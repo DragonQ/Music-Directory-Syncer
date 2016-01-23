@@ -1,0 +1,19 @@
+\\192.168.1.99\Adam\VB Projects\Music Folder Syncer\Project\bin\x64\Release\Music Folder Syncer.exe.config
+\\192.168.1.99\Adam\VB Projects\Music Folder Syncer\Project\bin\x64\Release\Music Folder Syncer.exe
+\\192.168.1.99\Adam\VB Projects\Music Folder Syncer\Project\bin\x64\Release\Music Folder Syncer.pdb
+\\192.168.1.99\Adam\VB Projects\Music Folder Syncer\Project\bin\x64\Release\Music Folder Syncer.xml
+\\192.168.1.99\Adam\VB Projects\Music Folder Syncer\Project\bin\x64\Release\Btl.Controls.MyControls.dll
+\\192.168.1.99\Adam\VB Projects\Music Folder Syncer\Project\bin\x64\Release\DragonQ.dll
+\\192.168.1.99\Adam\VB Projects\Music Folder Syncer\Project\bin\x64\Release\Fast Directory Enumerator DLL.dll
+\\192.168.1.99\Adam\VB Projects\Music Folder Syncer\Project\bin\x64\Release\taglib-sharp.dll
+\\192.168.1.99\Adam\VB Projects\Music Folder Syncer\Project\obj\x64\Release\EditSyncSettingsWindow.baml
+\\192.168.1.99\Adam\VB Projects\Music Folder Syncer\Project\obj\x64\Release\NewSyncWindow.baml
+\\192.168.1.99\Adam\VB Projects\Music Folder Syncer\Project\obj\x64\Release\EditSyncSettingsWindow.g.vb
+\\192.168.1.99\Adam\VB Projects\Music Folder Syncer\Project\obj\x64\Release\NewSyncWindow.g.vb
+\\192.168.1.99\Adam\VB Projects\Music Folder Syncer\Project\obj\x64\Release\Music Folder Syncer_MarkupCompile.cache
+\\192.168.1.99\Adam\VB Projects\Music Folder Syncer\Project\obj\x64\Release\Music Folder Syncer.g.resources
+\\192.168.1.99\Adam\VB Projects\Music Folder Syncer\Project\obj\x64\Release\Music_Folder_Syncer.Resources.resources
+\\192.168.1.99\Adam\VB Projects\Music Folder Syncer\Project\obj\x64\Release\Music Folder Syncer.vbproj.GenerateResource.Cache
+\\192.168.1.99\Adam\VB Projects\Music Folder Syncer\Project\obj\x64\Release\Music Folder Syncer.exe
+\\192.168.1.99\Adam\VB Projects\Music Folder Syncer\Project\obj\x64\Release\Music Folder Syncer.xml
+\\192.168.1.99\Adam\VB Projects\Music Folder Syncer\Project\obj\x64\Release\Music Folder Syncer.pdb

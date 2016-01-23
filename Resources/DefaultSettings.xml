@@ -1,0 +1,26 @@
+<?xml version="1.0"?>
+<MusicFolderSyncer>
+  <ffmpegPath>C:\Program Files\ffmpeg\ffmpeg.exe</ffmpegPath>
+  <!--<Threads>4</Threads>-->
+  <!--<SourceDirectory>P:\Audio\Music</SourceDirectory>-->
+  <!--<SyncDirectory>P:\Audio\Android Music</SyncDirectory>-->
+	<FileTypes>
+		<CodecName>FLAC</CodecName>
+		<CodecName>WMA Lossless</CodecName>
+		<CodecName>WMA</CodecName>
+		<CodecName>MP3</CodecName>
+		<CodecName>AAC</CodecName>
+		<CodecName>OGG Vorbis</CodecName>
+	</FileTypes>
+	<!--<Tags>
+    <Tag>
+      <Name>BEST_MUSIC</Name>
+    </Tag>
+	</Tags>-->
+	<TranscodeLosslessFiles />
+	<Encoder>
+    <CodecName>OGG Vorbis</CodecName>
+    <CodecProfile>Q7</CodecProfile>
+    <Extension>.ogg</Extension>
+  </Encoder>
+</MusicFolderSyncer>

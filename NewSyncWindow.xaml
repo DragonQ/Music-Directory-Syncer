@@ -1,0 +1,44 @@
+﻿<Window x:Class="NewSyncWindow"
+    xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+    xmlns:Controls="clr-namespace:Btl.Controls;assembly=Btl.Controls.MyControls"
+    Title="Create New Sync" Height="416.516" Width="444" ResizeMode="NoResize">
+    <Grid Margin="0,0,0,0" HorizontalAlignment="Stretch">
+        <TextBox x:Name="txtSourceDirectory" HorizontalAlignment="Left" Height="21" Margin="113,11,0,0" VerticalAlignment="Top" Width="306"/>
+        <Button x:Name="btnNewSync" Content="Start New Sync" Margin="233,0,19,113" VerticalAlignment="Bottom" Click="btnNewSync_Click" Height="24"/>
+        <TextBox x:Name="txtSyncDirectory" HorizontalAlignment="Left" Height="21" Margin="113,34,0,0" VerticalAlignment="Top" Width="306"/>
+        <Label Content="Source Directory:" HorizontalAlignment="Left" Height="26" Margin="0,7,0,0" VerticalAlignment="Top" Width="108" HorizontalContentAlignment="Right"/>
+        <Label Content="Sync Directory:" HorizontalAlignment="Left" Height="26" Margin="10,30,0,0" VerticalAlignment="Top" Width="98" HorizontalContentAlignment="Right" RenderTransformOrigin="0.5,0.5"/>
+        <Controls:SpinnerControl x:Name="spinThreads" HorizontalAlignment="Left" Margin="176,0,0,113" VerticalAlignment="Bottom" Minimum="1" Width="49" Value="1"/>
+        <Label Content="Threads:" HorizontalAlignment="Left" Margin="117,0,0,111" Width="54" HorizontalContentAlignment="Right" Height="26" VerticalAlignment="Bottom"/>
+        <GroupBox x:Name="grpFileTypes" Header="File Types To Sync" HorizontalAlignment="Left" Margin="10,61,0,0" VerticalAlignment="Top" Height="175" Width="215">
+            <ListBox x:Name="lstFileTypesToSync" Margin="0,0,0,0" IsSynchronizedWithCurrentItem="True" BorderThickness="0" Height="147" VerticalAlignment="Bottom">
+                <ListBox.ItemTemplate>
+                    <DataTemplate>
+                        <CheckBox IsChecked="{Binding IsChecked}" Content="{Binding MyName}" />
+                    </DataTemplate>
+                </ListBox.ItemTemplate>
+            </ListBox>
+        </GroupBox>
+        <GroupBox x:Name="boxTranscodeOptions" Header="Transcode Options" Margin="230,86,0,0" VerticalAlignment="Top" Height="150" HorizontalAlignment="Left" Width="189">
+            <Grid Margin="0,6,0,0">
+                <ComboBox x:Name="cmbCodec" HorizontalAlignment="Left" Margin="53,3,0,0" VerticalAlignment="Top" Width="114"/>
+                <ComboBox x:Name="cmbCodecLevel" HorizontalAlignment="Left" Margin="53,30,0,0" VerticalAlignment="Top" Width="114"/>
+                <Label Content="Codec:" HorizontalAlignment="Left" Height="26" VerticalAlignment="Top" Width="48" HorizontalContentAlignment="Right"/>
+                <Label Content="Profile:" HorizontalAlignment="Left" Height="26" Margin="0,27,0,0" VerticalAlignment="Top" Width="48" HorizontalContentAlignment="Right"/>
+                <Label Content="ffmpeg location:" HorizontalAlignment="Left" Height="26" Margin="2,58,0,0" VerticalAlignment="Top" Width="95" HorizontalContentAlignment="Left"/>
+                <TextBox x:Name="txt_ffmpegPath" HorizontalAlignment="Left" Height="21" Margin="1,89,0,0" VerticalAlignment="Top" Width="175"/>
+            </Grid>
+        </GroupBox>
+        <CheckBox x:Name="tckTranscode" Content="Transcode lossless files" VerticalAlignment="Top" HorizontalAlignment="Left" Width="189" Margin="230,66,0,0"/>
+        <GroupBox x:Name="boxTranscodeOptions_Copy" Header="Sync Progress" Margin="10,0,19,21" Height="92" VerticalAlignment="Bottom">
+            <Grid Margin="8,8,0,0">
+                <ProgressBar x:Name="FilesCompletedProgressBar" HorizontalAlignment="Left" Height="24" VerticalAlignment="Top" Width="379" Margin="0,-1,0,0"/>
+                <Label Content="Files Processed:" HorizontalAlignment="Left" Height="26" VerticalAlignment="Top" Width="95" HorizontalContentAlignment="Right" Margin="32,26,0,0"/>
+                <Label Content="Files Remaining:" HorizontalAlignment="Left" Height="26" Margin="204,26,0,0" VerticalAlignment="Top" Width="103" HorizontalContentAlignment="Right"/>
+                <TextBox x:Name="txtFilesRemaining" HorizontalAlignment="Left" Height="23" Margin="312,29,0,0" TextWrapping="Wrap" Text="" VerticalAlignment="Top" Width="67"/>
+                <TextBox x:Name="txtFilesProcessed" HorizontalAlignment="Left" Height="23" Margin="132,29,0,0" TextWrapping="Wrap" Text="" VerticalAlignment="Top" Width="67"/>
+            </Grid>
+        </GroupBox>
+    </Grid>
+</Window>

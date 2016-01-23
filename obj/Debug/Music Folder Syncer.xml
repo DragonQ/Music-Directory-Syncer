@@ -1,0 +1,93 @@
+﻿<?xml version="1.0"?>
+<doc>
+<assembly>
+<name>
+Music Folder Syncer
+</name>
+</assembly>
+<members>
+<member name="T:Music_Folder_Syncer.EditSyncSettingsWindow">
+<summary>
+EditSyncSettingsWindow
+</summary>
+</member>
+<member name="M:Music_Folder_Syncer.EditSyncSettingsWindow.InitializeComponent">
+<summary>
+InitializeComponent
+</summary>
+</member>
+<member name="T:Music_Folder_Syncer.My.Resources.Resources">
+<summary>
+  A strongly-typed resource class, for looking up localized strings, etc.
+</summary>
+</member>
+<member name="P:Music_Folder_Syncer.My.Resources.Resources.ResourceManager">
+<summary>
+  Returns the cached ResourceManager instance used by this class.
+</summary>
+</member>
+<member name="P:Music_Folder_Syncer.My.Resources.Resources.Culture">
+<summary>
+  Overrides the current thread's CurrentUICulture property for all
+  resource lookups using this strongly typed resource class.
+</summary>
+</member>
+<member name="P:Music_Folder_Syncer.My.Resources.Resources.Tray_Icon">
+<summary>
+  Looks up a localized resource of type System.Drawing.Icon similar to (Icon).
+</summary>
+</member>
+<member name="T:Music_Folder_Syncer.My.MyWpfExtension">
+ <summary>
+ Module used to define the properties that are available in the My Namespace for WPF
+ </summary>
+ <remarks></remarks>
+</member>
+<member name="P:Music_Folder_Syncer.My.MyWpfExtension.Application">
+ <summary>
+ Returns the application object for the running application
+ </summary>
+</member>
+<member name="P:Music_Folder_Syncer.My.MyWpfExtension.Computer">
+ <summary>
+ Returns information about the host computer.
+ </summary>
+</member>
+<member name="P:Music_Folder_Syncer.My.MyWpfExtension.User">
+ <summary>
+ Returns information for the current user.  If you wish to run the application with the current 
+ Windows user credentials, call My.User.InitializeWithWindowsUser().
+ </summary>
+</member>
+<member name="P:Music_Folder_Syncer.My.MyWpfExtension.Log">
+ <summary>
+ Returns the application log. The listeners can be configured by the application's configuration file.
+ </summary>
+</member>
+<member name="P:Music_Folder_Syncer.My.MyWpfExtension.Windows">
+ <summary>
+ Returns the collection of Windows defined in the project.
+ </summary>
+</member>
+<member name="T:Music_Folder_Syncer.NewSyncWindow">
+<summary>
+NewSyncWindow
+</summary>
+</member>
+<member name="M:Music_Folder_Syncer.NewSyncWindow.InitializeComponent">
+<summary>
+InitializeComponent
+</summary>
+</member>
+<member name="M:Music_Folder_Syncer.XML.OptionalElement(System.Xml.Linq.XElement,System.String)">
+ <summary>
+ This function makes it easy to search for optional XML elements within an
+ XDocument object. If <paramref name="ElementName"/> exists within
+ <paramref name="ActionElement"/> , its value is returned. Otherwise, nothing
+ is returned.
+ </summary>
+ <param name="ActionElement">XElement in which to search.</param>
+ <param name="ElementName">XElement to search for.</param>
+</member>
+</members>
+</doc>

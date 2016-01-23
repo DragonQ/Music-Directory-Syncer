@@ -1,0 +1,31 @@
+<?xml version="1.0"?>
+<MusicFolderSyncer>
+  <EnableSync />
+  <Threads>2</Threads>
+  <SourceDirectory>P:\Audio\Music</SourceDirectory>
+  <SyncDirectory>P:\Audio\Android Music</SyncDirectory>
+	<FileTypes>
+		<CodecName>FLAC</CodecName>
+		<CodecName>WMA Lossless</CodecName>
+		<CodecName>MP3</CodecName>
+		<!-- <CodecName>AAC</CodecName> -->
+	</FileTypes>
+	<Tags>
+    <Tag>
+      <Name>HOME_MUSIC</Name>
+      <!-- <Value>Yes</Value> -->
+    </Tag>
+    <Tag>
+      <Name>BEST_MUSIC</Name>
+    </Tag>
+    <Tag>
+      <Name>BEST_MUSIC_STEREO</Name>
+    </Tag>
+	</Tags>
+	<TranscodeLosslessFiles />
+	<Encoder>
+    <CodecName>OGG Vorbis</CodecName>
+    <CodecProfile>Q7</CodecProfile>
+    <Extension>.ogg</Extension>
+  </Encoder>
+</MusicFolderSyncer>
