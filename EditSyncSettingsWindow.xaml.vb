@@ -1,5 +1,6 @@
-﻿Imports Music_Folder_Syncer.Logger.DebugLogLevel
-
+﻿#Region " Namespaces "
+Imports Music_Folder_Syncer.Logger.DebugLogLevel
+#End Region
 
 Public Class EditSyncSettingsWindow
 
@@ -27,7 +28,7 @@ Public Class EditSyncSettingsWindow
             Me.Close()
         Else
             MyLog.Write("Could not update sync settings. Error: " & MyResult.ErrorMessage, Warning)
-            MessageBox.Show("Save failed!", MyResult.ErrorMessage, MessageBoxButton.OK, MessageBoxImage.Error)
+            System.Windows.MessageBox.Show("Save failed!", MyResult.ErrorMessage, MessageBoxButton.OK, MessageBoxImage.Error)
             EnableDisableControls(True)
         End If
 

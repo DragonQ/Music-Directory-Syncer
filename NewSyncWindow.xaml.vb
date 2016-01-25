@@ -1,13 +1,14 @@
-﻿#Region " Imports & Global Enums "
+﻿#Region " Namespaces "
 Imports DragonQ.Toolkit
 Imports Music_Folder_Syncer.Codec.CodecType
 Imports Music_Folder_Syncer.Logger.DebugLogLevel
 Imports System.IO
 Imports System.Environment
 Imports System.Threading
-Imports CodeProject
 Imports System.Security.AccessControl
 Imports System.Security.Principal
+Imports Microsoft.WindowsAPICodePack.Dialogs
+Imports CodeProject
 #End Region
 
 
@@ -42,7 +43,7 @@ Public Class NewSyncWindow
             AvailableCodecs.Add(New CheckedListItem(MyCodec, CodecString.Substring(0, CodecString.Length - 2) & ")", False))
 
             If MyCodec.Type = Lossy Then
-                cmbCodec.Items.Add(New DragonQ.Toolkit.Item(MyCodec.Name, MyCodec))
+                cmbCodec.Items.Add(New Item(MyCodec.Name, MyCodec))
                 If MyCodec.Name = DefaultSyncSettings.Encoder.Name Then
                     cmbCodec.SelectedIndex = CodecCount
                 End If
@@ -72,6 +73,47 @@ Public Class NewSyncWindow
     End Sub
 
 #Region " Window Controls "
+    Private Sub btnBrowseSourceDirectory_Click(sender As Object, e As RoutedEventArgs) Handles btnBrowseSourceDirectory.Click
+
+        Dim SelectDirectoryDialog = New CommonOpenFileDialog()
+        SelectDirectoryDialog.Title = "Select Sync Directory"
+        SelectDirectoryDialog.IsFolderPicker = True
+        SelectDirectoryDialog.AddToMostRecentlyUsedList = False
+        SelectDirectoryDialog.AllowNonFileSystemItems = True
+        SelectDirectoryDialog.DefaultDirectory = Environment.GetFolderPath(Environment.SpecialFolder.MyDocuments)
+        SelectDirectoryDialog.EnsureFileExists = False
+        SelectDirectoryDialog.EnsurePathExists = True
+        SelectDirectoryDialog.EnsureReadOnly = False
+        SelectDirectoryDialog.EnsureValidNames = True
+        SelectDirectoryDialog.Multiselect = False
+        SelectDirectoryDialog.ShowPlacesList = True
+
+        If SelectDirectoryDialog.ShowDialog() = CommonFileDialogResult.Ok Then
+            txtSourceDirectory.Text = SelectDirectoryDialog.FileName
+        End If
+
+    End Sub
+
+    Private Sub btnBrowseSyncDirectory_Click(sender As Object, e As RoutedEventArgs) Handles btnBrowseSyncDirectory.Click
+
+        Dim SelectDirectoryDialog = New CommonOpenFileDialog()
+        SelectDirectoryDialog.Title = "Select Sync Directory"
+        SelectDirectoryDialog.IsFolderPicker = True
+        SelectDirectoryDialog.AddToMostRecentlyUsedList = False
+        SelectDirectoryDialog.AllowNonFileSystemItems = True
+        SelectDirectoryDialog.DefaultDirectory = Environment.GetFolderPath(Environment.SpecialFolder.MyDocuments)
+        SelectDirectoryDialog.EnsureFileExists = False
+        SelectDirectoryDialog.EnsurePathExists = True
+        SelectDirectoryDialog.EnsureReadOnly = False
+        SelectDirectoryDialog.EnsureValidNames = True
+        SelectDirectoryDialog.Multiselect = False
+        SelectDirectoryDialog.ShowPlacesList = True
+
+        If SelectDirectoryDialog.ShowDialog() = CommonFileDialogResult.Ok Then
+            txtSyncDirectory.Text = SelectDirectoryDialog.FileName
+        End If
+
+    End Sub
     Private Sub cmbCodec_SelectionChanged(sender As Object, e As SelectionChangedEventArgs) Handles cmbCodec.SelectionChanged
 
         If cmbCodec.SelectedIndex > -1 Then
@@ -80,7 +122,7 @@ Public Class NewSyncWindow
 
             If MyCodecLevels.Count > 0 Then
                 For Each CodecLevel As Codec.Profile In MyCodecLevels ' CType(CType(cmbCodec.SelectedItem, Item).Value, Codec).Profiles
-                    cmbCodecLevel.Items.Add(New DragonQ.Toolkit.Item(CodecLevel.Name, CodecLevel))
+                    cmbCodecLevel.Items.Add(New Item(CodecLevel.Name, CodecLevel))
                 Next
                 cmbCodecLevel.SelectedIndex = 0
             End If
@@ -105,7 +147,7 @@ Public Class NewSyncWindow
     Private Sub btnNewSync_Click(sender As Object, e As RoutedEventArgs)
 
         If SyncBackgroundWorker.IsBusy Then 'Sync in progress, so we must cancel
-            If MessageBox.Show("Are you sure you want to cancel this sync operation? Your sync directory will be incomplete!", "Sync in progress!",
+            If System.Windows.MessageBox.Show("Are you sure you want to cancel this sync operation? Your sync directory will be incomplete!", "Sync in progress!",
                                    MessageBoxButton.OKCancel, MessageBoxImage.Error) = MessageBoxResult.OK Then
                 SyncBackgroundWorker.CancelAsync()
             End If
@@ -399,28 +441,27 @@ Public Class NewSyncWindow
             End If
 
             'Ask user if they want to start the background sync updater (presumably yes)
-            If MessageBox.Show("Sync directory size: " & SyncSizeString & NewLine & NewLine & "Time taken: " & TimeTaken & NewLine & NewLine &
+            If System.Windows.MessageBox.Show("Sync directory size: " & SyncSizeString & NewLine & NewLine & "Time taken: " & TimeTaken & NewLine & NewLine &
                                "Do you want to enable background sync " &
                                     "for this folder? This will ensure your sync folder is always up-to-date.", "Sync Complete!",
                                     MessageBoxButton.OKCancel, MessageBoxImage.Information) = MessageBoxResult.OK Then
                 MySyncSettings.SyncIsEnabled = True
-                Me.DialogResult = True
             Else
                 MySyncSettings.SyncIsEnabled = False
-                Me.DialogResult = False
             End If
 
             Dim MyResult As ReturnObject = SaveSyncSettings()
 
             If MyResult.Success Then
+                Me.DialogResult = True
                 MyLog.Write("Syncer settings updated.", Information)
                 Me.Close()
             Else
                 MyLog.Write("Could not update sync settings. Error: " & MyResult.ErrorMessage, Warning)
-                MessageBox.Show("Could not save sync settings!", MyResult.ErrorMessage, MessageBoxButton.OK, MessageBoxImage.Error)
+                System.Windows.MessageBox.Show("Could not save sync settings!", MyResult.ErrorMessage, MessageBoxButton.OK, MessageBoxImage.Error)
             End If
         Else
-            MessageBox.Show("Sync failed! " & NewLine & NewLine & Result.ErrorMessage, "Sync Failed!", _
+            System.Windows.MessageBox.Show("Sync failed! " & NewLine & NewLine & Result.ErrorMessage, "Sync Failed!",
                     MessageBoxButton.OKCancel, MessageBoxImage.Error)
             EnableDisableControls(True)
         End If
@@ -447,7 +488,7 @@ Public Class NewSyncWindow
 
         'User has closed the program, so we need to check if a sync is occuring
         If SyncBackgroundWorker.IsBusy Then
-            If MessageBox.Show("Are you sure you want to exit? Your sync directory will be incomplete!", "Sync in progress!",
+            If System.Windows.MessageBox.Show("Are you sure you want to exit? Your sync directory will be incomplete!", "Sync in progress!",
                                MessageBoxButton.OKCancel, MessageBoxImage.Error) = MessageBoxResult.OK Then
                 SyncBackgroundWorker.CancelAsync()
                 ExitApplication = True
@@ -455,6 +496,10 @@ Public Class NewSyncWindow
             e.Cancel = True
         ElseIf ExitApplication Then
             e.Cancel = True
+        End If
+
+        If DialogResult Is Nothing Then
+            DialogResult = False
         End If
 
     End Sub

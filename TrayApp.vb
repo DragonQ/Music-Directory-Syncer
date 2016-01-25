@@ -1,14 +1,9 @@
 ﻿#Region " Namespaces "
-'Imports DragonQ.Toolkit
 Imports Music_Folder_Syncer.Codec.CodecType
 Imports Music_Folder_Syncer.Logger.DebugLogLevel
 Imports System.Windows.Forms
+Imports System.Environment
 Imports System.IO
-'Imports System.IO.Compression
-'Imports System.Environment
-'Imports System.Xml
-'Imports System.Xml.Linq                 'Namespace required for XDocument parsing (XML reading/writing)
-'Imports System.Linq                     'Namespace required for XDocument parsing (XML reading/writing)
 #End Region
 
 
@@ -33,10 +28,8 @@ Public Class TrayApp
 #Region " New "
     Public Sub New(LaunchNewSyncWindow As Boolean)
 
-        Dim DownloadFiles As Boolean = True
-
         'Initialize the menus
-        mnuStatus = New ToolStripMenuItem("Syncer is active")
+        mnuStatus = New ToolStripMenuItem("Syncer is not active")
         mnuSep1 = New ToolStripSeparator()
         mnuEditSyncSettings = New ToolStripMenuItem("Edit sync settings")
         mnuViewLogFile = New ToolStripMenuItem("View log file")
@@ -45,20 +38,22 @@ Public Class TrayApp
         mnuSep3 = New ToolStripSeparator()
         mnuExit = New ToolStripMenuItem("Exit")
         mnuStatus.Enabled = False
+        mnuEditSyncSettings.Enabled = False
         MainMenu = New ContextMenuStrip
         MainMenu.Items.AddRange(New ToolStripItem() {mnuStatus, mnuSep1, mnuEditSyncSettings, mnuViewLogFile, mnuSep2, mnuNewSync, mnuSep3, mnuExit})
 
-        'Initialize the tray
+        'Initialize the notification area icon
         Tray = New NotifyIcon
         Tray.Icon = My.Resources.Tray_Icon
         Tray.ContextMenuStrip = MainMenu
         Tray.Text = ApplicationName
 
-        'Display
+        'Either display the Create New Sync window or start the file system watcher for background syncing
         If LaunchNewSyncWindow Then
             ShowNewSyncWindow()
         Else
             StartWatcher()
+            mnuEditSyncSettings.Enabled = True
             Tray.Visible = True
         End If
 
@@ -88,7 +83,7 @@ Public Class TrayApp
         MyLog.Write("  PROGRAM CLEAN EXIT")
         MyLog.Write("===============================================================")
         MyLog.Write("")
-        Me.ExitThread()
+        ExitThread() 'IF THIS EVER CAUSES ISSUES, USE THIS INSTEAD: Forms.Application.Exit()
     End Sub
 
     Private Sub mnuNewSync_Click(ByVal sender As Object, ByVal e As System.EventArgs) Handles mnuNewSync.Click
@@ -120,12 +115,25 @@ Public Class TrayApp
 
         Tray.Visible = True
 
-        If MyNewSyncWindow.DialogResult = True AndAlso StartWatcher().Success Then
-            mnuStatus.Text = "Syncer is active"
-            Tray.ShowBalloonTip(8, ApplicationName, "Syncer active.", ToolTipIcon.Info)
-        Else
+        If MyNewSyncWindow.DialogResult = True Then
+            ' Sync was successfully set up
+            mnuEditSyncSettings.Enabled = True
+            If MySyncSettings.SyncIsEnabled Then
+                Dim WatcherStartResult As ReturnObject = StartWatcher()
+
+                If WatcherStartResult.Success Then
+                    mnuStatus.Text = "Syncer is active"
+                    Tray.ShowBalloonTip(8, ApplicationName, "Syncer active.", ToolTipIcon.Info)
+                Else
+                    System.Windows.MessageBox.Show("Error starting background syncer!" & NewLine & NewLine & WatcherStartResult.ErrorMessage, "Background Syncer Error!", MessageBoxButton.OK, MessageBoxImage.Error)
+                End If
+            Else
+                mnuStatus.Text = "Syncer is not active"
+                Tray.ShowBalloonTip(8, ApplicationName, "Syncer disabled.", ToolTipIcon.Info)
+            End If
+        Else ' User closed the window before sync was completed
             mnuStatus.Text = "Syncer is not active"
-            Tray.ShowBalloonTip(8, ApplicationName, "Syncer disabled.", ToolTipIcon.Info)
+            Tray.ShowBalloonTip(8, ApplicationName, "Syncer not set up.", ToolTipIcon.Info)
         End If
 
     End Sub

@@ -1,6 +1,9 @@
-﻿Imports Music_Folder_Syncer.Logger.DebugLogLevel
+﻿#Region " Namespaces "
+Imports Music_Folder_Syncer.Logger.DebugLogLevel
 Imports System.IO
 Imports System.Environment
+Imports System.Windows
+#End Region
 
 '======================================================================
 '=================== FEATURES TO ADD / BUGS TO FIX ====================
@@ -30,7 +33,6 @@ Module Startup
         If Codecs Is Nothing Then
             MessageBox.Show("Could not read from Codecs.xml! Ensure the file is present and in the correct format.",
                             "Codecs Error", MessageBoxButton.OK, MessageBoxImage.Error)
-            'Application.Current.Shutdown()
             Exit Sub
         End If
 
@@ -40,7 +42,6 @@ Module Startup
             DefaultSyncSettings = DirectCast(DefaultSettings.MyObject, SyncSettings)
         Else
             MessageBox.Show(DefaultSettings.ErrorMessage, "Default Sync Settings Error", MessageBoxButton.OK, MessageBoxImage.Error)
-            'Application.Current.Shutdown()
             Exit Sub
         End If
 
@@ -54,14 +55,12 @@ Module Startup
                 System.Windows.Forms.Application.Run(New TrayApp(True))
             Else
                 MySyncSettings = DirectCast(Settings.MyObject, SyncSettings)
+                Forms.Application.Run(New TrayApp(False))
             End If
         Else
             MessageBox.Show(Settings.ErrorMessage, "Sync Settings Error", MessageBoxButton.OK, MessageBoxImage.Error)
-            'Application.Current.Shutdown()
             Exit Sub
         End If
-
-        System.Windows.Forms.Application.Run(New TrayApp(False))
 
     End Sub
 
