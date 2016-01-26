@@ -218,5 +218,15 @@
     <None Include="packages.config" />
     <None Include="Resources\Tray_Icon.ico" />
   </ItemGroup>
+  <ItemGroup>
+    <None Include="Resources\Codecs.xml" />
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="Resources\DefaultSettings.xml" />
+  </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.VisualBasic.targets" />
+  <PropertyGroup>
+    <PostBuildEvent>xcopy /Y "$(ProjectDir)Resources\Codecs.xml" "$(ProjectDir)$(OutDir)"
+xcopy /Y "$(ProjectDir)Resources\DefaultSettings.xml" "$(ProjectDir)$(OutDir)"</PostBuildEvent>
+  </PropertyGroup>
 </Project>
