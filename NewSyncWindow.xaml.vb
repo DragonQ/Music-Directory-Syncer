@@ -114,6 +114,29 @@ Public Class NewSyncWindow
         End If
 
     End Sub
+
+    Private Sub btnBrowseFFMPEG_Click(sender As Object, e As RoutedEventArgs) Handles btnBrowseFFMPEG.Click
+
+        Dim SelectDirectoryDialog = New CommonOpenFileDialog()
+        SelectDirectoryDialog.Title = "Select ffmpeg.exe Path"
+        SelectDirectoryDialog.IsFolderPicker = False
+        SelectDirectoryDialog.AddToMostRecentlyUsedList = False
+        SelectDirectoryDialog.AllowNonFileSystemItems = True
+        SelectDirectoryDialog.DefaultDirectory = Environment.GetFolderPath(Environment.SpecialFolder.ProgramFiles)
+        SelectDirectoryDialog.EnsureFileExists = True
+        SelectDirectoryDialog.EnsurePathExists = True
+        SelectDirectoryDialog.EnsureReadOnly = False
+        SelectDirectoryDialog.EnsureValidNames = True
+        SelectDirectoryDialog.Multiselect = False
+        SelectDirectoryDialog.ShowPlacesList = True
+        SelectDirectoryDialog.Filters.Add(New CommonFileDialogFilter("ffmpeg Executable", "*.exe"))
+
+        If SelectDirectoryDialog.ShowDialog() = CommonFileDialogResult.Ok Then
+            txt_ffmpegPath.Text = SelectDirectoryDialog.FileName
+        End If
+
+    End Sub
+
     Private Sub cmbCodec_SelectionChanged(sender As Object, e As SelectionChangedEventArgs) Handles cmbCodec.SelectionChanged
 
         If cmbCodec.SelectedIndex > -1 Then

@@ -27,7 +27,8 @@
                 <Label Content="Codec:" HorizontalAlignment="Left" Height="26" VerticalAlignment="Top" Width="48" HorizontalContentAlignment="Right"/>
                 <Label Content="Profile:" HorizontalAlignment="Left" Height="26" Margin="0,27,0,0" VerticalAlignment="Top" Width="48" HorizontalContentAlignment="Right"/>
                 <Label Content="ffmpeg location:" HorizontalAlignment="Left" Height="26" Margin="2,58,0,0" VerticalAlignment="Top" Width="95" HorizontalContentAlignment="Left"/>
-                <TextBox x:Name="txt_ffmpegPath" HorizontalAlignment="Left" Height="21" Margin="1,89,0,0" VerticalAlignment="Top" Width="175"/>
+                <TextBox x:Name="txt_ffmpegPath" HorizontalAlignment="Left" Height="21" Margin="1,89,0,0" VerticalAlignment="Top" Width="99"/>
+                <Button x:Name="btnBrowseFFMPEG" Content="Browse..." HorizontalAlignment="Left" Margin="105,89,0,0" VerticalAlignment="Top" Width="71" Height="21"/>
             </Grid>
         </GroupBox>
         <CheckBox x:Name="tckTranscode" Content="Transcode lossless files" VerticalAlignment="Top" HorizontalAlignment="Left" Width="189" Margin="230,66,0,0"/>
