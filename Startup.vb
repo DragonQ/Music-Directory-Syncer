@@ -46,7 +46,7 @@ Module Startup
         End If
 
         ' Read SyncSettings.xml file to import current sync settings (if there is one)
-        Dim Settings As ReturnObject = XML.ReadSyncSettings(Codecs)
+        Dim Settings As ReturnObject = XML.ReadSyncSettings(Codecs, DefaultSyncSettings)
         If Settings.Success Then
             If Settings.MyObject Is Nothing Then
                 MyLog.Write("Settings file not found; launching new sync window.", Information)
@@ -122,7 +122,7 @@ Module Startup
         End Try
 
         Try
-            Dim ffmpeg As New ProcessStartInfo(Path.Combine(System.AppDomain.CurrentDomain.BaseDirectory, "ffmpeg.exe"))
+            Dim ffmpeg As New ProcessStartInfo(MySyncSettings.ffmpegPath)
             ffmpeg.CreateNoWindow = True
             ffmpeg.UseShellExecute = False
 

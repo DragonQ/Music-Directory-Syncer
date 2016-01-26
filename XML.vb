@@ -76,29 +76,30 @@ Module XML
 
     End Function
 
-    Public Function ReadSyncSettings(Codecs As List(Of Codec)) As ReturnObject
-        Return ReadSettings(Codecs, Path.Combine(System.AppDomain.CurrentDomain.BaseDirectory, "SyncSettings.xml"))
+    Public Function ReadSyncSettings(Codecs As List(Of Codec), DefaultSettings As SyncSettings) As ReturnObject
+        Return ReadSettings(Codecs, Path.Combine(System.AppDomain.CurrentDomain.BaseDirectory, "SyncSettings.xml"), DefaultSettings)
     End Function
 
     Public Function ReadDefaultSettings(Codecs As List(Of Codec)) As ReturnObject
         Return ReadSettings(Codecs, Path.Combine(System.AppDomain.CurrentDomain.BaseDirectory, "DefaultSettings.xml"))
     End Function
 
-    Public Function ReadSettings(Codecs As List(Of Codec), FilePath As String) As ReturnObject
+    Public Function ReadSettings(Codecs As List(Of Codec), FilePath As String, Optional DefaultSettings As SyncSettings = Nothing) As ReturnObject
 
         Dim WatcherFilterList As New List(Of Codec)
         Dim TagList As New List(Of Codec.Tag)
-        Dim EnableSync As Boolean = False
-        Dim TranscodeLosslessFiles As Boolean = False
-        Dim SourceDirectory As String = ""
-        Dim SyncDirectory As String = ""
-        Dim ffmpegPath As String = ""
-        Dim TranscodeCodec As Codec = Nothing
-        Dim MaxThreads As Int32 = 1
+        Dim NewSyncSettings As SyncSettings
 
         Try
             'If SyncSettings.xml doesn't exist, return nothing
             If Not File.Exists(FilePath) Then Return New ReturnObject(True, "", Nothing)
+
+            'Apply all default values before searching for this sync's settings
+            If Not DefaultSettings Is Nothing Then
+                NewSyncSettings = New SyncSettings(DefaultSettings)
+            Else
+                NewSyncSettings = New SyncSettings(False, "", "", New List(Of Codec), New List(Of Codec.Tag), False, Nothing, System.Environment.ProcessorCount, "")
+            End If
 
             'Create StringWriter to store XML text
             Dim SettingsFile As String = File.ReadAllText(FilePath)
@@ -120,14 +121,14 @@ Module XML
 
             If Settings.Count > 0 Then
                 If Settings.Count = 1 Then
-                    If Not Settings(0).EnableSync Is Nothing Then EnableSync = True
-                    If Not Settings(0).SourceDirectory Is Nothing Then SourceDirectory = Settings(0).SourceDirectory.Value
-                    If Not Settings(0).SyncDirectory Is Nothing Then SyncDirectory = Settings(0).SyncDirectory.Value
-                    If Not Settings(0).MaxThreads Is Nothing Then MaxThreads = CInt(Settings(0).MaxThreads)
-                    If Not Settings(0).ffmpegPath Is Nothing Then ffmpegPath = Settings(0).ffmpegPath.Value
+                    If Not Settings(0).EnableSync Is Nothing Then NewSyncSettings.SyncIsEnabled = True
+                    If Not Settings(0).SourceDirectory Is Nothing Then NewSyncSettings.SourceDirectory = Settings(0).SourceDirectory.Value
+                    If Not Settings(0).SyncDirectory Is Nothing Then NewSyncSettings.SyncDirectory = Settings(0).SyncDirectory.Value
+                    If Not Settings(0).MaxThreads Is Nothing Then NewSyncSettings.MaxThreads = CInt(Settings(0).MaxThreads)
+                    If Not Settings(0).ffmpegPath Is Nothing Then NewSyncSettings.ffmpegPath = Settings(0).ffmpegPath.Value
 
                     If Not Settings(0).TranscodeLosslessFiles Is Nothing Then
-                        TranscodeLosslessFiles = True
+                        NewSyncSettings.TranscodeLosslessFiles = True
 
                         'Find transcoding settings
                         Dim TranscodeSettings = From Setting In SettingsXML.Elements("MusicFolderSyncer").Elements("Encoder")
@@ -149,7 +150,7 @@ Module XML
 
                                         For Each MyProfile As Codec.Profile In MyCodec.Profiles
                                             If TranscodeSettings(0).CodecProfile.Value = MyProfile.Name Then
-                                                TranscodeCodec = New Codec(MyCodec.Name, MyCodec.GetTypeString, {MyProfile},
+                                                NewSyncSettings.Encoder = New Codec(MyCodec.Name, MyCodec.GetTypeString, {MyProfile},
                                                                            {TranscodeSettings(0).Extension.Value})
                                                 ProfileFound = True
                                                 Exit For
@@ -213,6 +214,8 @@ Module XML
                 Throw New Exception("Settings file is malformed: missing <FileTypes> element.")
             End If
 
+            NewSyncSettings.SetWatcherCodecs(WatcherFilterList)
+
             Dim Tags = From Tag In SettingsXML.Elements("MusicFolderSyncer").Elements("Tags").Elements("Tag")
                        Select New With
                 {
@@ -224,8 +227,9 @@ Module XML
                 TagList.Add(New Codec.Tag(Tag.Name, Tag.Value))
             Next
 
-            Return New ReturnObject(True, "", New SyncSettings(EnableSync, SourceDirectory, SyncDirectory, WatcherFilterList, TagList,
-                                                               TranscodeLosslessFiles, TranscodeCodec, MaxThreads, ffmpegPath))
+            NewSyncSettings.SetWatcherTags(TagList)
+
+            Return New ReturnObject(True, "", NewSyncSettings)
         Catch ex As Exception
             Return New ReturnObject(False, ex.Message, Nothing)
         End Try

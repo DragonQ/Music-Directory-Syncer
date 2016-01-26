@@ -26,6 +26,20 @@
 
     End Sub
 
+    Public Sub New(NewSyncSettings As SyncSettings)
+
+        SyncIsEnabled = NewSyncSettings.SyncIsEnabled
+        SourceDirectory = NewSyncSettings.SourceDirectory
+        SyncDirectory = NewSyncSettings.SyncDirectory
+        WatcherCodecFilter = NewSyncSettings.GetWatcherCodecs
+        WatcherTags = NewSyncSettings.GetWatcherTags
+        TranscodeLosslessFiles = NewSyncSettings.TranscodeLosslessFiles
+        Encoder = NewSyncSettings.Encoder
+        MaxThreads = NewSyncSettings.MaxThreads
+        ffmpegPath = NewSyncSettings.ffmpegPath
+
+    End Sub
+
     Public Function GetFileExtensions() As List(Of String)
 
         Dim FileExtensions As New List(Of String)
@@ -40,19 +54,19 @@
 
     End Function
 
-    Public Sub SetWatcherCodecs(CodecList As List(Of Codec))
-        WatcherCodecFilter = CodecList.ToArray
-    End Sub
-
     Public Function GetWatcherCodecs() As Codec()
         Return WatcherCodecFilter
     End Function
+
+    Public Sub SetWatcherCodecs(CodecList As List(Of Codec))
+        WatcherCodecFilter = CodecList.ToArray
+    End Sub
 
     Public Function GetWatcherTags() As Codec.Tag()
         Return WatcherTags
     End Function
 
-    Public Sub SetWatcherCodecs(TagList As List(Of Codec.Tag))
+    Public Sub SetWatcherTags(TagList As List(Of Codec.Tag))
         WatcherTags = TagList.ToArray
     End Sub
 End Class

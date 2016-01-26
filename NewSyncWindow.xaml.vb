@@ -65,10 +65,12 @@ Public Class NewSyncWindow
             lstFileTypesToSync.Items.Add(CType(MyExtension, CheckedListItem))
         Next
 
-        spinThreads.Maximum = System.Environment.ProcessorCount
+        spinThreads.Maximum = DefaultSyncSettings.MaxThreads
         spinThreads.Value = spinThreads.Maximum
         spinThreads.IsEnabled = False
         txt_ffmpegPath.Text = DefaultSyncSettings.ffmpegPath
+        txtSourceDirectory.Text = DefaultSyncSettings.SourceDirectory
+        txtSyncDirectory.Text = DefaultSyncSettings.SyncDirectory
 
     End Sub
 
@@ -186,6 +188,7 @@ Public Class NewSyncWindow
                 MySyncSettings.SyncDirectory = txtSyncDirectory.Text
                 MySyncSettings.TranscodeLosslessFiles = tckTranscode.IsChecked
                 MySyncSettings.MaxThreads = CInt(spinThreads.Value)
+                MySyncSettings.ffmpegPath = txt_ffmpegPath.Text
 
                 If cmbCodec.SelectedIndex > -1 Then
                     If cmbCodecLevel.SelectedIndex > -1 Then
@@ -420,7 +423,7 @@ Public Class NewSyncWindow
                 Dim taskkill As New ProcessStartInfo("taskkill")
                 taskkill.CreateNoWindow = True
                 taskkill.UseShellExecute = False
-                taskkill.Arguments = " /F /IM ffmpeg.exe /T"
+                taskkill.Arguments = " /F /IM " & Path.GetFileName(MySyncSettings.ffmpegPath) & " /T"
 
                 MyLog.Write("Sync cancelled, now force-closing ffmpeg instances...", Warning)
 
