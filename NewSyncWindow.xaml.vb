@@ -71,10 +71,20 @@ Public Class NewSyncWindow
         txt_ffmpegPath.Text = DefaultSyncSettings.ffmpegPath
         txtSourceDirectory.Text = DefaultSyncSettings.SourceDirectory
         txtSyncDirectory.Text = DefaultSyncSettings.SyncDirectory
+        tckTranscode.IsChecked = DefaultSyncSettings.TranscodeLosslessFiles
 
     End Sub
 
 #Region " Window Controls "
+
+    Private Sub tckTranscode_Checked(sender As Object, e As RoutedEventArgs) Handles tckTranscode.Checked
+        boxTranscodeOptions.IsEnabled = True
+    End Sub
+
+    Private Sub tckTranscode_Unchecked(sender As Object, e As RoutedEventArgs) Handles tckTranscode.Unchecked
+        boxTranscodeOptions.IsEnabled = False
+    End Sub
+
     Private Sub btnBrowseSourceDirectory_Click(sender As Object, e As RoutedEventArgs) Handles btnBrowseSourceDirectory.Click
 
         Dim SelectDirectoryDialog = New CommonOpenFileDialog()
@@ -156,19 +166,6 @@ Public Class NewSyncWindow
 
     End Sub
 
-    Private Sub tckTranscode_Ticked(sender As Object, e As RoutedEventArgs)
-        If tckTranscode.IsLoaded AndAlso boxTranscodeOptions.IsLoaded Then
-            boxTranscodeOptions.IsEnabled = True
-        End If
-
-    End Sub
-
-    Private Sub tckTranscode_Unticked(sender As Object, e As RoutedEventArgs)
-        If tckTranscode.IsLoaded AndAlso boxTranscodeOptions.IsLoaded Then
-            boxTranscodeOptions.IsEnabled = False
-        End If
-    End Sub
-
     Private Sub btnNewSync_Click(sender As Object, e As RoutedEventArgs)
 
         If SyncBackgroundWorker.IsBusy Then 'Sync in progress, so we must cancel
@@ -181,6 +178,9 @@ Public Class NewSyncWindow
                     "sync folder!", "New Sync", MessageBoxButton.OKCancel, MessageBoxImage.Warning) = MessageBoxResult.OK Then
                 EnableDisableControls(False)
                 MyLog.Write("Creating new folder sync!", Warning)
+
+                MySyncSettings = New SyncSettings(DefaultSyncSettings)
+
                 MyLog.Write("Source directory: """ & txtSourceDirectory.Text & """.", Information)
                 MyLog.Write("Sync directory: """ & txtSyncDirectory.Text & """.", Information)
 

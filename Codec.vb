@@ -327,6 +327,4 @@ Public Class Codec
 
     End Class
 
-
-
 End Class
