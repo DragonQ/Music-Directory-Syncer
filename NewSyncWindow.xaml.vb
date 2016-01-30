@@ -9,6 +9,7 @@ Imports System.Security.AccessControl
 Imports System.Security.Principal
 Imports Microsoft.WindowsAPICodePack.Dialogs
 Imports CodeProject
+Imports System.Collections.ObjectModel
 #End Region
 
 
@@ -20,11 +21,14 @@ Public Class NewSyncWindow
     Dim ThreadsCompleted As Int64 = 0
     Dim SyncFolderSize As Int64
     Dim SyncTimer As New Stopwatch()
+    Dim TagsToSync As ObservableCollection(Of Codec.Tag)
+
 
     Public Sub New()
 
         ' This call is required by the designer.
         InitializeComponent()
+        Me.DataContext = Me
 
         SyncBackgroundWorker.WorkerReportsProgress = True
         SyncBackgroundWorker.WorkerSupportsCancellation = True
@@ -61,6 +65,15 @@ Public Class NewSyncWindow
             Next
         Next
 
+        TagsToSync = New ObservableCollection(Of Codec.Tag)
+        Dim Tags As Codec.Tag() = DefaultSyncSettings.GetWatcherTags
+        For Each MyTag As Codec.Tag In Tags
+            TagsToSync.Add(MyTag)
+        Next
+
+        ' TESTING:
+        'TagsToSync.Add(New Codec.Tag("BEST_MUSIC", "Yes"))
+
         For Each MyExtension As CheckedListItem In AvailableCodecs
             lstFileTypesToSync.Items.Add(CType(MyExtension, CheckedListItem))
         Next
@@ -74,6 +87,26 @@ Public Class NewSyncWindow
         tckTranscode.IsChecked = DefaultSyncSettings.TranscodeLosslessFiles
 
     End Sub
+
+
+    Public ReadOnly Property GetTagsToSync() As ObservableCollection(Of Codec.Tag)
+        Get
+            If TagsToSync Is Nothing Then
+                TagsToSync = New ObservableCollection(Of Codec.Tag)()
+            End If
+            Return TagsToSync
+        End Get
+    End Property
+
+    Public Sub OnAddingItem()
+        Dim newExample As New Codec.Tag("TEST")
+
+        GetTagsToSync.Add(newExample)
+        ' Because Examples is an ObservableCollection it raises a CollectionChanged event when adding or removing items,
+        ' the ItemsControl (DataGrid) in your case corresponds to that event and creates a new container for the item ( i.e. new DataGridRow ).
+    End Sub
+
+
 
 #Region " Window Controls "
 
@@ -189,6 +222,7 @@ Public Class NewSyncWindow
                 MySyncSettings.TranscodeLosslessFiles = tckTranscode.IsChecked
                 MySyncSettings.MaxThreads = CInt(spinThreads.Value)
                 MySyncSettings.ffmpegPath = txt_ffmpegPath.Text
+                MySyncSettings.SetWatcherTags(GetTagsToSync().ToList)
 
                 If cmbCodec.SelectedIndex > -1 Then
                     If cmbCodecLevel.SelectedIndex > -1 Then
