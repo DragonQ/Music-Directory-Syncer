@@ -3,10 +3,13 @@
 
 Public Class Codec
 
+    'Implements INotifyPropertyChanged
+
     Property Name As String
     Property Type As CodecType
     Property Profiles As Profile()
     Property FileExtensions As String()
+    Property IsEnabled As Boolean
 
     Enum CodecType
         Lossless
@@ -125,26 +128,32 @@ Public Class Codec
         Public Shared Function MatchTag(FilePath As String, Tags As Tag()) As ReturnObject
 
             Try
-                Dim FlacFile As New Flac.File(FilePath)
-                Dim Xiph As Ogg.XiphComment = CType(FlacFile.GetTag(TagTypes.Xiph, False), Ogg.XiphComment)
-
-                If Xiph Is Nothing Then
-                    Throw New Exception("FLAC tags not found.")
+                If Tags.Length = 0 Then
+                    'Tags weren't specified, so always match every file
+                    Return New ReturnObject(True, "", True)
                 Else
-                    'Search for each requested tag
-                    For Each MyTag As Tag In Tags
-                        Dim Results As String() = Xiph.GetField(MyTag.Name)
+                    'Find tags within FLAC file
+                    Dim FlacFile As New Flac.File(FilePath)
+                    Dim Xiph As Ogg.XiphComment = CType(FlacFile.GetTag(TagTypes.Xiph, False), Ogg.XiphComment)
 
-                        If Not Results Is Nothing AndAlso Results.Length > 0 Then 'Tag we're looking for is present, so continue
-                            'Value matches or wasn't requested, so return true
-                            If MyTag.Value Is Nothing OrElse MyTag.Value.ToUpper = Results(0).Trim.ToUpper Then
-                                Return New ReturnObject(True, "", True)
+                    If Xiph Is Nothing Then
+                        Throw New Exception("FLAC tags not found.")
+                    Else
+                        'Search for each requested tag
+                        For Each MyTag As Tag In Tags
+                            Dim Results As String() = Xiph.GetField(MyTag.Name)
+
+                            If Not Results Is Nothing AndAlso Results.Length > 0 Then 'Tag we're looking for is present, so continue
+                                'Value matches or wasn't requested, so return true
+                                If MyTag.Value Is Nothing OrElse MyTag.Value.ToUpper = Results(0).Trim.ToUpper Then
+                                    Return New ReturnObject(True, "", True)
+                                End If
                             End If
-                        End If
-                    Next
+                        Next
 
-                    'If none of the tags were found, return false
-                    Return New ReturnObject(True, "", False)
+                        'If none of the tags were found, return false
+                        Return New ReturnObject(True, "", False)
+                    End If
                 End If
             Catch ex As Exception
                 Return New ReturnObject(False, ex.Message, Nothing)
@@ -159,43 +168,49 @@ Public Class Codec
         Public Shared Function MatchTag(FilePath As String, Tags As Tag()) As ReturnObject
 
             Try
-                Dim WMAFile As TagLib.File = TagLib.File.Create(FilePath)
-                Dim ASF As Asf.Tag = CType(WMAFile.GetTag(TagTypes.Asf, False), Asf.Tag)
-
-                If ASF Is Nothing Then
-                    Throw New Exception("WMA tags not found.")
+                If Tags.Length = 0 Then
+                    'Tags weren't specified, so always match every file
+                    Return New ReturnObject(True, "", True)
                 Else
-                    'Search for each requested tag
-                    For Each MyTag As Tag In Tags
-                        Dim MatchFound As Asf.ContentDescriptor = Nothing
+                    'Find tags within WMA file
+                    Dim WMAFile As TagLib.File = TagLib.File.Create(FilePath)
+                    Dim ASF As Asf.Tag = CType(WMAFile.GetTag(TagTypes.Asf, False), Asf.Tag)
 
-                        For Each Field As Asf.ContentDescriptor In ASF
-                            Dim FieldName As String = Field.Name.Trim.ToUpper
-                            If FieldName = MyTag.Name.ToUpper Then
-                                MatchFound = Field
-                                Exit For
-                            ElseIf FieldName.Contains(MyTag.Name.ToUpper) Then 'Could be a match, need to do an extra check...
-                                Dim TagSplit As String() = FieldName.Split("/"c)
+                    If ASF Is Nothing Then
+                        Throw New Exception("WMA tags not found.")
+                    Else
+                        'Search for each requested tag
+                        For Each MyTag As Tag In Tags
+                            Dim MatchFound As Asf.ContentDescriptor = Nothing
 
-                                If TagSplit.Count > 1 AndAlso TagSplit(1).Trim.ToUpper = MyTag.Name.ToUpper Then
+                            For Each Field As Asf.ContentDescriptor In ASF
+                                Dim FieldName As String = Field.Name.Trim.ToUpper
+                                If FieldName = MyTag.Name.ToUpper Then
                                     MatchFound = Field
                                     Exit For
+                                ElseIf FieldName.Contains(MyTag.Name.ToUpper) Then 'Could be a match, need to do an extra check...
+                                    Dim TagSplit As String() = FieldName.Split("/"c)
+
+                                    If TagSplit.Count > 1 AndAlso TagSplit(1).Trim.ToUpper = MyTag.Name.ToUpper Then
+                                        MatchFound = Field
+                                        Exit For
+                                    End If
+                                End If
+                            Next
+
+                            If Not MatchFound Is Nothing Then 'If the value matches or wasn't requested, return true
+                                If MyTag.Value Is Nothing OrElse MyTag.Value.ToUpper = ASF.GetDescriptorString(MatchFound.Name).Trim.ToUpper Then
+                                    Return New ReturnObject(True, "", True)
                                 End If
                             End If
                         Next
 
-                        If Not MatchFound Is Nothing Then 'If the value matches or wasn't requested, return true
-                            If MyTag.Value Is Nothing OrElse MyTag.Value.ToUpper = ASF.GetDescriptorString(MatchFound.Name).Trim.ToUpper Then
-                                Return New ReturnObject(True, "", True)
-                            End If
-                        End If
-                    Next
+                        'If none of the tags was found, return false
+                        Return New ReturnObject(True, "", False)
+                    End If
 
-                    'If none of the tags was found, return false
                     Return New ReturnObject(True, "", False)
                 End If
-
-                Return New ReturnObject(True, "", False)
             Catch ex As Exception
                 Return New ReturnObject(False, ex.Message, Nothing)
             End Try
@@ -209,40 +224,46 @@ Public Class Codec
         Public Shared Function MatchTag(FilePath As String, Tags As Tag()) As ReturnObject
 
             Try
-                Dim MP3File As TagLib.File = TagLib.File.Create(FilePath)
-                Dim ID3 As Id3v2.Tag = CType(MP3File.GetTag(TagTypes.Id3v2, False), Id3v2.Tag)
-
-                If ID3 Is Nothing Then
-                    Throw New Exception("MP3 tags not found.")
+                If Tags.Length = 0 Then
+                    'Tags weren't specified, so always match every file
+                    Return New ReturnObject(True, "", True)
                 Else
-                    Dim ID3Frames As List(Of Id3v2.Frame) = ID3.GetFrames.ToList
-                    Dim ID3UserFrame As Id3v2.UserTextInformationFrame
+                    'Find tags within MP3 file
+                    Dim MP3File As TagLib.File = TagLib.File.Create(FilePath)
+                    Dim ID3 As Id3v2.Tag = CType(MP3File.GetTag(TagTypes.Id3v2, False), Id3v2.Tag)
 
-                    'Search for each requested tag
-                    For Each ID3Frame As Id3v2.Frame In ID3Frames
-                        Try 'Test if this is a user-defined ID3v2 tag - if not, skip to the next one
-                            ID3UserFrame = TryCast(ID3Frame, Id3v2.UserTextInformationFrame)
+                    If ID3 Is Nothing Then
+                        Throw New Exception("MP3 tags not found.")
+                    Else
+                        Dim ID3Frames As List(Of Id3v2.Frame) = ID3.GetFrames.ToList
+                        Dim ID3UserFrame As Id3v2.UserTextInformationFrame
 
-                            If Not ID3UserFrame Is Nothing Then
-                                For Each MyTag As Tag In Tags
-                                    If ID3UserFrame.Description.Trim.ToUpper = MyTag.Name.ToUpper Then
-                                        'If the value matches or wasn't requested, return true
-                                        If MyTag.Value Is Nothing OrElse MyTag.Value.ToUpper = ID3UserFrame.Text(0).Trim.ToUpper Then
-                                            Return New ReturnObject(True, "", True)
+                        'Search for each requested tag
+                        For Each ID3Frame As Id3v2.Frame In ID3Frames
+                            Try 'Test if this is a user-defined ID3v2 tag - if not, skip to the next one
+                                ID3UserFrame = TryCast(ID3Frame, Id3v2.UserTextInformationFrame)
+
+                                If Not ID3UserFrame Is Nothing Then
+                                    For Each MyTag As Tag In Tags
+                                        If ID3UserFrame.Description.Trim.ToUpper = MyTag.Name.ToUpper Then
+                                            'If the value matches or wasn't requested, return true
+                                            If MyTag.Value Is Nothing OrElse MyTag.Value.ToUpper = ID3UserFrame.Text(0).Trim.ToUpper Then
+                                                Return New ReturnObject(True, "", True)
+                                            End If
                                         End If
-                                    End If
-                                Next
-                            End If
-                        Catch ex As Exception
-                            Continue For
-                        End Try
-                    Next
+                                    Next
+                                End If
+                            Catch ex As Exception
+                                Continue For
+                            End Try
+                        Next
 
-                    'If none of the tags was found, return false
+                        'If none of the tags was found, return false
+                        Return New ReturnObject(True, "", False)
+                    End If
+
                     Return New ReturnObject(True, "", False)
                 End If
-
-                Return New ReturnObject(True, "", False)
             Catch ex As Exception
                 Return New ReturnObject(False, ex.Message, Nothing)
             End Try
@@ -260,64 +281,71 @@ Public Class Codec
             Dim BOXTYPE_DATA As ReadOnlyByteVector = "data" 'Tag value
 
             Try
-                'Grab user metadata box, which contains all of our tags
-                Dim AAC_File As New Mpeg4TestFile(FilePath)
-                Dim UserDataBoxes As Mpeg4.IsoUserDataBox = AAC_File.UdtaBoxes(0)
-                Dim UserDataBox = DirectCast(UserDataBoxes.Children.First(), Mpeg4.IsoMetaBox)
-
-                Dim TagMatched As Boolean = False
-
-                'Search through each box until we find the "ilst" box
-                For a As Int32 = 0 To UserDataBox.Children.Count - 1
-                    Try
-                        If UserDataBox.Children(a).BoxType = BOXTYPE_ILST Then
-                            'Search through child boxes of "ilst" box to find the relevant tags
-                            For Each UserData As Mpeg4.AppleAnnotationBox In CType(UserDataBox.Children(a), Mpeg4.AppleItemListBox).Children
-                                Dim TagFound As Tag = Nothing
-
-                                'If this AnnotationBox has children, look through them for tag data
-                                If UserData.Children.Count > 0 Then
-                                    For Each TagBox In UserData.Children
-                                        If TagBox.BoxType = BOXTYPE_NAME Then
-
-                                            Debug.WriteLine(CType(TagBox, Mpeg4.AppleAdditionalInfoBox).Text.Replace(Convert.ToChar(0), "").Trim)
-
-                                            'This AppleAdditionalInfoBox contains the name of the tag, so look for it in our list of tag names
-                                            For Each MyTag As Tag In Tags
-                                                If CType(TagBox, Mpeg4.AppleAdditionalInfoBox).Text.Replace(Convert.ToChar(0), "").Trim.ToUpper = MyTag.Name.ToUpper Then
-                                                    TagFound = MyTag
-                                                    Exit For
-                                                End If
-                                            Next
-                                        ElseIf TagBox.BoxType = BOXTYPE_DATA Then
-                                            'This AppleAdditionalInfoBox contains the value of the tag, so if this tag was found in our tag list
-                                            'we need to check if the tag's value also matches (or that no specific value was requested)
-                                            If Not TagFound Is Nothing Then
-                                                If TagFound.Value Is Nothing OrElse CType(TagBox, Mpeg4.AppleDataBox).Text.Trim.ToUpper = TagFound.Value.ToUpper Then
-                                                    TagMatched = True
-                                                    Exit For
-                                                End If
-                                            End If
-                                        End If
-                                    Next
-                                End If
-
-                                'If we matched a tag, we can end our search now
-                                If TagMatched Then Exit For
-                            Next
-                        End If
-                    Catch ex As Exception
-                        Return New ReturnObject(False, ex.Message, Nothing)
-                    End Try
-
-                    'If we matched a tag, we can end our search now
-                    If TagMatched Then Exit For
-                Next
-
-                If TagMatched Then
+                If Tags.Length = 0 Then
+                    'Tags weren't specified, so always match every file
                     Return New ReturnObject(True, "", True)
                 Else
-                    Return New ReturnObject(True, "", False)
+                    'Find tags within AAC file
+
+                    'Grab user metadata box, which contains all of our tags
+                    Dim AAC_File As New Mpeg4TestFile(FilePath)
+                    Dim UserDataBoxes As Mpeg4.IsoUserDataBox = AAC_File.UdtaBoxes(0)
+                    Dim UserDataBox = DirectCast(UserDataBoxes.Children.First(), Mpeg4.IsoMetaBox)
+
+                    Dim TagMatched As Boolean = False
+
+                    'Search through each box until we find the "ilst" box
+                    For a As Int32 = 0 To UserDataBox.Children.Count - 1
+                        Try
+                            If UserDataBox.Children(a).BoxType = BOXTYPE_ILST Then
+                                'Search through child boxes of "ilst" box to find the relevant tags
+                                For Each UserData As Mpeg4.AppleAnnotationBox In CType(UserDataBox.Children(a), Mpeg4.AppleItemListBox).Children
+                                    Dim TagFound As Tag = Nothing
+
+                                    'If this AnnotationBox has children, look through them for tag data
+                                    If UserData.Children.Count > 0 Then
+                                        For Each TagBox In UserData.Children
+                                            If TagBox.BoxType = BOXTYPE_NAME Then
+
+                                                Debug.WriteLine(CType(TagBox, Mpeg4.AppleAdditionalInfoBox).Text.Replace(Convert.ToChar(0), "").Trim)
+
+                                                'This AppleAdditionalInfoBox contains the name of the tag, so look for it in our list of tag names
+                                                For Each MyTag As Tag In Tags
+                                                    If CType(TagBox, Mpeg4.AppleAdditionalInfoBox).Text.Replace(Convert.ToChar(0), "").Trim.ToUpper = MyTag.Name.ToUpper Then
+                                                        TagFound = MyTag
+                                                        Exit For
+                                                    End If
+                                                Next
+                                            ElseIf TagBox.BoxType = BOXTYPE_DATA Then
+                                                'This AppleAdditionalInfoBox contains the value of the tag, so if this tag was found in our tag list
+                                                'we need to check if the tag's value also matches (or that no specific value was requested)
+                                                If Not TagFound Is Nothing Then
+                                                    If TagFound.Value Is Nothing OrElse CType(TagBox, Mpeg4.AppleDataBox).Text.Trim.ToUpper = TagFound.Value.ToUpper Then
+                                                        TagMatched = True
+                                                        Exit For
+                                                    End If
+                                                End If
+                                            End If
+                                        Next
+                                    End If
+
+                                    'If we matched a tag, we can end our search now
+                                    If TagMatched Then Exit For
+                                Next
+                            End If
+                        Catch ex As Exception
+                            Return New ReturnObject(False, ex.Message, Nothing)
+                        End Try
+
+                        'If we matched a tag, we can end our search now
+                        If TagMatched Then Exit For
+                    Next
+
+                    If TagMatched Then
+                        Return New ReturnObject(True, "", True)
+                    Else
+                        Return New ReturnObject(True, "", False)
+                    End If
                 End If
             Catch ex As Exception
                 Return New ReturnObject(False, ex.Message, Nothing)
