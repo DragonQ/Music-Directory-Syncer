@@ -6,7 +6,6 @@
   <!--<SyncDirectory>P:\Audio\Android Music</SyncDirectory>-->
 	<FileTypes>
 		<CodecName>FLAC</CodecName>
-		<CodecName>WMA Lossless</CodecName>
 		<CodecName>WMA</CodecName>
 		<CodecName>MP3</CodecName>
 		<CodecName>AAC</CodecName>

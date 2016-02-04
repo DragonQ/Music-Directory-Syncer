@@ -1,54 +1,60 @@
 <?xml version="1.0"?>
 <MusicFolderSyncer>
-	<Codecs>
-		<Codec>
-			<Name>OGG Vorbis</Name>
-			<Type>Lossy</Type>
-			<Extensions>
+  <Codecs>
+    <Codec>
+      <Name>OGG Vorbis</Name>
+      <Type>Lossy</Type>
+      <Extensions>
         <Extension>.ogg</Extension>
-			</Extensions>
+      </Extensions>
       <Profiles>
         <Profile>
           <Name>Q7</Name>
           <Argument>libvorbis -aq 7</Argument>
         </Profile>
-			</Profiles>
-		</Codec>
-		<Codec>
-			<Name>FLAC</Name>
-			<Type>Lossless</Type>
-			<Extensions>
+      </Profiles>
+    </Codec>
+    <Codec>
+      <Name>FLAC</Name>
+      <Type>Lossless</Type>
+      <Extensions>
         <Extension>.flac</Extension>
         <Extension>.fla</Extension>
-			</Extensions>
+      </Extensions>
       <Profiles>
         <Profile>
           <Name>Profile 8</Name>
           <Argument>flac -compression_level 8</Argument>
         </Profile>  
-			</Profiles>
-		</Codec>
-		<Codec>
-			<Name>WMA Lossless</Name>
-			<Type>Lossless</Type>
-			<Extensions>
+      </Profiles>
+    </Codec>
+    <!--<Codec>
+      <Name>WMA Lossless</Name>
+      <Type>Lossless</Type>
+      <Extensions>
         <Extension>.wma</Extension>
       </Extensions>
-		</Codec>
-		<Codec>
-			<Name>WMA</Name>
-			<Type>Lossy</Type>
-			<Extensions>
+    </Codec>-->
+    <Codec>
+      <Name>WMA</Name>
+      <Type>Lossy</Type>
+      <Extensions>
         <Extension>.wma</Extension>
       </Extensions>
-		</Codec>
-		<Codec>
-			<Name>MP3</Name>
-			<Type>Lossy</Type>
-			<Extensions>
+      <Profiles>
+        <Profile>
+          <Name>CBR 128 kb/s</Name>
+          <Argument>wmav2 -b 128k</Argument>
+        </Profile>
+      </Profiles>
+    </Codec>
+    <Codec>
+      <Name>MP3</Name>
+      <Type>Lossy</Type>
+      <Extensions>
         <Extension>.mp3</Extension>
       </Extensions>
-			<Profiles>
+      <Profiles>
         <Profile>
           <Name>VBR V0</Name>
           <Argument>V0</Argument>
@@ -57,16 +63,16 @@
           <Name>VBR V2</Name>
           <Argument>V2</Argument>
         </Profile>
-			</Profiles>
-		</Codec>
-		<Codec>
-			<Name>AAC</Name>
-			<Type>Lossy</Type>
-			<Extensions>
+      </Profiles>
+    </Codec>
+    <Codec>
+      <Name>AAC</Name>
+      <Type>Lossy</Type>
+      <Extensions>
         <Extension>.mp4</Extension>
         <Extension>.m4a</Extension>
         <Extension>.aac</Extension>
-			</Extensions>
+      </Extensions>
       <Profiles>
         <Profile>
           <Name>Q 0.69</Name>
@@ -76,7 +82,7 @@
           <Name>Q 0.60</Name>
           <Argument>Q0.60</Argument>
         </Profile>
-			</Profiles>
-		</Codec>
-	</Codecs>
+      </Profiles>
+    </Codec>
+  </Codecs>
 </MusicFolderSyncer>
