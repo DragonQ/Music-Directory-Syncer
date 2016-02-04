@@ -126,9 +126,8 @@ Module Startup
             ffmpeg.CreateNoWindow = True
             ffmpeg.UseShellExecute = False
 
-            'ffmpeg.Arguments = "-i """ & FileFrom & """ -c:a libfdk_aac vbr 5 -cutoff 18000 -hide_banner """ & FileTo & """"
             ffmpeg.Arguments = "-i """ & FileFrom & """ -vn -c:a " & MySyncSettings.Encoder.Profiles(0).Argument & " -hide_banner """ & OutputFilePath & """"
-            'aq: 4 = 128 kbps, 5 = 160 kbps, 6 = 192 kbps, 7 = 224 kbps, 8 = 256 kbps
+            'libvorbis -aq: 4 = 128 kbps, 5 = 160 kbps, 6 = 192 kbps, 7 = 224 kbps, 8 = 256 kbps
 
             MyLog.Write(ProcessID, "...ffmpeg arguments: """ & ffmpeg.Arguments & """...", Debug)
 
@@ -174,15 +173,17 @@ Module Startup
         Dim FileExtension As String = Path.GetExtension(FilePath)
 
         For Each Codec As Codec In CodecsToCheck
-            For Each CodecExtension As String In Codec.FileExtensions
-                If FileExtension = CodecExtension Then
-                    MyLog.Write(ProcessID, "...file type recognised, now checking tags...", Debug)
-                    Return Codec
-                End If
-            Next
+            If Codec.IsEnabled Then
+                For Each CodecExtension As String In Codec.FileExtensions
+                    If FileExtension = CodecExtension Then
+                        MyLog.Write(ProcessID, "...file type recognised, now checking tags...", Debug)
+                        Return Codec
+                    End If
+                Next
+            End If
         Next
 
-        MyLog.Write(ProcessID, "...file type not recognised as audio file, ignoring.", Debug)
+        MyLog.Write(ProcessID, "...file type not recognised, ignoring.", Debug)
         Return Nothing
 
     End Function

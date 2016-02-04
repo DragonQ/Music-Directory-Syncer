@@ -10,6 +10,7 @@ Imports System.Security.Principal
 Imports Microsoft.WindowsAPICodePack.Dialogs
 Imports CodeProject
 Imports System.Collections.ObjectModel
+Imports System.Collections.Specialized
 #End Region
 
 
@@ -22,6 +23,7 @@ Public Class NewSyncWindow
     Dim SyncFolderSize As Int64
     Dim SyncTimer As New Stopwatch()
     Dim TagsToSync As ObservableCollection(Of Codec.Tag)
+    Dim FileTypesToSync As ObservableCollection(Of Codec)
 
 
     Public Sub New()
@@ -36,16 +38,9 @@ Public Class NewSyncWindow
         AddHandler SyncBackgroundWorker.ProgressChanged, AddressOf SyncFolderProgressChanged
         AddHandler SyncBackgroundWorker.RunWorkerCompleted, AddressOf SyncFolderCompleted
 
-        Dim CodecCount As Int32 = 0
-
         ' Add all codecs (previously read from Codecs.xml) to AvailableCodecs list
+        Dim CodecCount As Int32 = 0
         For Each MyCodec As Codec In Codecs
-            Dim CodecString As String = MyCodec.Name & " ("
-            For Each MyExtension As String In MyCodec.FileExtensions
-                CodecString &= MyExtension & ", "
-            Next
-            AvailableCodecs.Add(New CheckedListItem(MyCodec, CodecString.Substring(0, CodecString.Length - 2) & ")", False))
-
             If MyCodec.Type = Lossy Then
                 cmbCodec.Items.Add(New Item(MyCodec.Name, MyCodec))
                 If MyCodec.Name = DefaultSyncSettings.Encoder.Name Then
@@ -55,14 +50,11 @@ Public Class NewSyncWindow
             End If
         Next
 
+        FileTypesToSync = New ObservableCollection(Of Codec)
+        AddHandler FileTypesToSync.CollectionChanged, AddressOf FileTypesToSyncResized
         Dim CodecsFilter As Codec() = DefaultSyncSettings.GetWatcherCodecs
         For Each MyFilter As Codec In CodecsFilter
-            For Each MyListItem As CheckedListItem In AvailableCodecs
-                If MyFilter.Name = CType(MyListItem.Data, Codec).Name Then
-                    MyListItem.IsChecked = True
-                    Exit For
-                End If
-            Next
+            FileTypesToSync.Add(MyFilter)
         Next
 
         TagsToSync = New ObservableCollection(Of Codec.Tag)
@@ -74,10 +66,6 @@ Public Class NewSyncWindow
         ' TESTING:
         'TagsToSync.Add(New Codec.Tag("BEST_MUSIC", "Yes"))
 
-        For Each MyExtension As CheckedListItem In AvailableCodecs
-            lstFileTypesToSync.Items.Add(CType(MyExtension, CheckedListItem))
-        Next
-
         spinThreads.Maximum = DefaultSyncSettings.MaxThreads
         spinThreads.Value = spinThreads.Maximum
         spinThreads.IsEnabled = False
@@ -88,13 +76,21 @@ Public Class NewSyncWindow
 
     End Sub
 
-
     Public ReadOnly Property GetTagsToSync() As ObservableCollection(Of Codec.Tag)
         Get
             If TagsToSync Is Nothing Then
                 TagsToSync = New ObservableCollection(Of Codec.Tag)()
             End If
             Return TagsToSync
+        End Get
+    End Property
+
+    Public ReadOnly Property GetFileTypesToSync() As ObservableCollection(Of Codec)
+        Get
+            If FileTypesToSync Is Nothing Then
+                FileTypesToSync = New ObservableCollection(Of Codec)()
+            End If
+            Return FileTypesToSync
         End Get
     End Property
 
@@ -106,10 +102,30 @@ Public Class NewSyncWindow
         ' the ItemsControl (DataGrid) in your case corresponds to that event and creates a new container for the item ( i.e. new DataGridRow ).
     End Sub
 
+    Private Sub FileTypesToSyncResized(sender As Object, e As NotifyCollectionChangedEventArgs)
 
+        'Dim action As NotifyCollectionChangedAction = e.Action
+
+    End Sub
+
+    Private Sub FileTypesToSyncChanged(sender As Object, e As RoutedEventArgs)
+
+        ' Check whether the user has chosen to monitor WMA files and enable/disable the special tick box as appropriate.
+        For Each FileType In FileTypesToSync
+            If FileType.Name = "WMA" Then
+                If FileType.IsEnabled Then
+                    tckTreatWMA_AsLossless.IsEnabled = True
+                    FileType.Type = Lossless
+                Else
+                    tckTreatWMA_AsLossless.IsEnabled = False
+                    FileType.Type = Lossy
+                End If
+            End If
+        Next
+
+    End Sub
 
 #Region " Window Controls "
-
     Private Sub tckTranscode_Checked(sender As Object, e As RoutedEventArgs) Handles tckTranscode.Checked
         boxTranscodeOptions.IsEnabled = True
     End Sub
@@ -231,11 +247,7 @@ Public Class NewSyncWindow
                     End If
                 End If
 
-                Dim CodecFilterList As New List(Of Codec)
-                For Each TickedCodec As CheckedListItem In AvailableCodecs
-                    If TickedCodec.IsChecked Then CodecFilterList.Add(CType(TickedCodec.Data, Codec))
-                Next
-                MySyncSettings.SetWatcherCodecs(CodecFilterList)
+                MySyncSettings.SetWatcherCodecs(GetFileTypesToSync().ToList)
 
                 FilesCompletedProgressBar.Value = 0
                 FilesCompletedProgressBar.IsIndeterminate = True
@@ -243,7 +255,7 @@ Public Class NewSyncWindow
                 txtFilesProcessed.Text = "???"
                 btnNewSync.Content = "Scanning files..."
                 SyncTimer.Start()
-                SyncBackgroundWorker.RunWorkerAsync(MySyncSettings.SourceDirectory)
+                SyncBackgroundWorker.RunWorkerAsync()
             End If
         End If
 
@@ -260,7 +272,7 @@ Public Class NewSyncWindow
 #Region " Start New Sync [Background Worker] "
     Private Sub SyncFolder(sender As Object, e As DoWorkEventArgs)
 
-        Dim FolderPath As String = CType(e.Argument, String)
+        Dim FolderPath As String = MySyncSettings.SourceDirectory
         Dim MyFiles As FileData() = Nothing
         Dim MyFilesToProcess As New List(Of String)
         Dim CodecsToCheck As Codec() = MySyncSettings.GetWatcherCodecs
