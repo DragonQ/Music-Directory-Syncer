@@ -16,6 +16,7 @@ Public Class EditSyncSettingsWindow
         spinThreads.Value = MySyncSettings.MaxThreads
 
     End Sub
+
     Private Function CreateDirectoryBrowser() As ReturnObject
 
         Dim SelectDirectoryDialog = New CommonOpenFileDialog()
@@ -40,7 +41,7 @@ Public Class EditSyncSettingsWindow
     End Function
 
 #Region " Window Controls "
-    Private Sub btnBrowseSourceDirectory_Click(sender As Object, e As RoutedEventArgs) Handles btnBrowseSourceDirectory.Click
+    Private Sub btnBrowseSourceDirectory_Click(sender As Object, e As RoutedEventArgs)
 
         Dim Browser As ReturnObject = CreateDirectoryBrowser()
 
@@ -50,7 +51,7 @@ Public Class EditSyncSettingsWindow
 
     End Sub
 
-    Private Sub btnBrowseSyncDirectory_Click(sender As Object, e As RoutedEventArgs) Handles btnBrowseSyncDirectory.Click
+    Private Sub btnBrowseSyncDirectory_Click(sender As Object, e As RoutedEventArgs)
 
         Dim Browser As ReturnObject = CreateDirectoryBrowser()
 
