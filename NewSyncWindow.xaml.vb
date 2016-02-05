@@ -38,7 +38,7 @@ Public Class NewSyncWindow
         AddHandler SyncBackgroundWorker.ProgressChanged, AddressOf SyncFolderProgressChanged
         AddHandler SyncBackgroundWorker.RunWorkerCompleted, AddressOf SyncFolderCompleted
 
-        ' Add all codecs (previously read from Codecs.xml) to AvailableCodecs list
+        ' Add all codecs (previously read from Codecs.xml) to cmbCodec
         Dim CodecCount As Int32 = 0
         For Each MyCodec As Codec In Codecs
             If MyCodec.Type = Lossy Then
@@ -73,6 +73,7 @@ Public Class NewSyncWindow
         txtSourceDirectory.Text = DefaultSyncSettings.SourceDirectory
         txtSyncDirectory.Text = DefaultSyncSettings.SyncDirectory
         tckTranscode.IsChecked = DefaultSyncSettings.TranscodeLosslessFiles
+        txtSourceDirectory.Focus()
 
     End Sub
 
@@ -89,7 +90,7 @@ Public Class NewSyncWindow
         Get
             Dim EnabledFileTypesToSync As New List(Of Codec)
 
-            ' Return a new list of codecs that only includes the codecs enabled/ticked by the user.
+            ' Return a new list of codecs that only includes the codecs enabled/ticked by the user
             If Not FileTypesToSync Is Nothing Then
                 For Each FileType As Codec In FileTypesToSync
                     If FileType.IsEnabled Then EnabledFileTypesToSync.Add(FileType)
@@ -110,27 +111,38 @@ Public Class NewSyncWindow
 
     Private Sub FileTypesToSyncResized(sender As Object, e As NotifyCollectionChangedEventArgs)
 
-        'Dim action As NotifyCollectionChangedAction = e.Action
+        If e.Action = NotifyCollectionChangedAction.Add Then
+            ' Check whether the user has chosen to monitor WMA files and enable/disable the special tick box as appropriate.
+            For Each FileType As Codec In e.NewItems
+                If CheckForWMA(FileType) = True Then Exit For
+            Next
+        End If
 
     End Sub
 
     Private Sub FileTypesToSyncChanged(sender As Object, e As RoutedEventArgs)
 
         ' Check whether the user has chosen to monitor WMA files and enable/disable the special tick box as appropriate.
-        For Each FileType In FileTypesToSync
-            If FileType.Name = "WMA" Then
-                If FileType.IsEnabled Then
-                    tckTreatWMA_AsLossless.IsEnabled = True
-                    FileType.Type = Lossless
-                Else
-                    tckTreatWMA_AsLossless.IsEnabled = False
-                    FileType.Type = Lossy
-                End If
-                Exit For
-            End If
+        For Each FileType As Codec In FileTypesToSync
+            If CheckForWMA(FileType) = True Then Exit For
         Next
 
     End Sub
+
+    Private Function CheckForWMA(FileType As Codec) As Boolean
+        If FileType.Name = "WMA" Then
+            If FileType.IsEnabled Then
+                tckTreatWMA_AsLossless.IsEnabled = True
+                FileType.Type = Lossless
+            Else
+                tckTreatWMA_AsLossless.IsEnabled = False
+                FileType.Type = Lossy
+            End If
+            Return True
+        Else
+            Return False
+        End If
+    End Function
 
 #Region " Window Controls "
     Private Sub tckTranscode_Checked(sender As Object, e As RoutedEventArgs) Handles tckTranscode.Checked

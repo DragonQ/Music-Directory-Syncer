@@ -4,15 +4,15 @@
     xmlns:Controls="clr-namespace:Btl.Controls;assembly=Btl.Controls.MyControls"
     Title="Create New Sync" Height="558" Width="444" ResizeMode="NoResize" WindowStartupLocation="CenterScreen">
     <Grid Margin="0,0,0,0" HorizontalAlignment="Stretch">
-        <TextBox x:Name="txtSourceDirectory" HorizontalAlignment="Left" Height="21" Margin="113,11,0,0" VerticalAlignment="Top" Width="230"/>
-        <Button x:Name="btnNewSync" Content="Start New Sync" Margin="0,0,10,113" VerticalAlignment="Bottom" Click="btnNewSync_Click" Height="24" HorizontalAlignment="Right" Width="186"/>
-        <TextBox x:Name="txtSyncDirectory" HorizontalAlignment="Left" Height="21" Margin="113,35,0,0" VerticalAlignment="Top" Width="230"/>
+        <TextBox x:Name="txtSourceDirectory" HorizontalAlignment="Left" Height="21" Margin="113,11,0,0" VerticalAlignment="Top" Width="230" TabIndex="0"/>
+        <Button x:Name="btnNewSync" Content="Start New Sync" Margin="0,0,10,113" VerticalAlignment="Bottom" Click="btnNewSync_Click" Height="24" HorizontalAlignment="Right" Width="186" TabIndex="52"/>
+        <TextBox x:Name="txtSyncDirectory" HorizontalAlignment="Left" Height="21" Margin="113,35,0,0" VerticalAlignment="Top" Width="230" TabIndex="2"/>
         <Label Content="Source Directory:" HorizontalAlignment="Left" Height="26" Margin="0,7,0,0" VerticalAlignment="Top" Width="108" HorizontalContentAlignment="Right"/>
         <Label Content="Sync Directory:" HorizontalAlignment="Left" Height="26" Margin="10,31,0,0" VerticalAlignment="Top" Width="98" HorizontalContentAlignment="Right" RenderTransformOrigin="0.5,0.5"/>
-        <Controls:SpinnerControl x:Name="spinThreads" HorizontalAlignment="Right" Margin="0,0,213,114" VerticalAlignment="Bottom" Minimum="1" Width="49" Value="1"/>
+        <Controls:SpinnerControl x:Name="spinThreads" HorizontalAlignment="Right" Margin="0,0,213,114" VerticalAlignment="Bottom" Minimum="1" Width="49" Value="1" IsTabStop="True" TabIndex="50"/>
         <Label Content="Threads:" HorizontalAlignment="Right" Margin="0,0,267,112" Width="54" HorizontalContentAlignment="Right" Height="26" VerticalAlignment="Bottom"/>
         <GroupBox x:Name="grpFileTypes" Header="File Types To Sync" Margin="10,61,0,293" HorizontalAlignment="Left" Width="189">
-            <ListBox x:Name="lstFileTypesToSync" Margin="0,6,0,0" IsSynchronizedWithCurrentItem="True" BorderThickness="0" ItemsSource="{Binding GetFileTypesToSync}">
+            <ListBox x:Name="lstFileTypesToSync" Margin="0,6,0,0" IsSynchronizedWithCurrentItem="True" BorderThickness="0" ItemsSource="{Binding GetFileTypesToSync}" IsTabStop="True" TabIndex="30">
                 <ListBox.ItemTemplate>
                     <DataTemplate>
                         <CheckBox IsChecked="{Binding IsEnabled}" Content="{Binding Name}" Checked="FileTypesToSyncChanged" Unchecked="FileTypesToSyncChanged"/>
@@ -21,7 +21,7 @@
             </ListBox>
         </GroupBox>
         <GroupBox x:Name="grpTags" Header="Tags To Sync" Margin="204,61,10,293">
-            <DataGrid AutoGenerateColumns="False" ItemsSource="{Binding GetTagsToSync}" Margin="0,2,0,-1" x:Name="dataTagsToSync">
+            <DataGrid AutoGenerateColumns="False" ItemsSource="{Binding GetTagsToSync}" Margin="0,2,0,-1" x:Name="dataTagsToSync" IsTabStop="True" TabIndex="32">
                 <DataGrid.Columns>
                     <DataGridTextColumn Binding="{Binding Path=Name}" Header="Name"/>
                     <DataGridTextColumn Binding="{Binding Path=Value}" Header="Value"/>
@@ -30,27 +30,27 @@
         </GroupBox>
         <GroupBox x:Name="boxTranscodeOptions" Header="Transcode Options" Margin="10,0,10,147" IsEnabled="False" Height="116" VerticalAlignment="Bottom">
             <Grid Margin="0,6,0,0">
-                <ComboBox x:Name="cmbCodec" HorizontalAlignment="Left" Margin="53,27,0,0" VerticalAlignment="Top" Width="125"/>
-                <ComboBox x:Name="cmbCodecLevel" Margin="0,27,10,0" VerticalAlignment="Top" HorizontalAlignment="Right" Width="141"/>
+                <ComboBox x:Name="cmbCodec" HorizontalAlignment="Left" Margin="53,27,0,0" VerticalAlignment="Top" Width="125" TabIndex="39"/>
+                <ComboBox x:Name="cmbCodecLevel" Margin="0,27,10,0" VerticalAlignment="Top" HorizontalAlignment="Right" Width="141" TabIndex="41"/>
                 <Label Content="Codec:" HorizontalAlignment="Left" Height="26" VerticalAlignment="Top" Width="48" HorizontalContentAlignment="Right" Margin="0,24,0,0"/>
                 <Label Content="Profile:" HorizontalAlignment="Right" Height="26" Margin="0,24,156,0" VerticalAlignment="Top" Width="48" HorizontalContentAlignment="Right"/>
                 <Label Content="ffmpeg Location:" HorizontalAlignment="Left" Height="26" Margin="0,54,0,0" VerticalAlignment="Top" Width="100" HorizontalContentAlignment="Right"/>
-                <TextBox x:Name="txt_ffmpegPath" Height="21" Margin="105,58,86,0" VerticalAlignment="Top"/>
-                <Button x:Name="btnBrowseFFMPEG" Content="Browse..." Margin="0,58,10,0" VerticalAlignment="Top" Height="21" HorizontalAlignment="Right" Width="71"/>
-                <CheckBox x:Name="tckTreatWMA_AsLossless" Content="Treat .wma files as lossless" HorizontalAlignment="Left" Width="189" Margin="6,4,0,0" IsEnabled="False" Height="20" VerticalAlignment="Top"/>
+                <TextBox x:Name="txt_ffmpegPath" Height="21" Margin="105,58,86,0" VerticalAlignment="Top" TabIndex="43"/>
+                <Button x:Name="btnBrowseFFMPEG" Content="Browse..." Margin="0,58,10,0" VerticalAlignment="Top" Height="21" HorizontalAlignment="Right" Width="71" TabIndex="44"/>
+                <CheckBox x:Name="tckTreatWMA_AsLossless" Content="Treat .wma files as lossless" HorizontalAlignment="Left" Width="189" Margin="6,4,0,0" IsEnabled="False" Height="20" VerticalAlignment="Top" TabIndex="37"/>
             </Grid>
         </GroupBox>
-        <CheckBox x:Name="tckTranscode" Content="Transcode lossless files" HorizontalAlignment="Left" Width="189" Margin="10,0,0,263" Height="20" VerticalAlignment="Bottom"/>
+        <CheckBox x:Name="tckTranscode" Content="Transcode lossless files" HorizontalAlignment="Left" Width="189" Margin="10,0,0,263" Height="20" VerticalAlignment="Bottom" TabIndex="35"/>
         <GroupBox x:Name="boxTranscodeOptions_Copy" Header="Sync Progress" Margin="10,0,10,21" Height="92" VerticalAlignment="Bottom">
             <Grid Margin="0,0,0,0">
-                <ProgressBar x:Name="FilesCompletedProgressBar" Height="24" VerticalAlignment="Top" Margin="8,8,10,0"/>
+                <ProgressBar x:Name="FilesCompletedProgressBar" Height="24" VerticalAlignment="Top" Margin="8,8,10,0" IsTabStop="False"/>
                 <Label Content="Files Processed:" Height="26" VerticalAlignment="Top" HorizontalContentAlignment="Right" Margin="0,37,262,0" HorizontalAlignment="Right" Width="95"/>
                 <Label Content="Files Remaining:" Height="26" Margin="0,37,82,0" VerticalAlignment="Top" HorizontalContentAlignment="Right" HorizontalAlignment="Right" Width="103"/>
-                <TextBox x:Name="txtFilesRemaining" Height="23" Margin="0,40,10,0" TextWrapping="Wrap" Text="" VerticalAlignment="Top" HorizontalAlignment="Right" Width="67"/>
-                <TextBox x:Name="txtFilesProcessed" Height="23" Margin="0,40,190,0" TextWrapping="Wrap" Text="" VerticalAlignment="Top" HorizontalAlignment="Right" Width="67"/>
+                <TextBox x:Name="txtFilesRemaining" Height="23" Margin="0,40,10,0" TextWrapping="Wrap" Text="" VerticalAlignment="Top" HorizontalAlignment="Right" Width="67" IsTabStop="False"/>
+                <TextBox x:Name="txtFilesProcessed" Height="23" Margin="0,40,190,0" TextWrapping="Wrap" Text="" VerticalAlignment="Top" HorizontalAlignment="Right" Width="67" IsTabStop="False"/>
             </Grid>
         </GroupBox>
-        <Button x:Name="btnBrowseSourceDirectory" Content="Browse..." HorizontalAlignment="Left" Margin="348,11,0,0" VerticalAlignment="Top" Width="71" Height="21"/>
-        <Button x:Name="btnBrowseSyncDirectory" Content="Browse..." HorizontalAlignment="Left" Margin="348,35,0,0" VerticalAlignment="Top" Width="71" Height="21"/>
+        <Button x:Name="btnBrowseSourceDirectory" Content="Browse..." HorizontalAlignment="Left" Margin="348,11,0,0" VerticalAlignment="Top" Width="71" Height="21" TabIndex="1"/>
+        <Button x:Name="btnBrowseSyncDirectory" Content="Browse..." HorizontalAlignment="Left" Margin="348,35,0,0" VerticalAlignment="Top" Width="71" Height="21" TabIndex="3"/>
     </Grid>
 </Window>
