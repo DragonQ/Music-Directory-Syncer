@@ -63,6 +63,8 @@ Public Class NewSyncWindow
             TagsToSync.Add(MyTag)
         Next
 
+        If TagsToSync.Count > 0 Then btnRemoveTag.IsEnabled = True
+
         ' TESTING:
         'TagsToSync.Add(New Codec.Tag("BEST_MUSIC", "Yes"))
 
@@ -101,13 +103,13 @@ Public Class NewSyncWindow
         End Get
     End Property
 
-    Public Sub OnAddingItem()
-        Dim newExample As New Codec.Tag("TEST")
+    'Public Sub OnAddingItem()
+    '    Dim newExample As New Codec.Tag("TEST")
 
-        GetTagsToSync.Add(newExample)
-        ' Because Examples is an ObservableCollection it raises a CollectionChanged event when adding or removing items,
-        ' the ItemsControl (DataGrid) in your case corresponds to that event and creates a new container for the item ( i.e. new DataGridRow ).
-    End Sub
+    '    GetTagsToSync.Add(newExample)
+    '    ' Because Examples is an ObservableCollection it raises a CollectionChanged event when adding or removing items,
+    '    ' the ItemsControl (DataGrid) in your case corresponds to that event and creates a new container for the item ( i.e. new DataGridRow ).
+    'End Sub
 
     Private Sub FileTypesToSyncResized(sender As Object, e As NotifyCollectionChangedEventArgs)
 
@@ -144,7 +146,7 @@ Public Class NewSyncWindow
         End If
     End Function
 
-    Private Function CreateDirectoryBrowser() As ReturnObject
+    Private Function CreateDirectoryBrowser(StartingDirectory As String) As ReturnObject
 
         Dim SelectDirectoryDialog = New CommonOpenFileDialog()
         SelectDirectoryDialog.Title = "Select Sync Directory"
@@ -152,6 +154,11 @@ Public Class NewSyncWindow
         SelectDirectoryDialog.AddToMostRecentlyUsedList = False
         SelectDirectoryDialog.AllowNonFileSystemItems = True
         SelectDirectoryDialog.DefaultDirectory = Environment.GetFolderPath(Environment.SpecialFolder.MyDocuments)
+        If Directory.Exists(StartingDirectory) Then
+            SelectDirectoryDialog.InitialDirectory = StartingDirectory
+        Else
+            SelectDirectoryDialog.InitialDirectory = SelectDirectoryDialog.DefaultDirectory
+        End If
         SelectDirectoryDialog.EnsureFileExists = False
         SelectDirectoryDialog.EnsurePathExists = True
         SelectDirectoryDialog.EnsureReadOnly = False
@@ -168,21 +175,27 @@ Public Class NewSyncWindow
     End Function
 
 #Region " Window Controls "
-    Private Sub tckTranscode_Checked(sender As Object, e As RoutedEventArgs) Handles tckTranscode.Checked
-        boxTranscodeOptions.IsEnabled = True
+    Private Sub tckTranscode_Changed(sender As Object, e As RoutedEventArgs)
+        boxTranscodeOptions.IsEnabled = CBool(tckTranscode.IsChecked)
     End Sub
 
-    Private Sub tckTranscode_Unchecked(sender As Object, e As RoutedEventArgs) Handles tckTranscode.Unchecked
-        boxTranscodeOptions.IsEnabled = False
+    Private Sub btnNewTag_Click(sender As Object, e As RoutedEventArgs)
+        TagsToSync.Add(New Codec.Tag("Tag Name", "Tag Value"))
+        btnRemoveTag.IsEnabled = True
     End Sub
 
-    Private Sub btnNewTag_Click(sender As Object, e As RoutedEventArgs) Handles btnNewTag.Click
+    Private Sub btnRemoveTag_Click(sender As Object, e As RoutedEventArgs)
+
+        If dataTagsToSync.SelectedIndex >= 0 Then
+            TagsToSync.RemoveAt(dataTagsToSync.SelectedIndex)
+            If TagsToSync.Count <= 0 Then btnRemoveTag.IsEnabled = False
+        End If
 
     End Sub
 
-    Private Sub btnBrowseSourceDirectory_Click(sender As Object, e As RoutedEventArgs) Handles btnBrowseSourceDirectory.Click
+    Private Sub btnBrowseSourceDirectory_Click(sender As Object, e As RoutedEventArgs)
 
-        Dim Browser As ReturnObject = CreateDirectoryBrowser()
+        Dim Browser As ReturnObject = CreateDirectoryBrowser(DefaultSyncSettings.SourceDirectory)
 
         If Browser.Success Then
             txtSourceDirectory.Text = CStr(Browser.MyObject)
@@ -190,9 +203,9 @@ Public Class NewSyncWindow
 
     End Sub
 
-    Private Sub btnBrowseSyncDirectory_Click(sender As Object, e As RoutedEventArgs) Handles btnBrowseSyncDirectory.Click
+    Private Sub btnBrowseSyncDirectory_Click(sender As Object, e As RoutedEventArgs)
 
-        Dim Browser As ReturnObject = CreateDirectoryBrowser()
+        Dim Browser As ReturnObject = CreateDirectoryBrowser(DefaultSyncSettings.SyncDirectory)
 
         If Browser.Success Then
             txtSyncDirectory.Text = CStr(Browser.MyObject)
@@ -200,7 +213,7 @@ Public Class NewSyncWindow
 
     End Sub
 
-    Private Sub btnBrowseFFMPEG_Click(sender As Object, e As RoutedEventArgs) Handles btnBrowseFFMPEG.Click
+    Private Sub btnBrowseFFMPEG_Click(sender As Object, e As RoutedEventArgs)
 
         Dim SelectDirectoryDialog = New CommonOpenFileDialog()
         SelectDirectoryDialog.Title = "Select ffmpeg.exe Path"

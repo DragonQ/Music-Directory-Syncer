@@ -29,9 +29,11 @@
                         <DataGridTextColumn Binding="{Binding Value}" Header="Value"/>
                     </DataGrid.Columns>
                 </DataGrid>
-                <Button x:Name="btnNewTag" Content="Add New Tag" Height="24" Margin="0,60,0,2" VerticalAlignment="Bottom" Click="btnNewTag_Click" TabIndex="17"/>
+                <Button x:Name="btnNewTag" Content="Add New Tag" Height="24" Margin="0,0,102,2" VerticalAlignment="Bottom" Click="btnNewTag_Click" TabIndex="33"/>
+                <Button x:Name="btnRemoveTag" Content="Remove Tag" Height="24" Margin="102,60,0,2" VerticalAlignment="Bottom" Click="btnRemoveTag_Click" TabIndex="34" IsEnabled="False"/>
             </Grid>
         </GroupBox>
+        <CheckBox x:Name="tckTranscode" Content="Transcode lossless files" HorizontalAlignment="Left" Width="189" Margin="10,0,0,257" Height="20" VerticalAlignment="Bottom" TabIndex="35" Checked="tckTranscode_Changed" Unchecked="tckTranscode_Changed"/>
         <GroupBox x:Name="boxTranscodeOptions" Header="Transcode Options" Margin="10,0,10,141" IsEnabled="False" Height="116" VerticalAlignment="Bottom">
             <Grid Margin="0,6">
                 <Grid Margin="0,0">
@@ -48,11 +50,10 @@
 
                 <Label Content="ffmpeg Location:" HorizontalAlignment="Left" Height="26" Margin="0,54,0,0" VerticalAlignment="Top" Width="100" HorizontalContentAlignment="Right"/>
                 <TextBox x:Name="txt_ffmpegPath" Height="21" Margin="105,58,86,0" VerticalAlignment="Top" TabIndex="43"/>
-                <Button x:Name="btnBrowseFFMPEG" Content="Browse..." Margin="0,58,10,0" VerticalAlignment="Top" Height="21" HorizontalAlignment="Right" Width="71" TabIndex="44"/>
+                <Button x:Name="btnBrowseFFMPEG" Content="Browse..." Margin="0,58,10,0" VerticalAlignment="Top" Height="21" HorizontalAlignment="Right" Width="71" TabIndex="44" Click="btnBrowseFFMPEG_Click"/>
                 <CheckBox x:Name="tckTreatWMA_AsLossless" Content="Treat .wma files as lossless" HorizontalAlignment="Left" Width="189" Margin="6,4,0,0" IsEnabled="False" Height="20" VerticalAlignment="Top" TabIndex="37"/>
             </Grid>
         </GroupBox>
-        <CheckBox x:Name="tckTranscode" Content="Transcode lossless files" HorizontalAlignment="Left" Width="189" Margin="10,0,0,257" Height="20" VerticalAlignment="Bottom" TabIndex="35"/>
         <GroupBox x:Name="boxTranscodeOptions_Copy" Header="Sync Progress" Margin="10,0,10,10" Height="92" VerticalAlignment="Bottom">
             <Grid Margin="0,0,0,0">
                 <ProgressBar x:Name="FilesCompletedProgressBar" Height="24" VerticalAlignment="Top" Margin="8,8,10,0" IsTabStop="False"/>
@@ -62,7 +63,7 @@
                 <TextBox x:Name="txtFilesProcessed" Height="23" Margin="0,40,190,0" TextWrapping="Wrap" Text="" VerticalAlignment="Top" HorizontalAlignment="Right" Width="67" IsTabStop="False"/>
             </Grid>
         </GroupBox>
-        <Button x:Name="btnBrowseSourceDirectory" Content="Browse..." Margin="0,11,10,0" VerticalAlignment="Top" Height="21" TabIndex="1" HorizontalAlignment="Right" Width="70"/>
-        <Button x:Name="btnBrowseSyncDirectory" Content="Browse..." Margin="0,35,10,0" VerticalAlignment="Top" Height="21" TabIndex="3" HorizontalAlignment="Right" Width="70"/>
+        <Button x:Name="btnBrowseSourceDirectory" Content="Browse..." Margin="0,11,10,0" VerticalAlignment="Top" Height="21" TabIndex="1" HorizontalAlignment="Right" Width="70" Click="btnBrowseSourceDirectory_Click"/>
+        <Button x:Name="btnBrowseSyncDirectory" Content="Browse..." Margin="0,35,10,0" VerticalAlignment="Top" Height="21" TabIndex="3" HorizontalAlignment="Right" Width="70" Click="btnBrowseSyncDirectory_Click"/>
     </Grid>
 </Window>
