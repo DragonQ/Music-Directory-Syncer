@@ -176,6 +176,10 @@ Public Class NewSyncWindow
         boxTranscodeOptions.IsEnabled = False
     End Sub
 
+    Private Sub btnNewTag_Click(sender As Object, e As RoutedEventArgs) Handles btnNewTag.Click
+
+    End Sub
+
     Private Sub btnBrowseSourceDirectory_Click(sender As Object, e As RoutedEventArgs) Handles btnBrowseSourceDirectory.Click
 
         Dim Browser As ReturnObject = CreateDirectoryBrowser()

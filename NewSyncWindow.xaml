@@ -22,12 +22,15 @@
             </ListBox>
         </GroupBox>
         <GroupBox x:Name="grpTags" Header="Tags To Sync" Margin="204,61,10,282">
-            <DataGrid AutoGenerateColumns="False" ItemsSource="{Binding GetTagsToSync}" Margin="0,2,0,-1" x:Name="dataTagsToSync" IsTabStop="True" TabIndex="32">
-                <DataGrid.Columns>
-                    <DataGridTextColumn Binding="{Binding Name}" Header="Name"/>
-                    <DataGridTextColumn Binding="{Binding Value}" Header="Value"/>
-                </DataGrid.Columns>
-            </DataGrid>
+            <Grid Margin="0,0,0,0">
+                <DataGrid AutoGenerateColumns="False" ItemsSource="{Binding GetTagsToSync}" Margin="0,4,0,30" x:Name="dataTagsToSync" IsTabStop="True" TabIndex="32">
+                    <DataGrid.Columns>
+                        <DataGridTextColumn Binding="{Binding Name}" Header="Name"/>
+                        <DataGridTextColumn Binding="{Binding Value}" Header="Value"/>
+                    </DataGrid.Columns>
+                </DataGrid>
+                <Button x:Name="btnNewTag" Content="Add New Tag" Height="24" Margin="0,60,0,2" VerticalAlignment="Bottom" Click="btnNewTag_Click" TabIndex="17"/>
+            </Grid>
         </GroupBox>
         <GroupBox x:Name="boxTranscodeOptions" Header="Transcode Options" Margin="10,0,10,141" IsEnabled="False" Height="116" VerticalAlignment="Bottom">
             <Grid Margin="0,6">
