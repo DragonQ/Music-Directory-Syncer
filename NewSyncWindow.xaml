@@ -23,17 +23,23 @@
         </GroupBox>
         <GroupBox x:Name="grpTags" Header="Tags To Sync" Margin="204,61,10,282">
             <Grid Margin="0,0,0,0">
-                <DataGrid AutoGenerateColumns="False" ItemsSource="{Binding GetTagsToSync}" Margin="0,4,0,30" x:Name="dataTagsToSync" IsTabStop="True" TabIndex="32">
+                <DataGrid AutoGenerateColumns="False" ItemsSource="{Binding GetTagsToSync}" Margin="0,4,0,30" x:Name="dataTagsToSync" IsTabStop="True" TabIndex="32" ScrollViewer.CanContentScroll="True" ScrollViewer.VerticalScrollBarVisibility="Auto" ScrollViewer.HorizontalScrollBarVisibility="Auto" MaxHeight="252">
                     <DataGrid.Columns>
                         <DataGridTextColumn Binding="{Binding Name}" Header="Name"/>
                         <DataGridTextColumn Binding="{Binding Value}" Header="Value"/>
                     </DataGrid.Columns>
                 </DataGrid>
-                <Button x:Name="btnNewTag" Content="Add New Tag" Height="24" Margin="0,0,102,2" VerticalAlignment="Bottom" Click="btnNewTag_Click" TabIndex="33"/>
-                <Button x:Name="btnRemoveTag" Content="Remove Tag" Height="24" Margin="102,60,0,2" VerticalAlignment="Bottom" Click="btnRemoveTag_Click" TabIndex="34" IsEnabled="False"/>
+                <Grid Margin="0,58,0,0" VerticalAlignment="Bottom" >
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="*" />
+                        <ColumnDefinition Width="*" />
+                    </Grid.ColumnDefinitions>
+                    <Button x:Name="btnNewTag" Grid.Column="0" Content="Add New Tag" Margin="0,0,4,0" Height="24" VerticalAlignment="Bottom" Click="btnNewTag_Click" TabIndex="33"/>
+                    <Button x:Name="btnRemoveTag" Grid.Column="1" Content="Remove Tag" Margin="4,0,0,0" Height="24" VerticalAlignment="Bottom" Click="btnRemoveTag_Click" TabIndex="34" IsEnabled="False"/>
+                </Grid>
             </Grid>
         </GroupBox>
-        <CheckBox x:Name="tckTranscode" Content="Transcode lossless files" HorizontalAlignment="Left" Width="189" Margin="10,0,0,257" Height="20" VerticalAlignment="Bottom" TabIndex="35" Checked="tckTranscode_Changed" Unchecked="tckTranscode_Changed"/>
+        <CheckBox x:Name="tckTranscode" Content="Transcode lossless files" HorizontalAlignment="Left" Width="189" Margin="10,0,0,256" Height="20" VerticalAlignment="Bottom" TabIndex="35" Checked="tckTranscode_Changed" Unchecked="tckTranscode_Changed"/>
         <GroupBox x:Name="boxTranscodeOptions" Header="Transcode Options" Margin="10,0,10,141" IsEnabled="False" Height="116" VerticalAlignment="Bottom">
             <Grid Margin="0,6">
                 <Grid Margin="0,0">
