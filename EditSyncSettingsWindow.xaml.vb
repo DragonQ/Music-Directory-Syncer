@@ -95,7 +95,7 @@ Public Class EditSyncSettingsWindow
             End If
         Catch ex As Exception
             MyLog.Write("Could not update sync settings. Error: " & ex.Message, Warning)
-            System.Windows.MessageBox.Show("Save failed!", ex.Message, MessageBoxButton.OK, MessageBoxImage.Error)
+            System.Windows.MessageBox.Show(ex.Message, "Save failed!", MessageBoxButton.OK, MessageBoxImage.Error)
             EnableDisableControls(True)
         End Try
 
