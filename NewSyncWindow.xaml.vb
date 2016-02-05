@@ -144,6 +144,29 @@ Public Class NewSyncWindow
         End If
     End Function
 
+    Private Function CreateDirectoryBrowser() As ReturnObject
+
+        Dim SelectDirectoryDialog = New CommonOpenFileDialog()
+        SelectDirectoryDialog.Title = "Select Sync Directory"
+        SelectDirectoryDialog.IsFolderPicker = True
+        SelectDirectoryDialog.AddToMostRecentlyUsedList = False
+        SelectDirectoryDialog.AllowNonFileSystemItems = True
+        SelectDirectoryDialog.DefaultDirectory = Environment.GetFolderPath(Environment.SpecialFolder.MyDocuments)
+        SelectDirectoryDialog.EnsureFileExists = False
+        SelectDirectoryDialog.EnsurePathExists = True
+        SelectDirectoryDialog.EnsureReadOnly = False
+        SelectDirectoryDialog.EnsureValidNames = True
+        SelectDirectoryDialog.Multiselect = False
+        SelectDirectoryDialog.ShowPlacesList = True
+
+        If SelectDirectoryDialog.ShowDialog() = CommonFileDialogResult.Ok Then
+            Return New ReturnObject(True, "", SelectDirectoryDialog.FileName)
+        Else
+            Return New ReturnObject(False, "")
+        End If
+
+    End Function
+
 #Region " Window Controls "
     Private Sub tckTranscode_Checked(sender As Object, e As RoutedEventArgs) Handles tckTranscode.Checked
         boxTranscodeOptions.IsEnabled = True
@@ -155,42 +178,20 @@ Public Class NewSyncWindow
 
     Private Sub btnBrowseSourceDirectory_Click(sender As Object, e As RoutedEventArgs) Handles btnBrowseSourceDirectory.Click
 
-        Dim SelectDirectoryDialog = New CommonOpenFileDialog()
-        SelectDirectoryDialog.Title = "Select Sync Directory"
-        SelectDirectoryDialog.IsFolderPicker = True
-        SelectDirectoryDialog.AddToMostRecentlyUsedList = False
-        SelectDirectoryDialog.AllowNonFileSystemItems = True
-        SelectDirectoryDialog.DefaultDirectory = Environment.GetFolderPath(Environment.SpecialFolder.MyDocuments)
-        SelectDirectoryDialog.EnsureFileExists = False
-        SelectDirectoryDialog.EnsurePathExists = True
-        SelectDirectoryDialog.EnsureReadOnly = False
-        SelectDirectoryDialog.EnsureValidNames = True
-        SelectDirectoryDialog.Multiselect = False
-        SelectDirectoryDialog.ShowPlacesList = True
+        Dim Browser As ReturnObject = CreateDirectoryBrowser()
 
-        If SelectDirectoryDialog.ShowDialog() = CommonFileDialogResult.Ok Then
-            txtSourceDirectory.Text = SelectDirectoryDialog.FileName
+        If Browser.Success Then
+            txtSourceDirectory.Text = CStr(Browser.MyObject)
         End If
 
     End Sub
 
     Private Sub btnBrowseSyncDirectory_Click(sender As Object, e As RoutedEventArgs) Handles btnBrowseSyncDirectory.Click
 
-        Dim SelectDirectoryDialog = New CommonOpenFileDialog()
-        SelectDirectoryDialog.Title = "Select Sync Directory"
-        SelectDirectoryDialog.IsFolderPicker = True
-        SelectDirectoryDialog.AddToMostRecentlyUsedList = False
-        SelectDirectoryDialog.AllowNonFileSystemItems = True
-        SelectDirectoryDialog.DefaultDirectory = Environment.GetFolderPath(Environment.SpecialFolder.MyDocuments)
-        SelectDirectoryDialog.EnsureFileExists = False
-        SelectDirectoryDialog.EnsurePathExists = True
-        SelectDirectoryDialog.EnsureReadOnly = False
-        SelectDirectoryDialog.EnsureValidNames = True
-        SelectDirectoryDialog.Multiselect = False
-        SelectDirectoryDialog.ShowPlacesList = True
+        Dim Browser As ReturnObject = CreateDirectoryBrowser()
 
-        If SelectDirectoryDialog.ShowDialog() = CommonFileDialogResult.Ok Then
-            txtSyncDirectory.Text = SelectDirectoryDialog.FileName
+        If Browser.Success Then
+            txtSyncDirectory.Text = CStr(Browser.MyObject)
         End If
 
     End Sub
