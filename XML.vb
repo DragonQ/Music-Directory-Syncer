@@ -157,9 +157,8 @@ Module XML
                                             End If
                                         Next
 
-                                        If Not ProfileFound Then
-                                            If Not ProfileFound Then Throw New Exception("Codec profile not recognised: " & TranscodeSettings(0).CodecProfile.Value)
-                                        End If
+
+                                        If Not ProfileFound Then Throw New Exception("Codec profile not recognised: " & TranscodeSettings(0).CodecProfile.Value)
 
                                         CodecFound = True
                                         Exit For
