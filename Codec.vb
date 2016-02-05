@@ -9,7 +9,7 @@ Public Class Codec
     Property Type As CodecType
     Property Profiles As Profile()
     Property FileExtensions As String()
-    Property IsEnabled As Boolean
+    Property IsEnabled As Boolean = True
 
     Enum CodecType
         Lossless

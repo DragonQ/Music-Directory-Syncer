@@ -51,7 +51,7 @@ Module Startup
             If Settings.MyObject Is Nothing Then
                 MyLog.Write("Settings file not found; launching new sync window.", Information)
                 MessageBox.Show("No existing sync setup was found. Please create one now.",
-                                "Sync Settings Missing", MessageBoxButton.OK, MessageBoxImage.Information)
+                                "No Sync Settings Found", MessageBoxButton.OK, MessageBoxImage.Information)
                 System.Windows.Forms.Application.Run(New TrayApp(True))
             Else
                 MySyncSettings = DirectCast(Settings.MyObject, SyncSettings)
@@ -173,14 +173,12 @@ Module Startup
         Dim FileExtension As String = Path.GetExtension(FilePath)
 
         For Each Codec As Codec In CodecsToCheck
-            If Codec.IsEnabled Then
-                For Each CodecExtension As String In Codec.FileExtensions
-                    If FileExtension = CodecExtension Then
-                        MyLog.Write(ProcessID, "...file type recognised, now checking tags...", Debug)
-                        Return Codec
-                    End If
-                Next
-            End If
+            For Each CodecExtension As String In Codec.FileExtensions
+                If FileExtension = CodecExtension Then
+                    MyLog.Write(ProcessID, "...file type recognised, now checking tags...", Debug)
+                    Return Codec
+                End If
+            Next
         Next
 
         MyLog.Write(ProcessID, "...file type not recognised, ignoring.", Debug)

@@ -85,12 +85,18 @@ Public Class NewSyncWindow
         End Get
     End Property
 
-    Public ReadOnly Property GetFileTypesToSync() As ObservableCollection(Of Codec)
+    Public ReadOnly Property GetFileTypesToSync() As List(Of Codec)
         Get
-            If FileTypesToSync Is Nothing Then
-                FileTypesToSync = New ObservableCollection(Of Codec)()
+            Dim EnabledFileTypesToSync As New List(Of Codec)
+
+            ' Return a new list of codecs that only includes the codecs enabled/ticked by the user.
+            If Not FileTypesToSync Is Nothing Then
+                For Each FileType As Codec In FileTypesToSync
+                    If FileType.IsEnabled Then EnabledFileTypesToSync.Add(FileType)
+                Next
             End If
-            Return FileTypesToSync
+
+            Return EnabledFileTypesToSync
         End Get
     End Property
 
@@ -120,6 +126,7 @@ Public Class NewSyncWindow
                     tckTreatWMA_AsLossless.IsEnabled = False
                     FileType.Type = Lossy
                 End If
+                Exit For
             End If
         Next
 
@@ -247,7 +254,7 @@ Public Class NewSyncWindow
                     End If
                 End If
 
-                MySyncSettings.SetWatcherCodecs(GetFileTypesToSync().ToList)
+                MySyncSettings.SetWatcherCodecs(GetFileTypesToSync())
 
                 FilesCompletedProgressBar.Value = 0
                 FilesCompletedProgressBar.IsIndeterminate = True
