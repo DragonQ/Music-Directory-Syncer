@@ -51,7 +51,7 @@
                     <Label Content="Codec:" Grid.Column="0" Height="26" VerticalAlignment="Top" HorizontalContentAlignment="Right" Margin="0,24,0,0" HorizontalAlignment="Left" Width="48"/>
                     <ComboBox x:Name="cmbCodec" Grid.Column="0" VerticalAlignment="Top" TabIndex="39" Margin="53,27,10,0" d:LayoutOverrides="HorizontalAlignment"/>
                     <Label Content="Profile:" Grid.Column="1" Height="26" VerticalAlignment="Top" HorizontalContentAlignment="Right" Margin="1,24,0,0" HorizontalAlignment="Left" Width="48"/>
-                    <ComboBox x:Name="cmbCodecLevel" Grid.Column="1" Margin="53,25,10,0" VerticalAlignment="Top" TabIndex="41" d:LayoutOverrides="HorizontalAlignment"/>
+                    <ComboBox x:Name="cmbCodecProfile" Grid.Column="1" Margin="53,25,10,0" VerticalAlignment="Top" TabIndex="41" d:LayoutOverrides="HorizontalAlignment"/>
                 </Grid>
 
                 <Label Content="ffmpeg Location:" HorizontalAlignment="Left" Height="26" Margin="0,54,0,0" VerticalAlignment="Top" Width="100" HorizontalContentAlignment="Right"/>

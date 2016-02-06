@@ -79,12 +79,12 @@ Public Class NewSyncWindow
 
     End Sub
 
-    Public ReadOnly Property GetTagsToSync() As ObservableCollection(Of Codec.Tag)
+    Public ReadOnly Property GetTagsToSync() As List(Of Codec.Tag)
         Get
             If TagsToSync Is Nothing Then
                 TagsToSync = New ObservableCollection(Of Codec.Tag)()
             End If
-            Return TagsToSync
+            Return TagsToSync.ToList
         End Get
     End Property
 
@@ -238,14 +238,14 @@ Public Class NewSyncWindow
     Private Sub cmbCodec_SelectionChanged(sender As Object, e As SelectionChangedEventArgs) Handles cmbCodec.SelectionChanged
 
         If cmbCodec.SelectedIndex > -1 Then
-            cmbCodecLevel.Items.Clear()
+            cmbCodecProfile.Items.Clear()
             Dim MyCodecLevels As Codec.Profile() = CType(CType(cmbCodec.SelectedItem, Item).Value, Codec).Profiles
 
             If MyCodecLevels.Count > 0 Then
                 For Each CodecLevel As Codec.Profile In MyCodecLevels ' CType(CType(cmbCodec.SelectedItem, Item).Value, Codec).Profiles
-                    cmbCodecLevel.Items.Add(New Item(CodecLevel.Name, CodecLevel))
+                    cmbCodecProfile.Items.Add(New Item(CodecLevel.Name, CodecLevel))
                 Next
-                cmbCodecLevel.SelectedIndex = 0
+                cmbCodecProfile.SelectedIndex = 0
             End If
 
         End If
@@ -262,30 +262,59 @@ Public Class NewSyncWindow
         Else 'Begin sync process
             If System.Windows.MessageBox.Show("Are you sure you want to start a new sync? This will delete all files and folders in the specified " &
                     "sync folder!", "New Sync", MessageBoxButton.OKCancel, MessageBoxImage.Warning) = MessageBoxResult.OK Then
+
+                'Disable window controls
                 EnableDisableControls(False)
+
+                'Grab list of files to sync and check if there are any listed. If not, abort sync creation.
+                Dim NewFileTypesToSync As List(Of Codec) = GetFileTypesToSync()
+                If NewFileTypesToSync Is Nothing OrElse NewFileTypesToSync.Count = 0 Then
+                    System.Windows.MessageBox.Show("You have not specified any file types to match!", "New Sync", MessageBoxButton.OKCancel, MessageBoxImage.Error)
+                    EnableDisableControls(True)
+                    Exit Sub
+                End If
+
+                'Grab list of tags to sync and check if there are any listed. If not, show a warning.
+                Dim NewTagsToSync As List(Of Codec.Tag) = GetTagsToSync()
+                If NewTagsToSync Is Nothing OrElse NewTagsToSync.Count = 0 Then
+                    If System.Windows.MessageBox.Show("You have not specified any tags to match. All files with specified file types will be synced. " & Environment.NewLine & Environment.NewLine &
+                                                  "Are you sure this is what you want to do?", "New Sync", MessageBoxButton.OKCancel, MessageBoxImage.Warning) <> MessageBoxResult.OK Then
+                        EnableDisableControls(True)
+                        Exit Sub
+                    End If
+                End If
+
                 MyLog.Write("Creating new folder sync!", Warning)
 
+                'Create new SyncSettings object using the default sync settings for now.
                 MySyncSettings = New SyncSettings(DefaultSyncSettings)
 
                 MyLog.Write("Source directory: """ & txtSourceDirectory.Text & """.", Information)
                 MyLog.Write("Sync directory: """ & txtSyncDirectory.Text & """.", Information)
 
-                MySyncSettings.SourceDirectory = txtSourceDirectory.Text
-                MySyncSettings.SyncDirectory = txtSyncDirectory.Text
+                'If transcoding is enabled, check that a valid encoder and encoder profile have been selected. If not, abort sync creation.
                 MySyncSettings.TranscodeLosslessFiles = tckTranscode.IsChecked
-                MySyncSettings.MaxThreads = CInt(spinThreads.Value)
-                MySyncSettings.ffmpegPath = txt_ffmpegPath.Text
-                MySyncSettings.SetWatcherTags(GetTagsToSync().ToList)
-
-                If cmbCodec.SelectedIndex > -1 Then
-                    If cmbCodecLevel.SelectedIndex > -1 Then
+                If MySyncSettings.TranscodeLosslessFiles Then
+                    If (cmbCodec.SelectedIndex > -1 AndAlso cmbCodecProfile.SelectedIndex > -1) Then
                         MySyncSettings.Encoder = New Codec(CType(CType(cmbCodec.SelectedItem, Item).Value, Codec),
-                                                           CType(CType(cmbCodecLevel.SelectedItem, Item).Value, Codec.Profile))
+                                                        CType(CType(cmbCodecProfile.SelectedItem, Item).Value, Codec.Profile))
+                    Else
+                        System.Windows.MessageBox.Show("You have not specified a valid encoder for this sync!", "New Sync", MessageBoxButton.OKCancel, MessageBoxImage.Error)
+                        MySyncSettings = Nothing
+                        EnableDisableControls(True)
+                        Exit Sub
                     End If
                 End If
 
-                MySyncSettings.SetWatcherCodecs(GetFileTypesToSync())
+                'Change remaining sync settings as specified by the user
+                MySyncSettings.SourceDirectory = txtSourceDirectory.Text
+                MySyncSettings.SyncDirectory = txtSyncDirectory.Text
+                MySyncSettings.MaxThreads = CInt(spinThreads.Value)
+                MySyncSettings.ffmpegPath = txt_ffmpegPath.Text
+                MySyncSettings.SetWatcherTags(NewTagsToSync)
+                MySyncSettings.SetWatcherCodecs(NewFileTypesToSync)
 
+                'Begin sync process.
                 FilesCompletedProgressBar.Value = 0
                 FilesCompletedProgressBar.IsIndeterminate = True
                 txtFilesRemaining.Text = "???"
