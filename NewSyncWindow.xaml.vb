@@ -1,5 +1,5 @@
 ﻿#Region " Namespaces "
-Imports DragonQ.Toolkit
+Imports Music_Folder_Syncer.Toolkit
 Imports Music_Folder_Syncer.Codec.CodecType
 Imports Music_Folder_Syncer.Logger.DebugLogLevel
 Imports System.IO

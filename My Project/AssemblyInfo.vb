@@ -15,7 +15,8 @@ Imports System.Windows
 <Assembly: AssemblyDescription("")> 
 <Assembly: AssemblyCompany("")>
 <Assembly: AssemblyProduct("Music_Folder_Syncer")>
-<Assembly: AssemblyCopyright("Copyright © DragonQ 2015")>
+
+<Assembly: AssemblyCopyright("Copyright © DragonQ 2016")>
 <Assembly: AssemblyTrademark("")> 
 <Assembly: ComVisible(false)>
 

@@ -90,9 +90,6 @@
       <SpecificVersion>False</SpecificVersion>
       <HintPath>Resources\Btl.Controls.MyControls.dll</HintPath>
     </Reference>
-    <Reference Include="DragonQ">
-      <HintPath>Resources\DragonQ.dll</HintPath>
-    </Reference>
     <Reference Include="Fast Directory Enumerator DLL">
       <HintPath>Resources\Fast Directory Enumerator DLL.dll</HintPath>
     </Reference>
@@ -148,6 +145,7 @@
     <Compile Include="ReturnObject.vb" />
     <Compile Include="Startup.vb" />
     <Compile Include="SyncSettings.vb" />
+    <Compile Include="Toolkit.vb" />
     <Compile Include="TrayApp.vb" />
     <Compile Include="XML.vb" />
     <Compile Include="Application.xaml.vb">
