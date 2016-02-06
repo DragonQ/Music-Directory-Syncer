@@ -12,7 +12,7 @@
         <Label Content="Sync Directory:" HorizontalAlignment="Left" Height="26" Margin="10,31,0,0" VerticalAlignment="Top" Width="98" HorizontalContentAlignment="Right" RenderTransformOrigin="0.5,0.5"/>
         <Controls:SpinnerControl x:Name="spinThreads" HorizontalAlignment="Right" Margin="0,0,213,108" VerticalAlignment="Bottom" Minimum="1" Width="49" Value="1" IsTabStop="True" TabIndex="50"/>
         <Label Content="Threads:" HorizontalAlignment="Right" Margin="0,0,267,106" Width="54" HorizontalContentAlignment="Right" Height="26" VerticalAlignment="Bottom"/>
-        <GroupBox x:Name="grpFileTypes" Header="File Types To Sync" Margin="10,61,0,282" HorizontalAlignment="Left" Width="189">
+        <GroupBox x:Name="boxFileTypes" Header="File Types To Sync" Margin="10,61,0,282" HorizontalAlignment="Left" Width="189">
             <ListBox x:Name="lstFileTypesToSync" Margin="0,6,0,0" IsSynchronizedWithCurrentItem="True" BorderThickness="0" ItemsSource="{Binding GetFileTypesToSync}" IsTabStop="True" TabIndex="30">
                 <ListBox.ItemTemplate>
                     <DataTemplate>
@@ -21,7 +21,7 @@
                 </ListBox.ItemTemplate>
             </ListBox>
         </GroupBox>
-        <GroupBox x:Name="grpTags" Header="Tags To Sync" Margin="204,61,10,282">
+        <GroupBox x:Name="boxTags" Header="Tags To Sync" Margin="204,61,10,282">
             <Grid Margin="0,0,0,0">
                 <DataGrid AutoGenerateColumns="False" ItemsSource="{Binding GetTagsToSync}" Margin="0,4,0,30" x:Name="dataTagsToSync" IsTabStop="True" TabIndex="32" ScrollViewer.CanContentScroll="True" ScrollViewer.VerticalScrollBarVisibility="Auto" ScrollViewer.HorizontalScrollBarVisibility="Auto" MaxHeight="252">
                     <DataGrid.Columns>

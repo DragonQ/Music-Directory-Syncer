@@ -328,10 +328,23 @@ Public Class NewSyncWindow
     End Sub
 
     Private Sub EnableDisableControls(Enable As Boolean)
-        btnNewSync.IsEnabled = Enable
-        tckTranscode.IsEnabled = Enable
+
+        'Group box controls
+        boxTranscodeOptions.IsEnabled = Enable
+        boxFileTypes.IsEnabled = Enable
+        boxTags.IsEnabled = Enable
+
+        'Directory controls
         txtSourceDirectory.IsEnabled = Enable
         txtSyncDirectory.IsEnabled = Enable
+        btnBrowseSourceDirectory.IsEnabled = Enable
+        btnBrowseSyncDirectory.IsEnabled = Enable
+
+        'Miscellaneous controls
+        btnNewSync.IsEnabled = Enable
+        tckTranscode.IsEnabled = Enable
+        spinThreads.IsEnabled = Enable
+
     End Sub
 #End Region
 
