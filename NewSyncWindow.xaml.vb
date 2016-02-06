@@ -65,9 +65,6 @@ Public Class NewSyncWindow
 
         If TagsToSync.Count > 0 Then btnRemoveTag.IsEnabled = True
 
-        ' TESTING:
-        'TagsToSync.Add(New Codec.Tag("BEST_MUSIC", "Yes"))
-
         spinThreads.Maximum = DefaultSyncSettings.MaxThreads
         spinThreads.Value = spinThreads.Maximum
         spinThreads.IsEnabled = False
@@ -102,14 +99,6 @@ Public Class NewSyncWindow
             Return EnabledFileTypesToSync
         End Get
     End Property
-
-    'Public Sub OnAddingItem()
-    '    Dim newExample As New Codec.Tag("TEST")
-
-    '    GetTagsToSync.Add(newExample)
-    '    ' Because Examples is an ObservableCollection it raises a CollectionChanged event when adding or removing items,
-    '    ' the ItemsControl (DataGrid) in your case corresponds to that event and creates a new container for the item ( i.e. new DataGridRow ).
-    'End Sub
 
     Private Sub FileTypesToSyncResized(sender As Object, e As NotifyCollectionChangedEventArgs)
 
