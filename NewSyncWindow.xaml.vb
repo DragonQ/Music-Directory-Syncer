@@ -76,18 +76,18 @@ Public Class NewSyncWindow
 
     End Sub
 
-    Public ReadOnly Property GetTagsToSync() As List(Of Codec.Tag)
+    Public ReadOnly Property GetTagsToSync() As ObservableCollection(Of Codec.Tag)
         Get
             If TagsToSync Is Nothing Then
                 TagsToSync = New ObservableCollection(Of Codec.Tag)()
             End If
-            Return TagsToSync.ToList
+            Return TagsToSync
         End Get
     End Property
 
-    Public ReadOnly Property GetFileTypesToSync() As List(Of Codec)
+    Public ReadOnly Property GetFileTypesToSync() As ObservableCollection(Of Codec)
         Get
-            Dim EnabledFileTypesToSync As New List(Of Codec)
+            Dim EnabledFileTypesToSync As New ObservableCollection(Of Codec)
 
             ' Return a new list of codecs that only includes the codecs enabled/ticked by the user
             If Not FileTypesToSync Is Nothing Then
@@ -256,7 +256,7 @@ Public Class NewSyncWindow
                 EnableDisableControls(False)
 
                 'Grab list of files to sync and check if there are any listed. If not, abort sync creation.
-                Dim NewFileTypesToSync As List(Of Codec) = GetFileTypesToSync()
+                Dim NewFileTypesToSync As List(Of Codec) = GetFileTypesToSync().ToList
                 If NewFileTypesToSync Is Nothing OrElse NewFileTypesToSync.Count = 0 Then
                     System.Windows.MessageBox.Show("You have not specified any file types to match!", "New Sync", MessageBoxButton.OKCancel, MessageBoxImage.Error)
                     EnableDisableControls(True)
@@ -264,7 +264,7 @@ Public Class NewSyncWindow
                 End If
 
                 'Grab list of tags to sync and check if there are any listed. If not, show a warning.
-                Dim NewTagsToSync As List(Of Codec.Tag) = GetTagsToSync()
+                Dim NewTagsToSync As List(Of Codec.Tag) = GetTagsToSync().ToList
                 If NewTagsToSync Is Nothing OrElse NewTagsToSync.Count = 0 Then
                     If System.Windows.MessageBox.Show("You have not specified any tags to match. All files with specified file types will be synced. " & Environment.NewLine & Environment.NewLine &
                                                   "Are you sure this is what you want to do?", "New Sync", MessageBoxButton.OKCancel, MessageBoxImage.Warning) <> MessageBoxResult.OK Then
