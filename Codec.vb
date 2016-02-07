@@ -145,7 +145,7 @@ Public Class Codec
 
                             If Not Results Is Nothing AndAlso Results.Length > 0 Then 'Tag we're looking for is present, so continue
                                 'Value matches or wasn't requested, so return true
-                                If MyTag.Value Is Nothing OrElse MyTag.Value.ToUpper = Results(0).Trim.ToUpper Then
+                                If MyTag.Value Is Nothing OrElse MyTag.Value = "" OrElse MyTag.Value.ToUpper = Results(0).Trim.ToUpper Then
                                     Return New ReturnObject(True, "", True)
                                 End If
                             End If
@@ -199,7 +199,7 @@ Public Class Codec
                             Next
 
                             If Not MatchFound Is Nothing Then 'If the value matches or wasn't requested, return true
-                                If MyTag.Value Is Nothing OrElse MyTag.Value.ToUpper = ASF.GetDescriptorString(MatchFound.Name).Trim.ToUpper Then
+                                If MyTag.Value Is Nothing OrElse MyTag.Value = "" OrElse MyTag.Value.ToUpper = ASF.GetDescriptorString(MatchFound.Name).Trim.ToUpper Then
                                     Return New ReturnObject(True, "", True)
                                 End If
                             End If
@@ -247,7 +247,7 @@ Public Class Codec
                                     For Each MyTag As Tag In Tags
                                         If ID3UserFrame.Description.Trim.ToUpper = MyTag.Name.ToUpper Then
                                             'If the value matches or wasn't requested, return true
-                                            If MyTag.Value Is Nothing OrElse MyTag.Value.ToUpper = ID3UserFrame.Text(0).Trim.ToUpper Then
+                                            If MyTag.Value Is Nothing OrElse MyTag.Value = "" OrElse MyTag.Value.ToUpper = ID3UserFrame.Text(0).Trim.ToUpper Then
                                                 Return New ReturnObject(True, "", True)
                                             End If
                                         End If
@@ -320,7 +320,7 @@ Public Class Codec
                                                 'This AppleAdditionalInfoBox contains the value of the tag, so if this tag was found in our tag list
                                                 'we need to check if the tag's value also matches (or that no specific value was requested)
                                                 If Not TagFound Is Nothing Then
-                                                    If TagFound.Value Is Nothing OrElse CType(TagBox, Mpeg4.AppleDataBox).Text.Trim.ToUpper = TagFound.Value.ToUpper Then
+                                                    If TagFound.Value Is Nothing OrElse TagFound.Value = "" OrElse CType(TagBox, Mpeg4.AppleDataBox).Text.Trim.ToUpper = TagFound.Value.ToUpper Then
                                                         TagMatched = True
                                                         Exit For
                                                     End If
