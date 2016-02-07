@@ -59,7 +59,9 @@ Public Class Logger
                 Dim LogText As String = MyNow.ToString & LogMarker & Text & NewLine
 
                 IO.File.AppendAllText(FilePath, LogText)
+#If DEBUG Then
                 Console.WriteLine(LogText)
+#End If
             End SyncLock
         End If
 
