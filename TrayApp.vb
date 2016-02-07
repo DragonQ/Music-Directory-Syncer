@@ -83,6 +83,7 @@ Public Class TrayApp
         MyLog.Write("  PROGRAM CLEAN EXIT")
         MyLog.Write("===============================================================")
         MyLog.Write("")
+        Tray.Visible = False
         ExitThread() 'IF THIS EVER CAUSES ISSUES, USE THIS INSTEAD: Forms.Application.Exit()
     End Sub
 
