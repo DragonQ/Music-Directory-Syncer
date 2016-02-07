@@ -181,7 +181,13 @@ Public Class NewSyncWindow
 
     Private Sub btnBrowseSourceDirectory_Click(sender As Object, e As RoutedEventArgs)
 
-        Dim Browser As ReturnObject = CreateDirectoryBrowser(DefaultSyncSettings.SourceDirectory)
+        Dim DefaultDirectory As String = txtSourceDirectory.Text
+
+        If Not Directory.Exists(DefaultDirectory) Then
+            DefaultDirectory = DefaultSyncSettings.SourceDirectory
+        End If
+
+        Dim Browser As ReturnObject = CreateDirectoryBrowser(DefaultDirectory)
 
         If Browser.Success Then
             txtSourceDirectory.Text = CStr(Browser.MyObject)
@@ -191,7 +197,13 @@ Public Class NewSyncWindow
 
     Private Sub btnBrowseSyncDirectory_Click(sender As Object, e As RoutedEventArgs)
 
-        Dim Browser As ReturnObject = CreateDirectoryBrowser(DefaultSyncSettings.SyncDirectory)
+        Dim DefaultDirectory As String = txtSyncDirectory.Text
+
+        If Not Directory.Exists(DefaultDirectory) Then
+            DefaultDirectory = DefaultSyncSettings.SyncDirectory
+        End If
+
+        Dim Browser As ReturnObject = CreateDirectoryBrowser(DefaultDirectory)
 
         If Browser.Success Then
             txtSyncDirectory.Text = CStr(Browser.MyObject)
@@ -201,12 +213,25 @@ Public Class NewSyncWindow
 
     Private Sub btnBrowseFFMPEG_Click(sender As Object, e As RoutedEventArgs)
 
+        Dim DefaultPath As String = txt_ffmpegPath.Text
+
+        If Not File.Exists(DefaultPath) Then
+            DefaultPath = DefaultSyncSettings.ffmpegPath
+        End If
+
         Dim SelectDirectoryDialog = New CommonOpenFileDialog()
         SelectDirectoryDialog.Title = "Select ffmpeg.exe Path"
         SelectDirectoryDialog.IsFolderPicker = False
         SelectDirectoryDialog.AddToMostRecentlyUsedList = False
         SelectDirectoryDialog.AllowNonFileSystemItems = True
+
         SelectDirectoryDialog.DefaultDirectory = Environment.GetFolderPath(Environment.SpecialFolder.ProgramFiles)
+        If File.Exists(DefaultPath) Then
+            SelectDirectoryDialog.InitialDirectory = Path.GetDirectoryName(DefaultPath)
+        Else
+            SelectDirectoryDialog.InitialDirectory = SelectDirectoryDialog.DefaultDirectory
+        End If
+
         SelectDirectoryDialog.EnsureFileExists = True
         SelectDirectoryDialog.EnsurePathExists = True
         SelectDirectoryDialog.EnsureReadOnly = False
