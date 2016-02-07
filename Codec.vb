@@ -1,5 +1,5 @@
-﻿Imports TagLib
-
+﻿Imports Music_Folder_Syncer.Toolkit
+Imports TagLib
 
 Public Class Codec
 

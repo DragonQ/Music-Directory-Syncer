@@ -1,8 +1,8 @@
 ﻿#Region " Namespaces "
 Imports Music_Folder_Syncer.Logger.DebugLogLevel
+Imports Music_Folder_Syncer.Toolkit
 Imports System.IO
 Imports System.Environment
-Imports System.Windows
 #End Region
 
 '======================================================================

@@ -13,9 +13,7 @@ Imports System.Collections.ObjectModel
 Imports System.Collections.Specialized
 #End Region
 
-
 Public Class NewSyncWindow
-    Dim AvailableCodecs As New List(Of CheckedListItem)
 
     Dim WithEvents SyncBackgroundWorker As New BackgroundWorker
     Dim ExitApplication As Boolean = False
@@ -265,7 +263,7 @@ Public Class NewSyncWindow
                 'Grab list of tags to sync and check if there are any listed. If not, show a warning.
                 Dim NewTagsToSync As List(Of Codec.Tag) = GetTagsToSync().ToList
                 If NewTagsToSync Is Nothing OrElse NewTagsToSync.Count = 0 Then
-                    If System.Windows.MessageBox.Show("You have not specified any tags to match. All files with specified file types will be synced. " & Environment.NewLine & Environment.NewLine &
+                    If System.Windows.MessageBox.Show("You have not specified any tags to match. All files with specified file types will be synced. " & NewLine & NewLine &
                                                   "Are you sure this is what you want to do?", "New Sync", MessageBoxButton.OKCancel, MessageBoxImage.Warning) <> MessageBoxResult.OK Then
                         EnableDisableControls(True)
                         Exit Sub

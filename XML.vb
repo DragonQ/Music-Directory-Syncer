@@ -1,5 +1,8 @@
-﻿Imports System.IO
+﻿#Region " Namespaces "
+Imports System.IO
 Imports System.Xml
+Imports Music_Folder_Syncer.Toolkit
+#End Region
 
 Module XML
 
@@ -98,7 +101,7 @@ Module XML
             If Not DefaultSettings Is Nothing Then
                 NewSyncSettings = New SyncSettings(DefaultSettings)
             Else
-                NewSyncSettings = New SyncSettings(False, "", "", New List(Of Codec), New List(Of Codec.Tag), False, Nothing, System.Environment.ProcessorCount, "")
+                NewSyncSettings = New SyncSettings(False, "", "", New List(Of Codec), New List(Of Codec.Tag), False, Nothing, Environment.ProcessorCount, "")
             End If
 
             'Create StringWriter to store XML text

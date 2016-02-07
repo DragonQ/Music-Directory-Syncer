@@ -1,5 +1,6 @@
 ﻿#Region " Namespaces "
 Imports Music_Folder_Syncer.Logger.DebugLogLevel
+Imports Music_Folder_Syncer.Toolkit
 Imports Microsoft.WindowsAPICodePack.Dialogs
 #End Region
 
@@ -12,7 +13,7 @@ Public Class EditSyncSettingsWindow
 
         txtSourceDirectory.Text = MySyncSettings.SourceDirectory
         txtSyncDirectory.Text = MySyncSettings.SyncDirectory
-        spinThreads.Maximum = System.Environment.ProcessorCount
+        spinThreads.Maximum = Environment.ProcessorCount
         spinThreads.Value = MySyncSettings.MaxThreads
 
     End Sub

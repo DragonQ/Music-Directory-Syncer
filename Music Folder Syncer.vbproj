@@ -129,7 +129,6 @@
       <Generator>MSBuild:Compile</Generator>
       <SubType>Designer</SubType>
     </None>
-    <Compile Include="CheckedListItem.vb" />
     <Compile Include="Logger.vb" />
     <Compile Include="EditSyncSettingsWindow.xaml.vb">
       <DependentUpon>EditSyncSettingsWindow.xaml</DependentUpon>
@@ -142,7 +141,6 @@
     <Compile Include="NewSyncWindow.xaml.vb">
       <DependentUpon>NewSyncWindow.xaml</DependentUpon>
     </Compile>
-    <Compile Include="ReturnObject.vb" />
     <Compile Include="Startup.vb" />
     <Compile Include="SyncSettings.vb" />
     <Compile Include="Toolkit.vb" />
