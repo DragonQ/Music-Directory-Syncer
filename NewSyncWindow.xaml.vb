@@ -67,7 +67,6 @@ Public Class NewSyncWindow
 
         spinThreads.Maximum = DefaultSyncSettings.MaxThreads
         spinThreads.Value = spinThreads.Maximum
-        spinThreads.IsEnabled = False
         txt_ffmpegPath.Text = DefaultSyncSettings.ffmpegPath
         txtSourceDirectory.Text = DefaultSyncSettings.SourceDirectory
         txtSyncDirectory.Text = DefaultSyncSettings.SyncDirectory
