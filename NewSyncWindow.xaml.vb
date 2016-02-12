@@ -23,7 +23,6 @@ Public Class NewSyncWindow
     Dim TagsToSync As ObservableCollection(Of Codec.Tag)
     Dim FileTypesToSync As ObservableCollection(Of Codec)
 
-
     Public Sub New()
 
         ' This call is required by the designer.
@@ -390,6 +389,7 @@ Public Class NewSyncWindow
         MyLog.Write("Creating sync folder.", Information)
         Dim ThreadsToRun As Int32 = MyFiles.Count
         Dim ThreadsStarted As UInt32 = 0
+        Dim FileID As Int32 = 0
         Dim One As UInt32 = 1
 
         'Delete existing sync folder if necessary
@@ -473,8 +473,14 @@ Public Class NewSyncWindow
             ThreadPool.SetMaxThreads(MySyncSettings.MaxThreads, MySyncSettings.MaxThreads)
 
             For Each MyFile As FileData In MyFiles
+                If FileID = MaxFileID Then
+                    FileID = 1
+                Else
+                    FileID += 1
+                End If
+
                 ThreadsStarted += One
-                Dim InputObjects As Object() = {ThreadsStarted, MyFile.Path, CodecsToCheck}
+                Dim InputObjects As Object() = {FileID, MyFile.Path, CodecsToCheck}
                 ThreadPool.QueueUserWorkItem(New WaitCallback(AddressOf TransferToSyncFolderDelegate), InputObjects)
             Next
 
@@ -519,7 +525,7 @@ Public Class NewSyncWindow
 
         Try
             Dim InputObjects As Object() = CType(Input, Object())
-            Dim ProcessID As UInt32 = CType(InputObjects(0), UInt32)
+            Dim ProcessID As Int32 = CType(InputObjects(0), Int32)
             Dim TransferResult As ReturnObject
 
             Try
@@ -538,7 +544,7 @@ Public Class NewSyncWindow
                 MyLog.Write(ProcessID, "File could not be processed. Malformed input to TransferToSyncFolderDelegate subroutine.", Warning)
             End Try
         Catch ex As Exception
-            MyLog.Write(UInt32.MaxValue, "File could not be processed. Malformed input to TransferToSyncFolderDelegate.", Warning)
+            MyLog.Write(Int32.MaxValue, "File could not be processed. Malformed input to TransferToSyncFolderDelegate.", Warning)
         End Try
 
         Interlocked.Increment(ThreadsCompleted)

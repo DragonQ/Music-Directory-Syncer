@@ -12,13 +12,14 @@ Imports System.Environment
 
 Module Startup
 
-    Public ApplicationName As String = "Music Folder Syncer"
+    Public Const ApplicationName As String = "Music Folder Syncer"
     Public MyLog As Logger
     Public MyLogFilePath As String = Path.Combine(System.AppDomain.CurrentDomain.BaseDirectory, ApplicationName & ".log")
-    Public DebugLevel As Logger.DebugLogLevel = Debug
+    Public Const DebugLevel As Logger.DebugLogLevel = Information
     Public MySyncSettings As SyncSettings
     Public DefaultSyncSettings As SyncSettings
     Public Codecs As List(Of Codec)
+    Public Const MaxFileID As Int32 = 99999
 
     Sub Main()
 
@@ -65,7 +66,7 @@ Module Startup
     End Sub
 
 #Region " Transfer File To Sync Folder "
-    Public Function TransferToSyncFolder(ByVal ProcessID As UInt32, ByVal FilePath As String, ByRef CodecsToCheck As Codec()) As ReturnObject
+    Public Function TransferToSyncFolder(ByVal ProcessID As Int32, ByVal FilePath As String, ByRef CodecsToCheck As Codec()) As ReturnObject
 
         Dim FileCodec As Codec = CheckFileCodec(ProcessID, FilePath, CodecsToCheck)
         Dim MyReturnObject As ReturnObject
@@ -88,19 +89,19 @@ Module Startup
 
                     Dim NewFile As New FileInfo(SyncFilePath)
                     'Interlocked.Add(SyncFolderSize, NewFile.Length)
-                    MyLog.Write(ProcessID, "...successfully added file to sync folder.", Debug)
+                    MyLog.Write(ProcessID, "...successfully added file to sync folder...", Debug)
                     MyReturnObject = New ReturnObject(True, "", NewFile.Length)
                 Else
                     MyReturnObject = New ReturnObject(True, "", 0)
                 End If
+
+                MyLog.Write(ProcessID, "File processed: """ & FilePath.Substring(MySyncSettings.SourceDirectory.Length) & """", Information)
             Catch ex As Exception
-                MyLog.Write(ProcessID, "...failed to add file to sync folder. Exception: " & ex.Message, Warning)
+                MyLog.Write(ProcessID, "Processing failed: """ & FilePath.Substring(MySyncSettings.SourceDirectory.Length) & """. Exception: " & ex.Message, Warning)
                 MyReturnObject = New ReturnObject(False, ex.Message, 0)
             End Try
-
-            MyLog.Write(ProcessID, "File processed: """ & FilePath.Substring(MySyncSettings.SourceDirectory.Length) & """", Information)
         Else
-            MyLog.Write(ProcessID, "File ignored: """ & FilePath.Substring(MySyncSettings.SourceDirectory.Length) & """", Information)
+            MyLog.Write(ProcessID, "Ignoring file: """ & FilePath.Substring(MySyncSettings.SourceDirectory.Length) & """", Information)
             MyReturnObject = New ReturnObject(True, "", 0)
         End If
 
@@ -108,7 +109,7 @@ Module Startup
 
     End Function
 
-    Public Sub TranscodeFile(ByVal ProcessID As UInt32, FileFrom As String, FileTo As String)
+    Public Sub TranscodeFile(ByVal ProcessID As Int32, FileFrom As String, FileTo As String)
 
         Dim OutputFilePath As String = ""
 
@@ -117,8 +118,7 @@ Module Startup
             OutputFilePath = Path.Combine(OutputDirectory, Path.GetFileNameWithoutExtension(FileTo)) & MySyncSettings.Encoder.FileExtensions(0)
             Directory.CreateDirectory(OutputDirectory)
         Catch ex As Exception
-            MyLog.Write(ProcessID, "...transcode failed [1]. Exception: " &
-                     ex.Message & NewLine & NewLine & ex.InnerException.ToString, Warning)
+            MyLog.Write(ProcessID, "...transcode failed [1]. Exception: " & ex.Message & NewLine & NewLine & ex.InnerException.ToString, Warning)
         End Try
 
         Try
@@ -140,27 +140,23 @@ Module Startup
 
             MyLog.Write(ProcessID, "...transcode complete...", Debug)
         Catch ex As Exception
-            MyLog.Write(ProcessID, "...transcode failed [2]. Exception: " &
-                     ex.Message & NewLine & NewLine & ex.InnerException.ToString, Warning)
+            MyLog.Write(ProcessID, "...transcode failed [2]. Exception: " & ex.Message & NewLine & NewLine & ex.InnerException.ToString, Warning)
         End Try
 
     End Sub
 #End Region
 
 #Region " File Checks "
-    Public Function CheckFileForSync(ByVal ProcessID As UInt32, ByVal FilePath As String, ByVal FileCodec As Codec) As Boolean
+    Public Function CheckFileForSync(ByVal ProcessID As Int32, ByVal FilePath As String, ByVal FileCodec As Codec) As Boolean
 
         Try
             If CheckFileTags(ProcessID, FilePath, FileCodec) Then
                 MyLog.Write(ProcessID, "...file has correct tags, now syncing...", Debug)
                 Return True
             Else
-                MyLog.Write(ProcessID, "...file does not have correct tags, ignoring.", Debug)
+                MyLog.Write(ProcessID, "...file does not have correct tags, ignoring...", Debug)
                 Return False
             End If
-
-            MyLog.Write(ProcessID, "...file type not recognised, ignoring.", Information)
-            Return False
         Catch ex As Exception
             MyLog.Write(ProcessID, "...error whilst attempting to parse file. Exception: " & ex.Message, Warning)
             Return False
@@ -168,7 +164,7 @@ Module Startup
 
     End Function
 
-    Public Function CheckFileCodec(ByVal ProcessID As UInt32, FilePath As String, CodecsToCheck As Codec()) As Codec
+    Public Function CheckFileCodec(ByVal ProcessID As Int32, FilePath As String, CodecsToCheck As Codec()) As Codec
 
         Dim FileExtension As String = Path.GetExtension(FilePath)
 
@@ -181,12 +177,12 @@ Module Startup
             Next
         Next
 
-        MyLog.Write(ProcessID, "...file type not recognised, ignoring.", Debug)
+        MyLog.Write(ProcessID, "...file type not recognised, ignoring...", Debug)
         Return Nothing
 
     End Function
 
-    Private Function CheckFileTags(ByVal ProcessID As UInt32, FilePath As String, MyCodec As Codec) As Boolean
+    Private Function CheckFileTags(ByVal ProcessID As Int32, FilePath As String, MyCodec As Codec) As Boolean
 
         Dim TagsObject As ReturnObject = MyCodec.MatchTag(FilePath, MySyncSettings.GetWatcherTags)
 

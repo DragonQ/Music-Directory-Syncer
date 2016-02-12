@@ -5,6 +5,7 @@ Imports Music_Folder_Syncer.Logger.DebugLogLevel
 Imports System.Windows.Forms
 Imports System.Environment
 Imports System.IO
+Imports System.Threading
 #End Region
 
 Public Class TrayApp
@@ -16,9 +17,9 @@ Public Class TrayApp
     Private WithEvents MainMenu As ContextMenuStrip
     Private WithEvents mnuViewLogFile, mnuNewSync, mnuStatus, mnuEditSyncSettings, mnuExit As ToolStripMenuItem
     Private WithEvents mnuSep1, mnuSep2, mnuSep3 As ToolStripSeparator
-    Private WithEvents MyTimer As New Timer
 
     Private WithEvents FileWatcher As FileSystemWatcher
+    Private FileID As Int32 = 0
 #End Region
 
 
@@ -194,6 +195,12 @@ Public Class TrayApp
             RenameInSyncFolder(e.FullPath, e.OldFullPath)
         End If
 
+        If Interlocked.Equals(FileID, MaxFileID) Then
+            Interlocked.Add(FileID, -MaxFileID)
+        Else
+            Interlocked.Increment(FileID)
+        End If
+
     End Sub
 
     Private Sub FileChanged(ByVal sender As Object, ByVal e As System.IO.FileSystemEventArgs)
@@ -204,26 +211,32 @@ Public Class TrayApp
                 Case Is = IO.WatcherChangeTypes.Changed
                     MyLog.Write("File changed: " & e.FullPath, Information)
                     DeleteInSyncFolder(e.FullPath)
-                    Dim Result As ReturnObject = TransferToSyncFolder(0, e.FullPath, MySyncSettings.GetWatcherCodecs)
+                    Dim Result As ReturnObject = TransferToSyncFolder(FileID, e.FullPath, MySyncSettings.GetWatcherCodecs)
 
                     If Result.Success Then
-                        If Tray.Visible Then Tray.ShowBalloonTip(8, "File Processed:", e.FullPath.Substring(MySyncSettings.SourceDirectory.Length), ToolTipIcon.Info)
+                        If Tray.Visible Then Tray.ShowBalloonTip(8, "File processed:", e.FullPath.Substring(MySyncSettings.SourceDirectory.Length), ToolTipIcon.Info)
                     Else
-                        If Tray.Visible Then Tray.ShowBalloonTip(8, "File Processing Failed:", e.FullPath.Substring(MySyncSettings.SourceDirectory.Length), ToolTipIcon.Error)
+                        If Tray.Visible Then Tray.ShowBalloonTip(8, "File processing failed:", e.FullPath.Substring(MySyncSettings.SourceDirectory.Length), ToolTipIcon.Error)
                     End If
                 Case Is = IO.WatcherChangeTypes.Created
                     MyLog.Write("File created: " & e.FullPath, Information)
-                    Dim Result As ReturnObject = TransferToSyncFolder(0, e.FullPath, MySyncSettings.GetWatcherCodecs)
+                    Dim Result As ReturnObject = TransferToSyncFolder(FileID, e.FullPath, MySyncSettings.GetWatcherCodecs)
 
                     If Result.Success Then
-                        If Tray.Visible Then Tray.ShowBalloonTip(8, "File Processed:", e.FullPath.Substring(MySyncSettings.SourceDirectory.Length), ToolTipIcon.Info)
+                        If Tray.Visible Then Tray.ShowBalloonTip(8, "File processed:", e.FullPath.Substring(MySyncSettings.SourceDirectory.Length), ToolTipIcon.Info)
                     Else
-                        If Tray.Visible Then Tray.ShowBalloonTip(8, "File Processing Failed:", e.FullPath.Substring(MySyncSettings.SourceDirectory.Length), ToolTipIcon.Error)
+                        If Tray.Visible Then Tray.ShowBalloonTip(8, "File processing failed:", e.FullPath.Substring(MySyncSettings.SourceDirectory.Length), ToolTipIcon.Error)
                     End If
                 Case Is = IO.WatcherChangeTypes.Deleted
                     MyLog.Write("File deleted: " & e.FullPath, Information)
                     DeleteInSyncFolder(e.FullPath)
             End Select
+        End If
+
+        If Interlocked.Equals(FileID, MaxFileID) Then
+            Interlocked.Add(FileID, -MaxFileID)
+        Else
+            Interlocked.Increment(FileID)
         End If
 
     End Sub
@@ -246,7 +259,7 @@ Public Class TrayApp
     Private Sub DeleteInSyncFolder(ByVal FilePath As String)
 
         Try
-            Dim FileCodec As Codec = CheckFileCodec(0, FilePath, MySyncSettings.GetWatcherCodecs)
+            Dim FileCodec As Codec = CheckFileCodec(FileID, FilePath, MySyncSettings.GetWatcherCodecs)
 
             If Not FileCodec Is Nothing Then
                 'File was meant to be synced, which means we now need to delete the synced version
@@ -279,11 +292,11 @@ Public Class TrayApp
     Private Sub RenameInSyncFolder(ByVal FilePath As String, ByVal OldFilePath As String)
 
         Try
-            Dim FileCodec As Codec = CheckFileCodec(0, FilePath, MySyncSettings.GetWatcherCodecs)
+            Dim FileCodec As Codec = CheckFileCodec(FileID, FilePath, MySyncSettings.GetWatcherCodecs)
 
             If Not FileCodec Is Nothing Then
 
-                If CheckFileForSync(0, FilePath, FileCodec) Then
+                If CheckFileForSync(FileID, FilePath, FileCodec) Then
                     Dim SyncFilePath As String = MySyncSettings.SyncDirectory & FilePath.Substring(MySyncSettings.SourceDirectory.Length)
                     Dim OldSyncFilePath As String = MySyncSettings.SyncDirectory & OldFilePath.Substring(MySyncSettings.SourceDirectory.Length)
 
@@ -303,7 +316,7 @@ Public Class TrayApp
 
                         If MySyncSettings.TranscodeLosslessFiles AndAlso FileCodec.Type = Lossless Then 'Need to transcode file
                             MyLog.Write("...transcoding file to " & MySyncSettings.Encoder.Name & "...", Debug)
-                            TranscodeFile(0, FilePath, SyncFilePath)
+                            TranscodeFile(FileID, FilePath, SyncFilePath)
                         Else
                             Directory.CreateDirectory(Path.GetDirectoryName(SyncFilePath))
                             File.Copy(FilePath, SyncFilePath, True)

@@ -19,7 +19,7 @@ Public Class Logger
         FilePath = LogFilePath
     End Sub
 
-    Public Overloads Sub Write(ThreadID As UInt32, Text As String, Optional LogLevel As DebugLogLevel = Always)
+    Public Overloads Sub Write(ThreadID As Int32, Text As String, Optional LogLevel As DebugLogLevel = Always)
 
         WriteCommon(Text, ThreadID, LogLevel)
 
@@ -32,7 +32,7 @@ Public Class Logger
 
     End Sub
 
-    Private Sub WriteCommon(Text As String, ThreadID As UInt32, LogLevel As DebugLogLevel)
+    Private Sub WriteCommon(Text As String, ThreadID As Int32, LogLevel As DebugLogLevel)
 
         If LogLevel >= DebugLevel Then
             Dim LogMarker As String
