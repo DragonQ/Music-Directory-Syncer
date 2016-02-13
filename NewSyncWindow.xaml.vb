@@ -526,10 +526,13 @@ Public Class NewSyncWindow
         Try
             Dim InputObjects As Object() = CType(Input, Object())
             Dim ProcessID As Int32 = CType(InputObjects(0), Int32)
+            Dim FilePath As String = CType(InputObjects(1), String)
+            Dim CodecsToCheck As Codec() = CType(InputObjects(2), Codec())
             Dim TransferResult As ReturnObject
 
             Try
-                TransferResult = TransferToSyncFolder(ProcessID, CType(InputObjects(1), String), CType(InputObjects(2), Codec()))
+                Dim MyFileParser As New FileParser(ProcessID, FilePath)
+                TransferResult = MyFileParser.TransferToSyncFolder(CodecsToCheck)
 
                 If TransferResult.Success Then
                     Dim NewSize As Int64 = CType(TransferResult.MyObject, Int64)

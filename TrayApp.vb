@@ -192,7 +192,9 @@ Public Class TrayApp
 
         If FilterMatch(e.Name) Then
             MyLog.Write("File renamed: " & e.FullPath, Information)
-            RenameInSyncFolder(e.FullPath, e.OldFullPath)
+            Dim MyFileParser As New FileParser(FileID, e.FullPath)
+            RenameInSyncFolder(MyFileParser, e.OldFullPath)
+            MyFileParser = Nothing
         End If
 
         If Interlocked.Equals(FileID, MaxFileID) Then
@@ -207,11 +209,12 @@ Public Class TrayApp
         'Handles changed and new files
 
         If FilterMatch(e.Name) Then
+            Dim MyFileParser As New FileParser(FileID, e.FullPath)
             Select Case e.ChangeType
                 Case Is = IO.WatcherChangeTypes.Changed
                     MyLog.Write("File changed: " & e.FullPath, Information)
-                    DeleteInSyncFolder(e.FullPath)
-                    Dim Result As ReturnObject = TransferToSyncFolder(FileID, e.FullPath, MySyncSettings.GetWatcherCodecs)
+                    DeleteInSyncFolder(MyFileParser, e.FullPath)
+                    Dim Result As ReturnObject = MyFileParser.TransferToSyncFolder(MySyncSettings.GetWatcherCodecs)
 
                     If Result.Success Then
                         If Tray.Visible Then Tray.ShowBalloonTip(8, "File processed:", e.FullPath.Substring(MySyncSettings.SourceDirectory.Length), ToolTipIcon.Info)
@@ -220,7 +223,7 @@ Public Class TrayApp
                     End If
                 Case Is = IO.WatcherChangeTypes.Created
                     MyLog.Write("File created: " & e.FullPath, Information)
-                    Dim Result As ReturnObject = TransferToSyncFolder(FileID, e.FullPath, MySyncSettings.GetWatcherCodecs)
+                    Dim Result As ReturnObject = MyFileParser.TransferToSyncFolder(MySyncSettings.GetWatcherCodecs)
 
                     If Result.Success Then
                         If Tray.Visible Then Tray.ShowBalloonTip(8, "File processed:", e.FullPath.Substring(MySyncSettings.SourceDirectory.Length), ToolTipIcon.Info)
@@ -229,8 +232,9 @@ Public Class TrayApp
                     End If
                 Case Is = IO.WatcherChangeTypes.Deleted
                     MyLog.Write("File deleted: " & e.FullPath, Information)
-                    DeleteInSyncFolder(e.FullPath)
+                    DeleteInSyncFolder(MyFileParser, e.FullPath)
             End Select
+            MyFileParser = Nothing
         End If
 
         If Interlocked.Equals(FileID, MaxFileID) Then
@@ -256,10 +260,10 @@ Public Class TrayApp
 
     End Function
 
-    Private Sub DeleteInSyncFolder(ByVal FilePath As String)
+    Private Sub DeleteInSyncFolder(ByRef MyFileParser As FileParser, ByVal FilePath As String)
 
         Try
-            Dim FileCodec As Codec = CheckFileCodec(FileID, FilePath, MySyncSettings.GetWatcherCodecs)
+            Dim FileCodec As Codec = MyFileParser.CheckFileCodec(MySyncSettings.GetWatcherCodecs)
 
             If Not FileCodec Is Nothing Then
                 'File was meant to be synced, which means we now need to delete the synced version
@@ -289,15 +293,16 @@ Public Class TrayApp
 
     End Sub
 
-    Private Sub RenameInSyncFolder(ByVal FilePath As String, ByVal OldFilePath As String)
+    Private Sub RenameInSyncFolder(ByRef MyFileParser As FileParser, ByVal OldFilePath As String)
 
         Try
-            Dim FileCodec As Codec = CheckFileCodec(FileID, FilePath, MySyncSettings.GetWatcherCodecs)
+            Dim FileCodec As Codec = MyFileParser.CheckFileCodec(MySyncSettings.GetWatcherCodecs)
+            Dim NewFilePath As String = MyFileParser.FilePath
 
             If Not FileCodec Is Nothing Then
 
-                If CheckFileForSync(FileID, FilePath, FileCodec) Then
-                    Dim SyncFilePath As String = MySyncSettings.SyncDirectory & FilePath.Substring(MySyncSettings.SourceDirectory.Length)
+                If MyFileParser.CheckFileForSync(FileCodec) Then
+                    Dim SyncFilePath As String = MySyncSettings.SyncDirectory & NewFilePath.Substring(MySyncSettings.SourceDirectory.Length)
                     Dim OldSyncFilePath As String = MySyncSettings.SyncDirectory & OldFilePath.Substring(MySyncSettings.SourceDirectory.Length)
 
                     If MySyncSettings.TranscodeLosslessFiles AndAlso FileCodec.Type = Lossless Then 'Need to replace extension with .ogg
@@ -316,19 +321,19 @@ Public Class TrayApp
 
                         If MySyncSettings.TranscodeLosslessFiles AndAlso FileCodec.Type = Lossless Then 'Need to transcode file
                             MyLog.Write("...transcoding file to " & MySyncSettings.Encoder.Name & "...", Debug)
-                            TranscodeFile(FileID, FilePath, SyncFilePath)
+                            MyFileParser.TranscodeFile(SyncFilePath)
                         Else
                             Directory.CreateDirectory(Path.GetDirectoryName(SyncFilePath))
-                            File.Copy(FilePath, SyncFilePath, True)
+                            File.Copy(NewFilePath, SyncFilePath, True)
                         End If
 
                         MyLog.Write("...successfully added file to sync folder.", Information)
-                        If Tray.Visible Then Tray.ShowBalloonTip(8, "File Processed:", FilePath.Substring(MySyncSettings.SourceDirectory.Length),
+                        If Tray.Visible Then Tray.ShowBalloonTip(8, "File Processed:", NewFilePath.Substring(MySyncSettings.SourceDirectory.Length),
                                                 ToolTipIcon.Info)
                     End If
 
                     MyLog.Write("...successfully renamed file in sync folder.", Information)
-                    If Tray.Visible Then Tray.ShowBalloonTip(8, "File Renamed:", FilePath.Substring(MySyncSettings.SourceDirectory.Length),
+                    If Tray.Visible Then Tray.ShowBalloonTip(8, "File Renamed:", NewFilePath.Substring(MySyncSettings.SourceDirectory.Length),
                                                 ToolTipIcon.Info)
                 End If
 
