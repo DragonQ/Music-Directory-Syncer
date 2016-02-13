@@ -17,6 +17,7 @@ Public Class TrayApp
     Private WithEvents MainMenu As ContextMenuStrip
     Private WithEvents mnuViewLogFile, mnuNewSync, mnuStatus, mnuEditSyncSettings, mnuExit As ToolStripMenuItem
     Private WithEvents mnuSep1, mnuSep2, mnuSep3 As ToolStripSeparator
+    Private Const BalloonTime As Int32 = 8
 
     Private WithEvents FileWatcher As FileSystemWatcher
     Private FileID As Int32 = 0
@@ -104,7 +105,7 @@ Public Class TrayApp
         Tray.Visible = True
 
         If MyEditSyncSettingsWindow.DialogResult = True Then
-            Tray.ShowBalloonTip(8, ApplicationName, "Sync settings updated.", ToolTipIcon.Info)
+            Tray.ShowBalloonTip(BalloonTime, ApplicationName, "Sync settings updated.", ToolTipIcon.Info)
         End If
 
     End Sub
@@ -125,17 +126,17 @@ Public Class TrayApp
 
                 If WatcherStartResult.Success Then
                     mnuStatus.Text = "Syncer is active"
-                    Tray.ShowBalloonTip(8, ApplicationName, "Syncer active.", ToolTipIcon.Info)
+                    Tray.ShowBalloonTip(BalloonTime, ApplicationName, "Syncer active.", ToolTipIcon.Info)
                 Else
                     System.Windows.MessageBox.Show("Error starting background syncer!" & NewLine & NewLine & WatcherStartResult.ErrorMessage, "Background Syncer Error!", MessageBoxButton.OK, MessageBoxImage.Error)
                 End If
             Else
                 mnuStatus.Text = "Syncer is not active"
-                Tray.ShowBalloonTip(8, ApplicationName, "Syncer disabled.", ToolTipIcon.Info)
+                Tray.ShowBalloonTip(BalloonTime, ApplicationName, "Syncer disabled.", ToolTipIcon.Info)
             End If
         Else ' User closed the window before sync was completed
             mnuStatus.Text = "Syncer is not active"
-            Tray.ShowBalloonTip(8, ApplicationName, "Syncer not set up.", ToolTipIcon.Info)
+            Tray.ShowBalloonTip(BalloonTime, ApplicationName, "Syncer not set up.", ToolTipIcon.Info)
         End If
 
     End Sub
@@ -161,7 +162,7 @@ Public Class TrayApp
 
             MyLog.Write("File system watcher started (monitoring directory """ & MySyncSettings.SourceDirectory & """ for audio files)", Information)
             mnuStatus.Text = "Syncer is active"
-            If Tray.Visible Then Tray.ShowBalloonTip(8, ApplicationName, "Syncer active.", ToolTipIcon.Info)
+            If Tray.Visible Then Tray.ShowBalloonTip(BalloonTime, ApplicationName, "Syncer active.", ToolTipIcon.Info)
         Catch ex As Exception
             Return New ReturnObject(False, ex.Message, Nothing)
         End Try
@@ -180,10 +181,10 @@ Public Class TrayApp
 
         If MyResult.Success Then
             MyLog.Write("Syncer stopped.", Warning)
-            If Tray.Visible Then Tray.ShowBalloonTip(8, ApplicationName, "Syncer has been disabled.", ToolTipIcon.Info)
+            If Tray.Visible Then Tray.ShowBalloonTip(BalloonTime, ApplicationName, "Syncer has been disabled.", ToolTipIcon.Info)
         Else
             MyLog.Write("Could not update sync settings. Error: " & MyResult.ErrorMessage, Warning)
-            If Tray.Visible Then Tray.ShowBalloonTip(8, ApplicationName, "Syncer has been disabled but settings file could not be updated.", ToolTipIcon.Error)
+            If Tray.Visible Then Tray.ShowBalloonTip(BalloonTime, ApplicationName, "Syncer has been disabled but settings file could not be updated.", ToolTipIcon.Error)
         End If
 
     End Sub
@@ -217,18 +218,18 @@ Public Class TrayApp
                     Dim Result As ReturnObject = MyFileParser.TransferToSyncFolder(MySyncSettings.GetWatcherCodecs)
 
                     If Result.Success Then
-                        If Tray.Visible Then Tray.ShowBalloonTip(8, "File processed:", e.FullPath.Substring(MySyncSettings.SourceDirectory.Length), ToolTipIcon.Info)
+                        If Tray.Visible Then Tray.ShowBalloonTip(BalloonTime, "File processed:", e.FullPath.Substring(MySyncSettings.SourceDirectory.Length), ToolTipIcon.Info)
                     Else
-                        If Tray.Visible Then Tray.ShowBalloonTip(8, "File processing failed:", e.FullPath.Substring(MySyncSettings.SourceDirectory.Length), ToolTipIcon.Error)
+                        If Tray.Visible Then Tray.ShowBalloonTip(BalloonTime, "File processing failed:", e.FullPath.Substring(MySyncSettings.SourceDirectory.Length), ToolTipIcon.Error)
                     End If
                 Case Is = IO.WatcherChangeTypes.Created
                     MyLog.Write("File created: " & e.FullPath, Information)
                     Dim Result As ReturnObject = MyFileParser.TransferToSyncFolder(MySyncSettings.GetWatcherCodecs)
 
                     If Result.Success Then
-                        If Tray.Visible Then Tray.ShowBalloonTip(8, "File processed:", e.FullPath.Substring(MySyncSettings.SourceDirectory.Length), ToolTipIcon.Info)
+                        If Tray.Visible Then Tray.ShowBalloonTip(BalloonTime, "File processed:", e.FullPath.Substring(MySyncSettings.SourceDirectory.Length), ToolTipIcon.Info)
                     Else
-                        If Tray.Visible Then Tray.ShowBalloonTip(8, "File processing failed:", e.FullPath.Substring(MySyncSettings.SourceDirectory.Length), ToolTipIcon.Error)
+                        If Tray.Visible Then Tray.ShowBalloonTip(BalloonTime, "File processing failed:", e.FullPath.Substring(MySyncSettings.SourceDirectory.Length), ToolTipIcon.Error)
                     End If
                 Case Is = IO.WatcherChangeTypes.Deleted
                     MyLog.Write("File deleted: " & e.FullPath, Information)
@@ -280,7 +281,7 @@ Public Class TrayApp
                 If File.Exists(SyncFilePath) Then
                     File.Delete(SyncFilePath)
                     MyLog.Write("...file in sync folder deleted: """ & SyncFilePath.Substring(MySyncSettings.SyncDirectory.Length) & """.", Information)
-                    If Tray.Visible Then Tray.ShowBalloonTip(8, "File Deleted:", SyncFilePath.Substring(MySyncSettings.SyncDirectory.Length), ToolTipIcon.Info)
+                    If Tray.Visible Then Tray.ShowBalloonTip(BalloonTime, "File Deleted:", SyncFilePath.Substring(MySyncSettings.SyncDirectory.Length), ToolTipIcon.Info)
                 Else
                     MyLog.Write("...file doesn't exist in sync folder, ignoring: """ & SyncFilePath.Substring(MySyncSettings.SyncDirectory.Length) & """.", Information)
                 End If
@@ -328,12 +329,12 @@ Public Class TrayApp
                         End If
 
                         MyLog.Write("...successfully added file to sync folder.", Information)
-                        If Tray.Visible Then Tray.ShowBalloonTip(8, "File Processed:", NewFilePath.Substring(MySyncSettings.SourceDirectory.Length),
+                        If Tray.Visible Then Tray.ShowBalloonTip(BalloonTime, "File Processed:", NewFilePath.Substring(MySyncSettings.SourceDirectory.Length),
                                                 ToolTipIcon.Info)
                     End If
 
                     MyLog.Write("...successfully renamed file in sync folder.", Information)
-                    If Tray.Visible Then Tray.ShowBalloonTip(8, "File Renamed:", NewFilePath.Substring(MySyncSettings.SourceDirectory.Length),
+                    If Tray.Visible Then Tray.ShowBalloonTip(BalloonTime, "File Renamed:", NewFilePath.Substring(MySyncSettings.SourceDirectory.Length),
                                                 ToolTipIcon.Info)
                 End If
 
