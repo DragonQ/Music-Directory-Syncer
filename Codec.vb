@@ -5,11 +5,11 @@ Public Class Codec
 
     'Implements INotifyPropertyChanged
 
-    Property Name As String
+    ReadOnly Property Name As String
     Property Type As CodecType
-    Property Profiles As Profile()
-    Property FileExtensions As String()
-    Property IsEnabled As Boolean = True
+    ReadOnly Property Profiles As Profile()
+    ReadOnly Property FileExtensions As String()
+    ReadOnly Property IsEnabled As Boolean = True
 
     Enum CodecType
         Lossless
@@ -22,7 +22,7 @@ Public Class Codec
         Name = MyName
         Profiles = MyProfiles
         FileExtensions = Extensions
-        Type = SetType(MyType)
+        Type = ConvertTypeStringToType(MyType)
 
     End Sub
 
@@ -31,11 +31,15 @@ Public Class Codec
         Name = MyCodec.Name
         Profiles = {MyProfile}
         FileExtensions = MyCodec.FileExtensions
-        Type = SetType(MyCodec.GetTypeString)
+        Type = MyCodec.Type
 
     End Sub
 
-    Private Function SetType(TypeString As String) As CodecType
+    Public Sub SetType(NewType As CodecType)
+        Type = NewType
+    End Sub
+
+    Private Function ConvertTypeStringToType(TypeString As String) As CodecType
 
         Select Case TypeString
             Case Is = "Lossless"
@@ -79,9 +83,9 @@ Public Class Codec
     End Function
 
     Public Class Profile
-        Property Name As String
+        ReadOnly Property Name As String
         'Property Type As ProfileType
-        Property Argument As String
+        ReadOnly Property Argument As String
 
         'Enum ProfileType
         '    CBR

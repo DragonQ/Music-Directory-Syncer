@@ -18,7 +18,7 @@ Public Class NewSyncWindow
     Dim WithEvents SyncBackgroundWorker As New BackgroundWorker
     Dim ExitApplication As Boolean = False
     Dim ThreadsCompleted As Int64 = 0
-    Dim SyncFolderSize As Int64
+    Dim SyncFolderSize As Int64 = 0
     Dim SyncTimer As New Stopwatch()
     Dim TagsToSync As ObservableCollection(Of Codec.Tag)
     Dim FileTypesToSync As ObservableCollection(Of Codec)
@@ -120,10 +120,10 @@ Public Class NewSyncWindow
         If FileType.Name = "WMA" Then
             If FileType.IsEnabled Then
                 tckTreatWMA_AsLossless.IsEnabled = True
-                FileType.Type = Lossless
+                FileType.SetType(Lossless)
             Else
                 tckTreatWMA_AsLossless.IsEnabled = False
-                FileType.Type = Lossy
+                FileType.SetType(Lossless)
             End If
             Return True
         Else
@@ -512,6 +512,9 @@ Public Class NewSyncWindow
                     End If
                 End If
             Loop
+
+            '==============================================================================================
+
         Catch ex As Exception
             MyLog.Write("Failed to complete sync. Exception: " & ex.Message, Warning)
             e.Result = New ReturnObject(False, ex.Message, "")
