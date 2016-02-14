@@ -246,7 +246,7 @@ Module XML
             XMLSettings.Encoding = New System.Text.UTF8Encoding
 
             'Create StringWriter to store XML text
-            Dim FileData As New StringWriter
+            Dim FileData As New StringWriter(EnglishGB)
 
             'Create XML writer to write all data in XML format
             Using MyWriter As XmlWriter = XmlWriter.Create(FileData, XMLSettings)
@@ -258,7 +258,7 @@ Module XML
                     MyWriter.WriteStartElement("EnableSync")
                     MyWriter.WriteEndElement()
                 End If
-                MyWriter.WriteElementString("Threads", MySyncSettings.MaxThreads.ToString)
+                MyWriter.WriteElementString("Threads", MySyncSettings.MaxThreads.ToString(EnglishGB))
                 MyWriter.WriteElementString("SourceDirectory", MySyncSettings.SourceDirectory)
                 MyWriter.WriteElementString("SyncDirectory", MySyncSettings.SyncDirectory)
                 MyWriter.WriteElementString("ffmpegPath", MySyncSettings.ffmpegPath)

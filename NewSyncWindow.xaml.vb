@@ -598,9 +598,9 @@ Public Class NewSyncWindow
             Dim SyncSize As Double = CType(Result.MyObject, Double) / (2 ^ 20) ' Convert to MiB
             Dim SyncSizeString As String = ""
             If SyncSize > 1024 Then ' Directory size is greater than 1 GiB
-                SyncSizeString = String.Format("{0:0.0}", SyncSize / (2 ^ 10)) & " GiB"
+                SyncSizeString = String.Format(EnglishGB, "{0:0.0}", SyncSize / (2 ^ 10)) & " GiB"
             Else
-                SyncSizeString = String.Format("{0:0.0}", SyncSize) & " MiB"
+                SyncSizeString = String.Format(EnglishGB, "{0:0.0}", SyncSize) & " MiB"
             End If
 
             'Work out how long the sync took
@@ -609,9 +609,9 @@ Public Class NewSyncWindow
             If SecondsTaken > 60 Then 'Longer than one minute
                 Dim MinutesTaken As Int32 = CInt(Math.Round(SecondsTaken / 60, 0, MidpointRounding.AwayFromZero) - 1)
                 Dim SecondsRemaining = SecondsTaken - MinutesTaken * 60
-                TimeTaken = String.Format("{0:0} minutes {1:00} seconds", {MinutesTaken, SecondsRemaining})
+                TimeTaken = String.Format(EnglishGB, "{0:0} minutes {1:00} seconds", {MinutesTaken, SecondsRemaining})
             Else
-                TimeTaken = String.Format("{0:0}", SecondsTaken) & " s"
+                TimeTaken = String.Format(EnglishGB, "{0:0}", SecondsTaken) & " s"
             End If
 
             'Ask user if they want to start the background sync updater (presumably yes)
@@ -647,8 +647,8 @@ Public Class NewSyncWindow
         'If Not e.UserState Is Nothing Then txtThreadsRunning.Text = "Threads running: " & CType(e.UserState, Int64).ToString
         If Not e.UserState Is Nothing Then
             Dim Times As Int64() = CType(e.UserState, Int64())
-            txtFilesRemaining.Text = Times(0).ToString
-            txtFilesProcessed.Text = Times(1).ToString
+            txtFilesRemaining.Text = Times(0).ToString(EnglishGB)
+            txtFilesProcessed.Text = Times(1).ToString(EnglishGB)
         End If
         FilesCompletedProgressBar.IsIndeterminate = False
         btnNewSync.Content = "Processing files..."

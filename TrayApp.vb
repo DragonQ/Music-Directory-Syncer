@@ -12,7 +12,6 @@ Public Class TrayApp
     Inherits ApplicationContext
 
 #Region " Declarations "
-    Private Locked As Boolean
     Private WithEvents Tray As NotifyIcon
     Private WithEvents MainMenu As ContextMenuStrip
     Private WithEvents mnuViewLogFile, mnuNewSync, mnuStatus, mnuEditSyncSettings, mnuExit As ToolStripMenuItem
@@ -249,10 +248,10 @@ Public Class TrayApp
     Private Function FilterMatch(FileName As String) As Boolean
 
         Dim Match As Boolean = False
-        Dim FileExtension As String = Path.GetExtension(FileName).ToLower
+        Dim FileExtension As String = Path.GetExtension(FileName).ToLower(EnglishGB)
 
         For Each Filter As String In MySyncSettings.GetFileExtensions
-            If FileExtension = Filter.ToLower Then
+            If FileExtension = Filter.ToLower(EnglishGB) Then
                 Return True
             End If
         Next

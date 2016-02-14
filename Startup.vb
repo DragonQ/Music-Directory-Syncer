@@ -12,6 +12,7 @@ Imports System.Environment
 
 Module Startup
 
+    Public EnglishGB As System.Globalization.CultureInfo = System.Globalization.CultureInfo.CreateSpecificCulture("en-GB")
     Private Const DebugLevel As Logger.DebugLogLevel = Information
     Public MyLogFilePath As String = Path.Combine(System.AppDomain.CurrentDomain.BaseDirectory, ApplicationName & ".log")
 

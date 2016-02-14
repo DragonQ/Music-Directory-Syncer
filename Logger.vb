@@ -52,12 +52,12 @@ Public Class Logger
             If ThreadID = UInt32.MaxValue Then 'Unknown thread
                 LogMarker &= "[?????] "
             Else
-                LogMarker &= String.Format("[{0:00000}] ", ThreadID)
+                LogMarker &= String.Format(EnglishGB, "[{0:00000}] ", ThreadID)
             End If
 
             SyncLock LoggerSync
                 Dim MyNow As Date = DateTime.Now
-                Dim LogText As String = MyNow.ToString & LogMarker & Text & NewLine
+                Dim LogText As String = MyNow.ToString(EnglishGB) & LogMarker & Text & NewLine
 
                 IO.File.AppendAllText(FilePath, LogText)
 #If DEBUG Then
