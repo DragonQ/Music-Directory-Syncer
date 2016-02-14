@@ -12,10 +12,11 @@ Imports System.Environment
 
 Module Startup
 
+    Private Const DebugLevel As Logger.DebugLogLevel = Information
+    Public MyLogFilePath As String = Path.Combine(System.AppDomain.CurrentDomain.BaseDirectory, ApplicationName & ".log")
+
     Public Const ApplicationName As String = "Music Folder Syncer"
     Public MyLog As Logger
-    Public MyLogFilePath As String = Path.Combine(System.AppDomain.CurrentDomain.BaseDirectory, ApplicationName & ".log")
-    Public Const DebugLevel As Logger.DebugLogLevel = Information
     Public MySyncSettings As SyncSettings
     Public DefaultSyncSettings As SyncSettings
     Public Codecs As List(Of Codec)
@@ -23,7 +24,7 @@ Module Startup
 
     Sub Main()
 
-        MyLog = New Logger(MyLogFilePath)
+        MyLog = New Logger(MyLogFilePath, DebugLevel)
 
         MyLog.Write("===============================================================")
         MyLog.Write("  PROGRAM LAUNCHED")

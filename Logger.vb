@@ -11,12 +11,13 @@ Public Class Logger
         Always
     End Enum
 
-    Dim FilePath As String
+    Private ReadOnly FilePath As String
     Private ReadOnly LoggerSync As New Object
+    Property DebugLevel As DebugLogLevel
 
-
-    Public Sub New(ByVal LogFilePath As String)
+    Public Sub New(ByVal LogFilePath As String, ByVal LogDebugLevel As DebugLogLevel)
         FilePath = LogFilePath
+        DebugLevel = LogDebugLevel
     End Sub
 
     Public Overloads Sub Write(ThreadID As Int32, Text As String, Optional LogLevel As DebugLogLevel = Always)
