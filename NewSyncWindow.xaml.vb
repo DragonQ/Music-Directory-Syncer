@@ -138,34 +138,6 @@ Public Class NewSyncWindow
         End If
     End Function
 
-    Private Shared Function CreateDirectoryBrowser(StartingDirectory As String) As ReturnObject
-
-        Dim SelectDirectoryDialog = New CommonOpenFileDialog()
-        SelectDirectoryDialog.Title = "Select Sync Directory"
-        SelectDirectoryDialog.IsFolderPicker = True
-        SelectDirectoryDialog.AddToMostRecentlyUsedList = False
-        SelectDirectoryDialog.AllowNonFileSystemItems = True
-        SelectDirectoryDialog.DefaultDirectory = Environment.GetFolderPath(Environment.SpecialFolder.MyDocuments)
-        If Directory.Exists(StartingDirectory) Then
-            SelectDirectoryDialog.InitialDirectory = StartingDirectory
-        Else
-            SelectDirectoryDialog.InitialDirectory = SelectDirectoryDialog.DefaultDirectory
-        End If
-        SelectDirectoryDialog.EnsureFileExists = False
-        SelectDirectoryDialog.EnsurePathExists = True
-        SelectDirectoryDialog.EnsureReadOnly = False
-        SelectDirectoryDialog.EnsureValidNames = True
-        SelectDirectoryDialog.Multiselect = False
-        SelectDirectoryDialog.ShowPlacesList = True
-
-        If SelectDirectoryDialog.ShowDialog() = CommonFileDialogResult.Ok Then
-            Return New ReturnObject(True, "", SelectDirectoryDialog.FileName)
-        Else
-            Return New ReturnObject(False, "")
-        End If
-
-    End Function
-
 #Region " Window Controls "
     Private Sub tckTranscode_Changed(sender As Object, e As RoutedEventArgs)
         boxTranscodeOptions.IsEnabled = CBool(tckTranscode.IsChecked)

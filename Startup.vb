@@ -1,6 +1,8 @@
 ﻿#Region " Namespaces "
 Imports MusicFolderSyncer.Logger.DebugLogLevel
 Imports MusicFolderSyncer.Toolkit
+Imports System.IO
+Imports Microsoft.WindowsAPICodePack.Dialogs
 #End Region
 
 '======================================================================
@@ -12,7 +14,7 @@ Module Startup
 
     Public EnglishGB As System.Globalization.CultureInfo = System.Globalization.CultureInfo.CreateSpecificCulture("en-GB")
     Private Const DebugLevel As Logger.DebugLogLevel = Information
-    Public MyLogFilePath As String = IO.Path.Combine(System.AppDomain.CurrentDomain.BaseDirectory, ApplicationName & ".log")
+    Public MyLogFilePath As String = Path.Combine(System.AppDomain.CurrentDomain.BaseDirectory, ApplicationName & ".log")
 
     Public Const ApplicationName As String = "Music Folder Syncer"
     Public MyLog As Logger
@@ -64,5 +66,33 @@ Module Startup
         End If
 
     End Sub
+
+    Public Function CreateDirectoryBrowser(StartingDirectory As String) As ReturnObject
+
+        Dim SelectDirectoryDialog = New CommonOpenFileDialog()
+        SelectDirectoryDialog.Title = "Select Sync Directory"
+        SelectDirectoryDialog.IsFolderPicker = True
+        SelectDirectoryDialog.AddToMostRecentlyUsedList = False
+        SelectDirectoryDialog.AllowNonFileSystemItems = True
+        SelectDirectoryDialog.DefaultDirectory = Environment.GetFolderPath(Environment.SpecialFolder.MyDocuments)
+        If Directory.Exists(StartingDirectory) Then
+            SelectDirectoryDialog.InitialDirectory = StartingDirectory
+        Else
+            SelectDirectoryDialog.InitialDirectory = SelectDirectoryDialog.DefaultDirectory
+        End If
+        SelectDirectoryDialog.EnsureFileExists = False
+        SelectDirectoryDialog.EnsurePathExists = True
+        SelectDirectoryDialog.EnsureReadOnly = False
+        SelectDirectoryDialog.EnsureValidNames = True
+        SelectDirectoryDialog.Multiselect = False
+        SelectDirectoryDialog.ShowPlacesList = True
+
+        If SelectDirectoryDialog.ShowDialog() = CommonFileDialogResult.Ok Then
+            Return New ReturnObject(True, "", SelectDirectoryDialog.FileName)
+        Else
+            Return New ReturnObject(False, "")
+        End If
+
+    End Function
 
 End Module

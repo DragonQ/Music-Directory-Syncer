@@ -1,7 +1,7 @@
 ﻿#Region " Namespaces "
 Imports MusicFolderSyncer.Logger.DebugLogLevel
 Imports MusicFolderSyncer.Toolkit
-Imports Microsoft.WindowsAPICodePack.Dialogs
+Imports System.IO
 #End Region
 
 Public Class EditSyncSettingsWindow
@@ -23,33 +23,16 @@ Public Class EditSyncSettingsWindow
 
     End Sub
 
-    Private Shared Function CreateDirectoryBrowser() As ReturnObject
-
-        Dim SelectDirectoryDialog = New CommonOpenFileDialog()
-        SelectDirectoryDialog.Title = "Select Sync Directory"
-        SelectDirectoryDialog.IsFolderPicker = True
-        SelectDirectoryDialog.AddToMostRecentlyUsedList = False
-        SelectDirectoryDialog.AllowNonFileSystemItems = True
-        SelectDirectoryDialog.DefaultDirectory = Environment.GetFolderPath(Environment.SpecialFolder.MyDocuments)
-        SelectDirectoryDialog.EnsureFileExists = False
-        SelectDirectoryDialog.EnsurePathExists = True
-        SelectDirectoryDialog.EnsureReadOnly = False
-        SelectDirectoryDialog.EnsureValidNames = True
-        SelectDirectoryDialog.Multiselect = False
-        SelectDirectoryDialog.ShowPlacesList = True
-
-        If SelectDirectoryDialog.ShowDialog() = CommonFileDialogResult.Ok Then
-            Return New ReturnObject(True, "", SelectDirectoryDialog.FileName)
-        Else
-            Return New ReturnObject(False, "")
-        End If
-
-    End Function
-
 #Region " Window Controls "
     Private Sub btnBrowseSourceDirectory_Click(sender As Object, e As RoutedEventArgs)
 
-        Dim Browser As ReturnObject = CreateDirectoryBrowser()
+        Dim DefaultDirectory As String = txtSourceDirectory.Text
+
+        If Not Directory.Exists(DefaultDirectory) Then
+            DefaultDirectory = DefaultSyncSettings.SourceDirectory
+        End If
+
+        Dim Browser As ReturnObject = CreateDirectoryBrowser(DefaultDirectory)
 
         If Browser.Success Then
             txtSourceDirectory.Text = CStr(Browser.MyObject)
@@ -59,7 +42,13 @@ Public Class EditSyncSettingsWindow
 
     Private Sub btnBrowseSyncDirectory_Click(sender As Object, e As RoutedEventArgs)
 
-        Dim Browser As ReturnObject = CreateDirectoryBrowser()
+        Dim DefaultDirectory As String = txtSyncDirectory.Text
+
+        If Not Directory.Exists(DefaultDirectory) Then
+            DefaultDirectory = DefaultSyncSettings.SyncDirectory
+        End If
+
+        Dim Browser As ReturnObject = CreateDirectoryBrowser(DefaultDirectory)
 
         If Browser.Success Then
             txtSyncDirectory.Text = CStr(Browser.MyObject)
@@ -73,13 +62,13 @@ Public Class EditSyncSettingsWindow
 
         Try
             ' Check settings aren't nonsense
-            If Not IO.Directory.Exists(txtSourceDirectory.Text) Then
+            If Not Directory.Exists(txtSourceDirectory.Text) Then
                 Throw New Exception("Specified source directory doesn't exist.")
             End If
 
-            If Not IO.Directory.Exists(txtSyncDirectory.Text) Then
-                If (IO.Path.IsPathRooted(txtSyncDirectory.Text) AndAlso IO.Path.IsPathRooted(txtSyncDirectory.Text)) Then
-                    IO.Directory.CreateDirectory(txtSyncDirectory.Text)
+            If Not Directory.Exists(txtSyncDirectory.Text) Then
+                If (Path.IsPathRooted(txtSyncDirectory.Text) AndAlso Path.IsPathRooted(txtSyncDirectory.Text)) Then
+                    Directory.CreateDirectory(txtSyncDirectory.Text)
                 Else
                     Throw New Exception("Specified sync directory is not valid.")
                 End If
