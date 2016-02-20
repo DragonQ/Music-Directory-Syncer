@@ -140,7 +140,7 @@ Module Startup
                 ffmpeg.CreateNoWindow = True
                 ffmpeg.UseShellExecute = False
 
-                ffmpeg.Arguments = "-i """ & FileFrom & """ -vn -c:a " & MySyncSettings.Encoder.Profiles(0).Argument & " -hide_banner """ & OutputFilePath & """"
+                ffmpeg.Arguments = "-i """ & FileFrom & """ -vn -c:a " & MySyncSettings.Encoder.GetProfiles(0).Argument & " -hide_banner """ & OutputFilePath & """"
                 'libvorbis -aq: 4 = 128 kbps, 5 = 160 kbps, 6 = 192 kbps, 7 = 224 kbps, 8 = 256 kbps
 
                 MyLog.Write(ProcessID, "...ffmpeg arguments: """ & ffmpeg.Arguments & """...", Debug)

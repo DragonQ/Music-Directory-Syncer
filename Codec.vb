@@ -8,9 +8,9 @@ Public Class Codec
 
     ReadOnly Property Name As String
     Property Type As CodecType
-    ReadOnly Property Profiles As Profile()
+    Private Profiles As Profile()
     ReadOnly Property FileExtensions As String()
-    ReadOnly Property IsEnabled As Boolean = True
+    Property IsEnabled As Boolean = True
 
     Enum CodecType
         Lossless
@@ -35,6 +35,10 @@ Public Class Codec
         Type = MyCodec.Type
 
     End Sub
+
+    Public Function GetProfiles() As Profile()
+        Return Profiles
+    End Function
 
     Public Sub SetType(NewType As CodecType)
         Type = NewType

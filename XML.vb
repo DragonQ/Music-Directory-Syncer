@@ -151,7 +151,7 @@ Module XML
 
                                         Dim ProfileFound As Boolean = False
 
-                                        For Each MyProfile As Codec.Profile In MyCodec.Profiles
+                                        For Each MyProfile As Codec.Profile In MyCodec.GetProfiles()
                                             If TranscodeSettings(0).CodecProfile.Value = MyProfile.Name Then
                                                 NewSyncSettings.Encoder = New Codec(MyCodec.Name, MyCodec.GetTypeString, {MyProfile},
                                                                            {TranscodeSettings(0).Extension.Value})
@@ -285,7 +285,7 @@ Module XML
                     MyWriter.WriteEndElement()
                     MyWriter.WriteStartElement("Encoder")
                     MyWriter.WriteElementString("CodecName", MySyncSettings.Encoder.Name)
-                    MyWriter.WriteElementString("CodecProfile", MySyncSettings.Encoder.Profiles(0).Name)
+                    MyWriter.WriteElementString("CodecProfile", MySyncSettings.Encoder.GetProfiles(0).Name)
                     MyWriter.WriteElementString("Extension", MySyncSettings.Encoder.FileExtensions(0))
                     MyWriter.WriteEndElement()
                 End If

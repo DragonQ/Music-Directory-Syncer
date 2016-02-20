@@ -249,7 +249,7 @@ Public Class NewSyncWindow
 
         If cmbCodec.SelectedIndex > -1 Then
             cmbCodecProfile.Items.Clear()
-            Dim MyCodecLevels As Codec.Profile() = CType(CType(cmbCodec.SelectedItem, Item).Value, Codec).Profiles
+            Dim MyCodecLevels As Codec.Profile() = CType(CType(cmbCodec.SelectedItem, Item).Value, Codec).GetProfiles()
 
             If MyCodecLevels.Count > 0 Then
                 For Each CodecLevel As Codec.Profile In MyCodecLevels ' CType(CType(cmbCodec.SelectedItem, Item).Value, Codec).Profiles
