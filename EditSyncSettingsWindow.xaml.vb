@@ -11,6 +11,11 @@ Public Class EditSyncSettingsWindow
         ' This call is required by the designer.
         InitializeComponent()
 
+    End Sub
+
+    Private Sub EditSyncSettingsWindow_Loaded(sender As Object, e As RoutedEventArgs) Handles Me.Loaded
+
+        ' Set run-time properties of window objects
         txtSourceDirectory.Text = MySyncSettings.SourceDirectory
         txtSyncDirectory.Text = MySyncSettings.SyncDirectory
         spinThreads.Maximum = Environment.ProcessorCount

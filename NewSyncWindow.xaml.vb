@@ -29,11 +29,31 @@ Public Class NewSyncWindow
         InitializeComponent()
         Me.DataContext = Me
 
+        ' Set properties and events for the SyncBackgroundWorker
         SyncBackgroundWorker.WorkerReportsProgress = True
         SyncBackgroundWorker.WorkerSupportsCancellation = True
         AddHandler SyncBackgroundWorker.DoWork, AddressOf SyncFolder
         AddHandler SyncBackgroundWorker.ProgressChanged, AddressOf SyncFolderProgressChanged
         AddHandler SyncBackgroundWorker.RunWorkerCompleted, AddressOf SyncFolderCompleted
+
+        ' Define collection for FileTypesToSync, which is bound to lstFileTypesToSync
+        FileTypesToSync = New ObservableCollection(Of Codec)
+        AddHandler FileTypesToSync.CollectionChanged, AddressOf FileTypesToSyncResized
+        Dim CodecsFilter As Codec() = DefaultSyncSettings.GetWatcherCodecs
+        For Each MyFilter As Codec In CodecsFilter
+            FileTypesToSync.Add(MyFilter)
+        Next
+
+        ' Define collection for TagsToSync, which is bound to dataTagsToSync
+        TagsToSync = New ObservableCollection(Of Codec.Tag)
+        Dim Tags As Codec.Tag() = DefaultSyncSettings.GetWatcherTags
+        For Each MyTag As Codec.Tag In Tags
+            TagsToSync.Add(MyTag)
+        Next
+
+    End Sub
+
+    Private Sub NewSyncWindow_Loaded(sender As Object, e As RoutedEventArgs) Handles Me.Loaded
 
         ' Add all codecs (previously read from Codecs.xml) to cmbCodec
         Dim CodecCount As Int32 = 0
@@ -47,21 +67,8 @@ Public Class NewSyncWindow
             End If
         Next
 
-        FileTypesToSync = New ObservableCollection(Of Codec)
-        AddHandler FileTypesToSync.CollectionChanged, AddressOf FileTypesToSyncResized
-        Dim CodecsFilter As Codec() = DefaultSyncSettings.GetWatcherCodecs
-        For Each MyFilter As Codec In CodecsFilter
-            FileTypesToSync.Add(MyFilter)
-        Next
-
-        TagsToSync = New ObservableCollection(Of Codec.Tag)
-        Dim Tags As Codec.Tag() = DefaultSyncSettings.GetWatcherTags
-        For Each MyTag As Codec.Tag In Tags
-            TagsToSync.Add(MyTag)
-        Next
-
+        ' Set run-time properties of window objects
         If TagsToSync.Count > 0 Then btnRemoveTag.IsEnabled = True
-
         spinThreads.Maximum = DefaultSyncSettings.MaxThreads
         spinThreads.Value = spinThreads.Maximum
         txt_ffmpegPath.Text = DefaultSyncSettings.ffmpegPath
