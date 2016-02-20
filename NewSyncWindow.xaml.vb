@@ -23,6 +23,7 @@ Public Class NewSyncWindow
     Dim TagsToSync As ObservableCollection(Of Codec.Tag)
     Dim FileTypesToSync As ObservableCollection(Of Codec)
 
+#Region " New "
     Public Sub New()
 
         ' This call is required by the designer.
@@ -78,6 +79,7 @@ Public Class NewSyncWindow
         txtSourceDirectory.Focus()
 
     End Sub
+#End Region
 
     Public ReadOnly Property GetTagsToSync() As ObservableCollection(Of Codec.Tag)
         Get

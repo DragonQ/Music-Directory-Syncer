@@ -19,7 +19,7 @@ Public Class Codec
         Lossy
     End Enum
 
-
+#Region " New "
     Public Sub New(MyName As String, MyType As String, MyProfiles As Profile(), Extensions As String())
 
         Name = MyName
@@ -37,6 +37,7 @@ Public Class Codec
         End If
         If Not MyProfile Is Nothing Then Profiles = {MyProfile}
     End Sub
+#End Region
 
     Public Function GetProfiles() As Profile()
         Return Profiles

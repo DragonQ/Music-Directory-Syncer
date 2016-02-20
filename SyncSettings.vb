@@ -10,7 +10,7 @@
     Property MaxThreads As Int32
     Property ffmpegPath As String
 
-
+#Region " New "
     Public Sub New(MySyncIsEnabled As Boolean, MySourceDirectory As String, MySyncDirectory As String, MyWatcherCodecs As List(Of Codec),
                    MyWatcherTags As List(Of Codec.Tag), MyTranscodeLosslessFiles As Boolean, MyEncoder As Codec, MyMaxThreads As Int32, My_ffmpegPath As String)
 
@@ -41,6 +41,7 @@
         End If
 
     End Sub
+#End Region
 
     Public Function GetFileExtensions() As String() 'List(Of String)
 

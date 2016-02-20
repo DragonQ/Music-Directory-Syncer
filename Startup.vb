@@ -23,6 +23,7 @@ Module Startup
     Public Codecs As List(Of Codec)
     Public Const MaxFileID As Int32 = 99999
 
+#Region " Sub Main "
     Sub Main()
 
         MyLog = New Logger(MyLogFilePath, DebugLevel)
@@ -66,6 +67,7 @@ Module Startup
         End If
 
     End Sub
+#End Region
 
     Public Function CreateDirectoryBrowser(StartingDirectory As String) As ReturnObject
 

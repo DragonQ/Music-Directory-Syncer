@@ -10,10 +10,12 @@ Class FileParser
     Private ProcessID As Int32
     ReadOnly Property FilePath As String
 
+#Region " New "
     Public Sub New(ByVal NewProcessID As Int32, ByVal NewFilePath As String)
         ProcessID = NewProcessID
         FilePath = NewFilePath
     End Sub
+#End Region
 
 #Region " Transfer File To Sync Folder "
     Public Function TransferToSyncFolder(ByRef CodecsToCheck As Codec()) As ReturnObject

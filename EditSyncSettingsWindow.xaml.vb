@@ -6,6 +6,7 @@ Imports System.IO
 
 Public Class EditSyncSettingsWindow
 
+#Region " New "
     Public Sub New()
 
         ' This call is required by the designer.
@@ -22,6 +23,7 @@ Public Class EditSyncSettingsWindow
         spinThreads.Value = MySyncSettings.MaxThreads
 
     End Sub
+#End Region
 
 #Region " Window Controls "
     Private Sub btnBrowseSourceDirectory_Click(sender As Object, e As RoutedEventArgs)
