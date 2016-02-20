@@ -1,6 +1,8 @@
-﻿Imports MusicFolderSyncer.Toolkit
+﻿#Region " Namespaces "
+Imports MusicFolderSyncer.Toolkit
 Imports TagLib
 Imports System.Globalization.CultureInfo
+#End Region
 
 Public Class Codec
 
