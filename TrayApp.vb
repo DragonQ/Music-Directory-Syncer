@@ -1,7 +1,7 @@
 ﻿#Region " Namespaces "
-Imports Music_Folder_Syncer.Codec.CodecType
-Imports Music_Folder_Syncer.Toolkit
-Imports Music_Folder_Syncer.Logger.DebugLogLevel
+Imports MusicFolderSyncer.Codec.CodecType
+Imports MusicFolderSyncer.Toolkit
+Imports MusicFolderSyncer.Logger.DebugLogLevel
 Imports System.Windows.Forms
 Imports System.Environment
 Imports System.IO
@@ -245,12 +245,12 @@ Public Class TrayApp
 
     End Sub
 
-    Private Function FilterMatch(FileName As String) As Boolean
+    Private Shared Function FilterMatch(FileName As String) As Boolean
 
         Dim Match As Boolean = False
         Dim FileExtension As String = Path.GetExtension(FileName).ToLower(EnglishGB)
 
-        For Each Filter As String In MySyncSettings.GetFileExtensions
+        For Each Filter As String In MySyncSettings.GetFileExtensions()
             If FileExtension = Filter.ToLower(EnglishGB) Then
                 Return True
             End If
@@ -272,7 +272,7 @@ Public Class TrayApp
 
                 If MySyncSettings.TranscodeLosslessFiles AndAlso FileCodec.Type = Lossless Then 'Need to replace extension with .ogg
                     Dim TranscodedFilePath As String = Path.Combine(Path.GetDirectoryName(SyncFilePath), Path.GetFileNameWithoutExtension(SyncFilePath)) &
-                                                    MySyncSettings.Encoder.FileExtensions(0)
+                                                    MySyncSettings.Encoder.GetFileExtensions(0)
                     SyncFilePath = TranscodedFilePath
                 End If
 
@@ -307,10 +307,10 @@ Public Class TrayApp
 
                     If MySyncSettings.TranscodeLosslessFiles AndAlso FileCodec.Type = Lossless Then 'Need to replace extension with .ogg
                         Dim TempString As String = Path.Combine(Path.GetDirectoryName(SyncFilePath), Path.GetFileNameWithoutExtension(SyncFilePath)) &
-                            MySyncSettings.Encoder.FileExtensions(0)
+                            MySyncSettings.Encoder.GetFileExtensions(0)
                         SyncFilePath = TempString
                         TempString = Path.Combine(Path.GetDirectoryName(OldSyncFilePath), Path.GetFileNameWithoutExtension(OldSyncFilePath)) &
-                            MySyncSettings.Encoder.FileExtensions(0)
+                            MySyncSettings.Encoder.GetFileExtensions(0)
                         OldSyncFilePath = TempString
                     End If
 

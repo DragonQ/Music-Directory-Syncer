@@ -28,29 +28,31 @@
 
     Public Sub New(NewSyncSettings As SyncSettings)
 
-        SyncIsEnabled = NewSyncSettings.SyncIsEnabled
-        SourceDirectory = NewSyncSettings.SourceDirectory
-        SyncDirectory = NewSyncSettings.SyncDirectory
-        WatcherCodecFilter = NewSyncSettings.GetWatcherCodecs
-        WatcherTags = NewSyncSettings.GetWatcherTags
-        TranscodeLosslessFiles = NewSyncSettings.TranscodeLosslessFiles
-        Encoder = NewSyncSettings.Encoder
-        MaxThreads = NewSyncSettings.MaxThreads
-        ffmpegPath = NewSyncSettings.ffmpegPath
+        If Not NewSyncSettings Is Nothing Then
+            SyncIsEnabled = NewSyncSettings.SyncIsEnabled
+            SourceDirectory = NewSyncSettings.SourceDirectory
+            SyncDirectory = NewSyncSettings.SyncDirectory
+            WatcherCodecFilter = NewSyncSettings.GetWatcherCodecs
+            WatcherTags = NewSyncSettings.GetWatcherTags
+            TranscodeLosslessFiles = NewSyncSettings.TranscodeLosslessFiles
+            Encoder = NewSyncSettings.Encoder
+            MaxThreads = NewSyncSettings.MaxThreads
+            ffmpegPath = NewSyncSettings.ffmpegPath
+        End If
 
     End Sub
 
-    Public Function GetFileExtensions() As List(Of String)
+    Public Function GetFileExtensions() As String() 'List(Of String)
 
         Dim FileExtensions As New List(Of String)
 
         For Each MyCodec As Codec In WatcherCodecFilter
-            For Each MyExtension As String In MyCodec.FileExtensions
+            For Each MyExtension As String In MyCodec.GetFileExtensions()
                 FileExtensions.Add(MyExtension)
             Next
         Next
 
-        Return FileExtensions
+        Return FileExtensions.ToArray
 
     End Function
 
@@ -59,7 +61,7 @@
     End Function
 
     Public Sub SetWatcherCodecs(CodecList As List(Of Codec))
-        WatcherCodecFilter = CodecList.ToArray
+        If Not CodecList Is Nothing Then WatcherCodecFilter = CodecList.ToArray
     End Sub
 
     Public Function GetWatcherTags() As Codec.Tag()
@@ -67,6 +69,6 @@
     End Function
 
     Public Sub SetWatcherTags(TagList As List(Of Codec.Tag))
-        WatcherTags = TagList.ToArray
+        If Not TagList Is Nothing Then WatcherTags = TagList.ToArray
     End Sub
 End Class

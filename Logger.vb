@@ -1,4 +1,4 @@
-﻿Imports Music_Folder_Syncer.Logger.DebugLogLevel
+﻿Imports MusicFolderSyncer.Logger.DebugLogLevel
 Imports System.Environment
 
 
@@ -20,16 +20,23 @@ Public Class Logger
         DebugLevel = LogDebugLevel
     End Sub
 
-    Public Overloads Sub Write(ThreadID As Int32, Text As String, Optional LogLevel As DebugLogLevel = Always)
+    Public Overloads Sub Write(ThreadID As Int32, Text As String, LogLevel As DebugLogLevel)
 
         WriteCommon(Text, ThreadID, LogLevel)
 
     End Sub
 
-    Public Overloads Sub Write(Text As String, Optional LogLevel As DebugLogLevel = Always)
+    Public Overloads Sub Write(Text As String, LogLevel As DebugLogLevel)
 
         'If no ThreadID is specified, this is the main thread (0)
         WriteCommon(Text, 0, LogLevel)
+
+    End Sub
+
+    Public Overloads Sub Write(Text As String)
+
+        'If no ThreadID is specified, this is the main thread (0)
+        WriteCommon(Text, 0, Always)
 
     End Sub
 

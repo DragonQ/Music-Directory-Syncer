@@ -11,10 +11,10 @@ Imports System.Windows
 
 ' Review the values of the assembly attributes
 
-<Assembly: AssemblyTitle("Music_Folder_Syncer")>
+<Assembly: AssemblyTitle("MusicFolderSyncer")>
 <Assembly: AssemblyDescription("")> 
 <Assembly: AssemblyCompany("")>
-<Assembly: AssemblyProduct("Music_Folder_Syncer")>
+<Assembly: AssemblyProduct("MusicFolderSyncer")>
 
 <Assembly: AssemblyCopyright("Copyright © DragonQ 2016")>
 <Assembly: AssemblyTrademark("")> 

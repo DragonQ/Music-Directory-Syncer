@@ -1,7 +1,7 @@
 ﻿#Region " Namespaces "
 Imports System.IO
 Imports System.Xml
-Imports Music_Folder_Syncer.Toolkit
+Imports MusicFolderSyncer.Toolkit
 #End Region
 
 Module XML
@@ -286,7 +286,7 @@ Module XML
                     MyWriter.WriteStartElement("Encoder")
                     MyWriter.WriteElementString("CodecName", MySyncSettings.Encoder.Name)
                     MyWriter.WriteElementString("CodecProfile", MySyncSettings.Encoder.GetProfiles(0).Name)
-                    MyWriter.WriteElementString("Extension", MySyncSettings.Encoder.FileExtensions(0))
+                    MyWriter.WriteElementString("Extension", MySyncSettings.Encoder.GetFileExtensions(0))
                     MyWriter.WriteEndElement()
                 End If
 

@@ -1,6 +1,6 @@
 ﻿#Region " Namespaces "
-Imports Music_Folder_Syncer.Logger.DebugLogLevel
-Imports Music_Folder_Syncer.Toolkit
+Imports MusicFolderSyncer.Logger.DebugLogLevel
+Imports MusicFolderSyncer.Toolkit
 Imports System.IO
 Imports System.Environment
 #End Region
@@ -94,7 +94,7 @@ Module Startup
                             TranscodeFile(SyncFilePath)
 
                             SyncFilePath = Path.Combine(Path.GetDirectoryName(SyncFilePath), Path.GetFileNameWithoutExtension(SyncFilePath)) &
-                                MySyncSettings.Encoder.FileExtensions(0)
+                                MySyncSettings.Encoder.GetFileExtensions(0)
                         Else
                             Directory.CreateDirectory(Path.GetDirectoryName(SyncFilePath))
                             File.Copy(FilePath, SyncFilePath, True)
@@ -129,7 +129,7 @@ Module Startup
 
             Try
                 Dim OutputDirectory As String = Path.GetDirectoryName(FileTo)
-                OutputFilePath = Path.Combine(OutputDirectory, Path.GetFileNameWithoutExtension(FileTo)) & MySyncSettings.Encoder.FileExtensions(0)
+                OutputFilePath = Path.Combine(OutputDirectory, Path.GetFileNameWithoutExtension(FileTo)) & MySyncSettings.Encoder.GetFileExtensions(0)
                 Directory.CreateDirectory(OutputDirectory)
             Catch ex As Exception
                 MyLog.Write(ProcessID, "...transcode failed [1]. Exception: " & ex.Message & NewLine & NewLine & ex.InnerException.ToString, Warning)
@@ -183,7 +183,7 @@ Module Startup
             Dim FileExtension As String = Path.GetExtension(FilePath)
 
             For Each Codec As Codec In CodecsToCheck
-                For Each CodecExtension As String In Codec.FileExtensions
+                For Each CodecExtension As String In Codec.GetFileExtensions()
                     If FileExtension = CodecExtension Then
                         MyLog.Write(ProcessID, "...file type recognised, now checking tags...", Debug)
                         Return Codec

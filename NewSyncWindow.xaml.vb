@@ -1,7 +1,7 @@
 ﻿#Region " Namespaces "
-Imports Music_Folder_Syncer.Toolkit
-Imports Music_Folder_Syncer.Codec.CodecType
-Imports Music_Folder_Syncer.Logger.DebugLogLevel
+Imports MusicFolderSyncer.Toolkit
+Imports MusicFolderSyncer.Codec.CodecType
+Imports MusicFolderSyncer.Logger.DebugLogLevel
 Imports System.IO
 Imports System.Environment
 Imports System.Threading
@@ -138,7 +138,7 @@ Public Class NewSyncWindow
         End If
     End Function
 
-    Private Function CreateDirectoryBrowser(StartingDirectory As String) As ReturnObject
+    Private Shared Function CreateDirectoryBrowser(StartingDirectory As String) As ReturnObject
 
         Dim SelectDirectoryDialog = New CommonOpenFileDialog()
         SelectDirectoryDialog.Title = "Select Sync Directory"

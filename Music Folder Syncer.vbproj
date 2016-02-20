@@ -7,7 +7,7 @@
     <ProjectGuid>{0B6BF188-5EA1-4928-869E-69ED233E80A6}</ProjectGuid>
     <ProjectTypeGuids>{60dc8134-eba5-43b8-bcc9-bb4bc16c2548};{F184B08F-C81C-45F6-A57F-5ABD9991F28F}</ProjectTypeGuids>
     <OutputType>WinExe</OutputType>
-    <RootNamespace>Music_Folder_Syncer</RootNamespace>
+    <RootNamespace>MusicFolderSyncer</RootNamespace>
     <AssemblyName>Music Folder Syncer</AssemblyName>
     <TargetFrameworkVersion>v4.0</TargetFrameworkVersion>
     <MyType>Custom</MyType>

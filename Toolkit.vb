@@ -8,13 +8,15 @@ Namespace Toolkit
         Property Value As Object
 
         Public Sub New(MyName As String, MyValue As Object)
-            Name = MyName
-            Value = MyValue
+            If Not MyName Is Nothing Then Name = MyName
+            If Not MyValue Is Nothing Then Value = MyValue
         End Sub
 
         Public Sub New(MyItem As Item) ' Cloning
-            Name = MyItem.Name
-            Value = MyItem.Value
+            If Not MyItem Is Nothing Then
+                Name = MyItem.Name
+                Value = MyItem.Value
+            End If
         End Sub
 
         Public Overrides Function ToString() As String

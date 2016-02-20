@@ -62,9 +62,9 @@ Namespace My
     Friend Module MySettingsProperty
         
         <Global.System.ComponentModel.Design.HelpKeywordAttribute("My.Settings")>  _
-        Friend ReadOnly Property Settings() As Global.Music_Folder_Syncer.MySettings
+        Friend ReadOnly Property Settings() As Global.MusicFolderSyncer.MySettings
             Get
-                Return Global.Music_Folder_Syncer.MySettings.Default
+                Return Global.MusicFolderSyncer.MySettings.Default
             End Get
         End Property
     End Module
