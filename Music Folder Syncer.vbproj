@@ -91,8 +91,9 @@
       <SpecificVersion>False</SpecificVersion>
       <HintPath>Resources\Btl.Controls.MyControls.dll</HintPath>
     </Reference>
-    <Reference Include="Fast Directory Enumerator DLL">
-      <HintPath>Resources\Fast Directory Enumerator DLL.dll</HintPath>
+    <Reference Include="Fast Directory Enumerator, Version=1.0.0.0, Culture=neutral, processorArchitecture=MSIL">
+      <SpecificVersion>False</SpecificVersion>
+      <HintPath>Resources\Fast Directory Enumerator.dll</HintPath>
     </Reference>
     <Reference Include="Microsoft.WindowsAPICodePack, Version=1.1.0.0, Culture=neutral, processorArchitecture=MSIL">
       <HintPath>packages\Microsoft.WindowsAPICodePack-Core.1.1.0.2\lib\Microsoft.WindowsAPICodePack.dll</HintPath>
