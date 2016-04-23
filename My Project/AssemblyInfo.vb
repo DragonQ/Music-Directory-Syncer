@@ -11,10 +11,10 @@ Imports System.Windows
 
 ' Review the values of the assembly attributes
 
-<Assembly: AssemblyTitle("MusicFolderSyncer")>
+<Assembly: AssemblyTitle("Music Folder Syncer")>
 <Assembly: AssemblyDescription("")> 
 <Assembly: AssemblyCompany("")>
-<Assembly: AssemblyProduct("MusicFolderSyncer")>
+<Assembly: AssemblyProduct("Music Folder Syncer")>
 
 <Assembly: AssemblyCopyright("Copyright © DragonQ 2016")>
 <Assembly: AssemblyTrademark("")> 
@@ -56,5 +56,6 @@ Imports System.Windows
 ' by using the '*' as shown below:
 ' <Assembly: AssemblyVersion("1.0.*")> 
 
-<Assembly: AssemblyVersion("0.1.0.*")>
-' <Assembly: AssemblyFileVersion("0.1.0")>
+'<Assembly: AssemblyVersion("0.1")>                     ' Only alter with breaking changes.
+'<Assembly: AssemblyFileVersion("0.1.0.0")>             ' Version used in Windows properties page.
+'<Assembly: AssemblyInformationalVersion("0.1")>        ' Human readable version string.
