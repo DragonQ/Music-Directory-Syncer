@@ -44,6 +44,8 @@ Imports System.Windows
 
 'The following GUID is for the ID of the typelib if this project is exposed to COM
 <Assembly: Guid("a3eb4c87-3bdc-4390-b030-873b9c5142ff")>
+<Assembly: NeutralResourcesLanguage("en-GB")>
+
 
 ' Version information for an assembly consists of the following four values:
 '
