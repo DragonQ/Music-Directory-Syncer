@@ -2,14 +2,15 @@
 <MusicFolderSyncer>
   <Codecs>
     <Codec>
-      <Name>OGG Vorbis</Name>
+      <Name>OGG</Name>
       <Type>Lossy</Type>
       <Extensions>
         <Extension>.ogg</Extension>
+        <Extension>.opus</Extension>
       </Extensions>
       <Profiles>
         <Profile>
-          <Name>Q7</Name>
+          <Name>Vorbis Q7</Name>
           <Argument>libvorbis -aq 7</Argument>
         </Profile>
       </Profiles>

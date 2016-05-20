@@ -9,7 +9,7 @@
 		<CodecName>WMA</CodecName>
 		<CodecName>MP3</CodecName>
 		<CodecName>AAC</CodecName>
-		<CodecName>OGG Vorbis</CodecName>
+		<CodecName>OGG</CodecName>
 	</FileTypes>
 	<!--<Tags>
     <Tag>
@@ -18,8 +18,8 @@
 	</Tags>-->
 	<TranscodeLosslessFiles />
 	<Encoder>
-    <CodecName>OGG Vorbis</CodecName>
-    <CodecProfile>Q7</CodecProfile>
+    <CodecName>OGG</CodecName>
+    <CodecProfile>Vorbis Q7</CodecProfile>
     <Extension>.ogg</Extension>
   </Encoder>
 </MusicFolderSyncer>
