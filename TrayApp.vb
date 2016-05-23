@@ -282,7 +282,7 @@ Public Class TrayApp
                     MyLog.Write("...file in sync folder deleted: """ & SyncFilePath.Substring(MySyncSettings.SyncDirectory.Length) & """.", Information)
                     If Tray.Visible Then Tray.ShowBalloonTip(BalloonTime, "File Deleted:", SyncFilePath.Substring(MySyncSettings.SyncDirectory.Length), ToolTipIcon.Info)
                 Else
-                    MyLog.Write("...file doesn't exist in sync folder, ignoring: """ & SyncFilePath.Substring(MySyncSettings.SyncDirectory.Length) & """.", Information)
+                    MyLog.Write("...file doesn't exist in sync folder: """ & SyncFilePath.Substring(MySyncSettings.SyncDirectory.Length) & """.", Information)
                 End If
             Else
                 Throw New Exception("File was being watched but could not determine its codec.")
