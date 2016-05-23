@@ -379,8 +379,11 @@ Public Class NewSyncWindow
         Catch ex As DirectoryNotFoundException
             'Do nothing
         Catch ex As Exception
-            MyLog.Write("Failed to delete existing files in sync folder. Exception: " & ex.Message & NewLine &
-                     NewLine & "                  " & ex.InnerException.ToString, Warning)
+            Dim MyError As String = ex.Message
+            If ex.InnerException IsNot Nothing Then
+                MyError &= NewLine & NewLine & ex.InnerException.ToString
+            End If
+            MyLog.Write("Failed to delete existing files in sync folder [1]. Exception: " & MyError, Warning)
             e.Result = New ReturnObject(False, ex.Message, "")
             Exit Sub
         End Try
@@ -393,8 +396,11 @@ Public Class NewSyncWindow
 
             Directory.CreateDirectory(MySyncSettings.SyncDirectory, FullAccess)
         Catch ex As Exception
-            MyLog.Write("Failed to delete existing files in sync folder. Exception: " & ex.Message & NewLine &
-                     NewLine & "                  " & ex.InnerException.ToString, Warning)
+            Dim MyError As String = ex.Message
+            If ex.InnerException IsNot Nothing Then
+                MyError &= NewLine & NewLine & ex.InnerException.ToString
+            End If
+            MyLog.Write("Failed to delete existing files in sync folder [2]. Exception: " & MyError, Warning)
             e.Result = New ReturnObject(False, ex.Message, "")
             Exit Sub
         End Try

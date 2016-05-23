@@ -71,7 +71,11 @@ Class FileParser
             OutputFilePath = Path.Combine(OutputDirectory, Path.GetFileNameWithoutExtension(FileTo)) & MySyncSettings.Encoder.GetFileExtensions(0)
             Directory.CreateDirectory(OutputDirectory)
         Catch ex As Exception
-            MyLog.Write(ProcessID, "...transcode failed [1]. Exception: " & ex.Message & NewLine & NewLine & ex.InnerException.ToString, Warning)
+            Dim MyError As String = ex.Message
+            If ex.InnerException IsNot Nothing Then
+                MyError &= NewLine & NewLine & ex.InnerException.ToString
+            End If
+            MyLog.Write(ProcessID, "...transcode failed [1]. Exception: " & MyError, Warning)
         End Try
 
         Try
@@ -93,7 +97,11 @@ Class FileParser
 
             MyLog.Write(ProcessID, "...transcode complete...", Debug)
         Catch ex As Exception
-            MyLog.Write(ProcessID, "...transcode failed [2]. Exception: " & ex.Message & NewLine & NewLine & ex.InnerException.ToString, Warning)
+            Dim MyError As String = ex.Message
+            If ex.InnerException IsNot Nothing Then
+                MyError &= NewLine & NewLine & ex.InnerException.ToString
+            End If
+            MyLog.Write(ProcessID, "...transcode failed [2]. Exception: " & MyError, Warning)
         End Try
 
     End Sub
