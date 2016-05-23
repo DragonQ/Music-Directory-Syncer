@@ -1,6 +1,7 @@
 <?xml version="1.0"?>
 <MusicFolderSyncer>
   <EnableSync />
+  <ffmpegPath>C:\Program Files\ffmpeg\ffmpeg.exe</ffmpegPath>
   <Threads>2</Threads>
   <SourceDirectory>P:\Audio\Music</SourceDirectory>
   <SyncDirectory>P:\Audio\Android Music</SyncDirectory>
@@ -8,7 +9,8 @@
 		<CodecName>FLAC</CodecName>
 		<CodecName>WMA</CodecName>
 		<CodecName>MP3</CodecName>
-		<!-- <CodecName>AAC</CodecName> -->
+		<CodecName>AAC</CodecName>
+		<CodecName>OGG</CodecName>
 	</FileTypes>
 	<Tags>
     <Tag>
@@ -24,8 +26,8 @@
 	</Tags>
 	<TranscodeLosslessFiles />
 	<Encoder>
-    <CodecName>OGG Vorbis</CodecName>
-    <CodecProfile>Q7</CodecProfile>
+    <CodecName>OGG</CodecName>
+    <CodecProfile>Vorbis Q7</CodecProfile>
     <Extension>.ogg</Extension>
   </Encoder>
 </MusicFolderSyncer>
