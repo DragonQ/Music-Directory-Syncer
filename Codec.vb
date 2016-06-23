@@ -64,18 +64,18 @@ Public Class Codec
 
     End Function
 
-    Public Function GetTypeString() As String
-
-        Select Case CompressionType
-            Case Is = CodecType.Lossless
-                Return "Lossless"
-            Case Is = CodecType.Lossy
-                Return "Lossy"
-            Case Else
-                Return Nothing
-        End Select
-
-    End Function
+    Public ReadOnly Property TypeString() As String
+        Get
+            Select Case CompressionType
+                Case Is = CodecType.Lossless
+                    Return "Lossless"
+                Case Is = CodecType.Lossy
+                    Return "Lossy"
+                Case Else
+                    Return Nothing
+            End Select
+        End Get
+    End Property
 
     Public Overridable Function MatchTag(FilePath As String, Tags As Tag()) As ReturnObject
 
