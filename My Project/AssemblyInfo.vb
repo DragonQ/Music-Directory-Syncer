@@ -61,3 +61,12 @@ Imports System.Windows
 '<Assembly: AssemblyVersion("0.1")>                     ' Only alter with breaking changes.
 '<Assembly: AssemblyFileVersion("0.1.0.0")>             ' Version used in Windows properties page.
 '<Assembly: AssemblyInformationalVersion("0.1")>        ' Human readable version string.
+
+<Assembly: AssemblyVersion(ThisAssembly.Git.BaseVersion.Major + "." + ThisAssembly.Git.BaseVersion.Minor + "." + ThisAssembly.Git.BaseVersion.Patch)>
+<Assembly: AssemblyFileVersion(ThisAssembly.Git.SemVer.Major + "." + ThisAssembly.Git.SemVer.Minor + "." + ThisAssembly.Git.BaseVersion.Patch)>
+<Assembly: AssemblyInformationalVersion(
+    ThisAssembly.Git.SemVer.Major + "." +
+    ThisAssembly.Git.SemVer.Minor + "." +
+    ThisAssembly.Git.BaseVersion.Patch + "." +
+    ThisAssembly.Git.Commits + "-" +
+    ThisAssembly.Git.Commit)>
