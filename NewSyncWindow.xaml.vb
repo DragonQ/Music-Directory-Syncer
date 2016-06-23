@@ -199,30 +199,31 @@ Public Class NewSyncWindow
             DefaultPath = DefaultSyncSettings.ffmpegPath
         End If
 
-        Dim SelectDirectoryDialog = New CommonOpenFileDialog()
-        SelectDirectoryDialog.Title = "Select ffmpeg.exe Path"
-        SelectDirectoryDialog.IsFolderPicker = False
-        SelectDirectoryDialog.AddToMostRecentlyUsedList = False
-        SelectDirectoryDialog.AllowNonFileSystemItems = True
+        Using SelectDirectoryDialog = New CommonOpenFileDialog()
+            SelectDirectoryDialog.Title = "Select ffmpeg.exe Path"
+            SelectDirectoryDialog.IsFolderPicker = False
+            SelectDirectoryDialog.AddToMostRecentlyUsedList = False
+            SelectDirectoryDialog.AllowNonFileSystemItems = True
 
-        SelectDirectoryDialog.DefaultDirectory = Environment.GetFolderPath(Environment.SpecialFolder.ProgramFiles)
-        If File.Exists(DefaultPath) Then
-            SelectDirectoryDialog.InitialDirectory = Path.GetDirectoryName(DefaultPath)
-        Else
-            SelectDirectoryDialog.InitialDirectory = SelectDirectoryDialog.DefaultDirectory
-        End If
+            SelectDirectoryDialog.DefaultDirectory = Environment.GetFolderPath(Environment.SpecialFolder.ProgramFiles)
+            If File.Exists(DefaultPath) Then
+                SelectDirectoryDialog.InitialDirectory = Path.GetDirectoryName(DefaultPath)
+            Else
+                SelectDirectoryDialog.InitialDirectory = SelectDirectoryDialog.DefaultDirectory
+            End If
 
-        SelectDirectoryDialog.EnsureFileExists = True
-        SelectDirectoryDialog.EnsurePathExists = True
-        SelectDirectoryDialog.EnsureReadOnly = False
-        SelectDirectoryDialog.EnsureValidNames = True
-        SelectDirectoryDialog.Multiselect = False
-        SelectDirectoryDialog.ShowPlacesList = True
-        SelectDirectoryDialog.Filters.Add(New CommonFileDialogFilter("ffmpeg Executable", "*.exe"))
+            SelectDirectoryDialog.EnsureFileExists = True
+            SelectDirectoryDialog.EnsurePathExists = True
+            SelectDirectoryDialog.EnsureReadOnly = False
+            SelectDirectoryDialog.EnsureValidNames = True
+            SelectDirectoryDialog.Multiselect = False
+            SelectDirectoryDialog.ShowPlacesList = True
+            SelectDirectoryDialog.Filters.Add(New CommonFileDialogFilter("ffmpeg Executable", "*.exe"))
 
-        If SelectDirectoryDialog.ShowDialog() = CommonFileDialogResult.Ok Then
-            txt_ffmpegPath.Text = SelectDirectoryDialog.FileName
-        End If
+            If SelectDirectoryDialog.ShowDialog() = CommonFileDialogResult.Ok Then
+                txt_ffmpegPath.Text = SelectDirectoryDialog.FileName
+            End If
+        End Using
 
     End Sub
 
