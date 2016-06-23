@@ -253,52 +253,51 @@ Module XML
             Using FileData As New StringWriter(EnglishGB)
 
                 'Create XML writer to write all data in XML format
-                Using MyWriter As XmlWriter = XmlWriter.Create(FileData, XMLSettings)
-                    'Begin document
-                    MyWriter.WriteStartDocument()
-                    MyWriter.WriteStartElement("MusicFolderSyncer")
+                Dim MyWriter As XmlWriter = XmlWriter.Create(FileData, XMLSettings)
+                'Begin document
+                MyWriter.WriteStartDocument()
+                MyWriter.WriteStartElement("MusicFolderSyncer")
 
-                    If MySyncSettings.SyncIsEnabled Then
-                        MyWriter.WriteStartElement("EnableSync")
-                        MyWriter.WriteEndElement()
-                    End If
-                    MyWriter.WriteElementString("Threads", MySyncSettings.MaxThreads.ToString(EnglishGB))
-                    MyWriter.WriteElementString("SourceDirectory", MySyncSettings.SourceDirectory)
-                    MyWriter.WriteElementString("SyncDirectory", MySyncSettings.SyncDirectory)
-                    MyWriter.WriteElementString("ffmpegPath", MySyncSettings.ffmpegPath)
-
-                    'Write data for each codec/file type to be synced
-                    MyWriter.WriteStartElement("FileTypes")
-                    For Each MyCodec As Codec In MySyncSettings.GetWatcherCodecs
-                        MyWriter.WriteElementString("CodecName", MyCodec.Name)
-                    Next
+                If MySyncSettings.SyncIsEnabled Then
+                    MyWriter.WriteStartElement("EnableSync")
                     MyWriter.WriteEndElement()
+                End If
+                MyWriter.WriteElementString("Threads", MySyncSettings.MaxThreads.ToString(EnglishGB))
+                MyWriter.WriteElementString("SourceDirectory", MySyncSettings.SourceDirectory)
+                MyWriter.WriteElementString("SyncDirectory", MySyncSettings.SyncDirectory)
+                MyWriter.WriteElementString("ffmpegPath", MySyncSettings.ffmpegPath)
 
-                    'Write data for each file tag to be synced
-                    MyWriter.WriteStartElement("Tags")
-                    For Each MyTag As Codec.Tag In MySyncSettings.GetWatcherTags
-                        MyWriter.WriteStartElement("Tag")
-                        MyWriter.WriteElementString("Name", MyTag.Name)
-                        If Not MyTag.Value Is Nothing Then MyWriter.WriteElementString("Value", MyTag.Value)
-                        MyWriter.WriteEndElement()
-                    Next
+                'Write data for each codec/file type to be synced
+                MyWriter.WriteStartElement("FileTypes")
+                For Each MyCodec As Codec In MySyncSettings.GetWatcherCodecs
+                    MyWriter.WriteElementString("CodecName", MyCodec.Name)
+                Next
+                MyWriter.WriteEndElement()
+
+                'Write data for each file tag to be synced
+                MyWriter.WriteStartElement("Tags")
+                For Each MyTag As Codec.Tag In MySyncSettings.GetWatcherTags
+                    MyWriter.WriteStartElement("Tag")
+                    MyWriter.WriteElementString("Name", MyTag.Name)
+                    If Not MyTag.Value Is Nothing Then MyWriter.WriteElementString("Value", MyTag.Value)
                     MyWriter.WriteEndElement()
+                Next
+                MyWriter.WriteEndElement()
 
-                    If MySyncSettings.TranscodeLosslessFiles Then
-                        MyWriter.WriteStartElement("TranscodeLosslessFiles")
-                        MyWriter.WriteEndElement()
-                        MyWriter.WriteStartElement("Encoder")
-                        MyWriter.WriteElementString("CodecName", MySyncSettings.Encoder.Name)
-                        MyWriter.WriteElementString("CodecProfile", MySyncSettings.Encoder.GetProfiles(0).Name)
-                        MyWriter.WriteElementString("Extension", MySyncSettings.Encoder.GetFileExtensions(0))
-                        MyWriter.WriteEndElement()
-                    End If
-
-                    'End document
+                If MySyncSettings.TranscodeLosslessFiles Then
+                    MyWriter.WriteStartElement("TranscodeLosslessFiles")
                     MyWriter.WriteEndElement()
-                    MyWriter.WriteEndDocument()
-                    MyWriter.Flush()
-                End Using
+                    MyWriter.WriteStartElement("Encoder")
+                    MyWriter.WriteElementString("CodecName", MySyncSettings.Encoder.Name)
+                    MyWriter.WriteElementString("CodecProfile", MySyncSettings.Encoder.GetProfiles(0).Name)
+                    MyWriter.WriteElementString("Extension", MySyncSettings.Encoder.GetFileExtensions(0))
+                    MyWriter.WriteEndElement()
+                End If
+
+                'End document
+                MyWriter.WriteEndElement()
+                MyWriter.WriteEndDocument()
+                MyWriter.Flush()
 
                 'Write XML text to string
                 StringToWrite = FileData.ToString.Replace("<?xml version=""1.0"" encoding=""utf-16""?>",
