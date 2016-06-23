@@ -9,7 +9,7 @@ Public Class Codec
     'Implements INotifyPropertyChanged
 
     ReadOnly Property Name As String
-    Property Type As CodecType
+    Property CompressionType As CodecType
     Private Profiles As Profile()
     Private ReadOnly FileExtensions As String()
     Property IsEnabled As Boolean = True
@@ -25,7 +25,7 @@ Public Class Codec
         Name = MyName
         Profiles = MyProfiles
         FileExtensions = Extensions
-        Type = ConvertTypeStringToType(MyType)
+        CompressionType = ConvertTypeStringToType(MyType)
 
     End Sub
 
@@ -33,7 +33,7 @@ Public Class Codec
         If Not MyCodec Is Nothing Then
             Name = MyCodec.Name
             FileExtensions = MyCodec.FileExtensions
-            Type = MyCodec.Type
+            CompressionType = MyCodec.CompressionType
         End If
         If Not MyProfile Is Nothing Then Profiles = {MyProfile}
     End Sub
@@ -44,7 +44,7 @@ Public Class Codec
     End Function
 
     Public Sub SetType(NewType As CodecType)
-        Type = NewType
+        CompressionType = NewType
     End Sub
 
     Public Function GetFileExtensions() As String()
@@ -66,7 +66,7 @@ Public Class Codec
 
     Public Function GetTypeString() As String
 
-        Select Case Type
+        Select Case CompressionType
             Case Is = CodecType.Lossless
                 Return "Lossless"
             Case Is = CodecType.Lossy

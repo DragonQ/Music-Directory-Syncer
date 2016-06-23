@@ -59,7 +59,7 @@ Public Class NewSyncWindow
         ' Add all codecs (previously read from Codecs.xml) to cmbCodec
         Dim CodecCount As Int32 = 0
         For Each MyCodec As Codec In Codecs
-            If MyCodec.Type = Lossy Then
+            If MyCodec.CompressionType = Lossy Then
                 cmbCodec.Items.Add(New Item(MyCodec.Name, MyCodec))
                 If MyCodec.Name = DefaultSyncSettings.Encoder.Name Then
                     cmbCodec.SelectedIndex = CodecCount
