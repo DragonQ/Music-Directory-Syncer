@@ -270,7 +270,7 @@ Public Class TrayApp
 
                 Dim SyncFilePath As String = MySyncSettings.SyncDirectory & FilePath.Substring(MySyncSettings.SourceDirectory.Length)
 
-                If MySyncSettings.TranscodeLosslessFiles AndAlso FileCodec.Type = Lossless Then 'Need to replace extension with .ogg
+                If MySyncSettings.TranscodeLosslessFiles AndAlso FileCodec.CompressionType = Lossless Then 'Need to replace extension with .ogg
                     Dim TranscodedFilePath As String = Path.Combine(Path.GetDirectoryName(SyncFilePath), Path.GetFileNameWithoutExtension(SyncFilePath)) &
                                                     MySyncSettings.Encoder.GetFileExtensions(0)
                     SyncFilePath = TranscodedFilePath
@@ -305,7 +305,7 @@ Public Class TrayApp
                     Dim SyncFilePath As String = MySyncSettings.SyncDirectory & NewFilePath.Substring(MySyncSettings.SourceDirectory.Length)
                     Dim OldSyncFilePath As String = MySyncSettings.SyncDirectory & OldFilePath.Substring(MySyncSettings.SourceDirectory.Length)
 
-                    If MySyncSettings.TranscodeLosslessFiles AndAlso FileCodec.Type = Lossless Then 'Need to replace extension with .ogg
+                    If MySyncSettings.TranscodeLosslessFiles AndAlso FileCodec.CompressionType = Lossless Then 'Need to replace extension with .ogg
                         Dim TempString As String = Path.Combine(Path.GetDirectoryName(SyncFilePath), Path.GetFileNameWithoutExtension(SyncFilePath)) &
                             MySyncSettings.Encoder.GetFileExtensions(0)
                         SyncFilePath = TempString
@@ -319,7 +319,7 @@ Public Class TrayApp
                     Else
                         MyLog.Write("...old file doesn't exist in sync folder: """ & OldSyncFilePath & """, creating now...", Warning)
 
-                        If MySyncSettings.TranscodeLosslessFiles AndAlso FileCodec.Type = Lossless Then 'Need to transcode file
+                        If MySyncSettings.TranscodeLosslessFiles AndAlso FileCodec.CompressionType = Lossless Then 'Need to transcode file
                             MyLog.Write("...transcoding file to " & MySyncSettings.Encoder.Name & "...", Debug)
                             MyFileParser.TranscodeFile(SyncFilePath)
                         Else

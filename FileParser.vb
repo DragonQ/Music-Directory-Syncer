@@ -28,7 +28,7 @@ Class FileParser
                 If CheckFileForSync(FileCodec) Then
                     Dim SyncFilePath As String = MySyncSettings.SyncDirectory & FilePath.Substring(MySyncSettings.SourceDirectory.Length)
 
-                    If MySyncSettings.TranscodeLosslessFiles AndAlso FileCodec.Type = Codec.CodecType.Lossless Then 'Need to transcode file
+                    If MySyncSettings.TranscodeLosslessFiles AndAlso FileCodec.CompressionType = Codec.CodecType.Lossless Then 'Need to transcode file
                         MyLog.Write(ProcessID, "...transcoding file to " & MySyncSettings.Encoder.Name & "...", Debug)
                         TranscodeFile(SyncFilePath)
 
