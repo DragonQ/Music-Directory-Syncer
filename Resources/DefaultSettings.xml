@@ -17,6 +17,7 @@
     </Tag>
 	</Tags>-->
 	<TranscodeLosslessFiles />
+	<ReplayGainMode>None</ReplayGainMode>
 	<Encoder>
     <CodecName>OGG</CodecName>
     <CodecProfile>Vorbis Q7</CodecProfile>

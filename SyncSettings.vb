@@ -6,13 +6,20 @@
     Dim WatcherCodecFilter As Codec()
     Dim WatcherTags As Codec.Tag()
     Property TranscodeLosslessFiles As Boolean?
+    Property ReplayGain As ReplayGainMode
     Property Encoder As Codec
     Property MaxThreads As Int32
     Property ffmpegPath As String
 
+    Enum ReplayGainMode
+        None
+        Track
+        Album
+    End Enum
+
 #Region " New "
-    Public Sub New(MySyncIsEnabled As Boolean, MySourceDirectory As String, MySyncDirectory As String, MyWatcherCodecs As List(Of Codec),
-                   MyWatcherTags As List(Of Codec.Tag), MyTranscodeLosslessFiles As Boolean, MyEncoder As Codec, MyMaxThreads As Int32, My_ffmpegPath As String)
+    Public Sub New(MySyncIsEnabled As Boolean, MySourceDirectory As String, MySyncDirectory As String, MyWatcherCodecs As List(Of Codec), MyWatcherTags As List(Of Codec.Tag),
+                   MyTranscodeLosslessFiles As Boolean, MyEncoder As Codec, MyMaxThreads As Int32, My_ffmpegPath As String, MyReplayGain As ReplayGainMode)
 
         SyncIsEnabled = MySyncIsEnabled
         SourceDirectory = MySourceDirectory
@@ -23,6 +30,7 @@
         Encoder = MyEncoder
         MaxThreads = MyMaxThreads
         ffmpegPath = My_ffmpegPath
+        ReplayGain = MyReplayGain
 
     End Sub
 
@@ -38,6 +46,7 @@
             Encoder = NewSyncSettings.Encoder
             MaxThreads = NewSyncSettings.MaxThreads
             ffmpegPath = NewSyncSettings.ffmpegPath
+            ReplayGain = NewSyncSettings.ReplayGain
         End If
 
     End Sub
@@ -72,4 +81,19 @@
     Public Sub SetWatcherTags(TagList As List(Of Codec.Tag))
         If Not TagList Is Nothing Then WatcherTags = TagList.ToArray
     End Sub
+
+    Public Function GetReplayGainSetting() As String
+        Return GetReplayGainSetting(ReplayGain)
+    End Function
+
+    Public Shared Function GetReplayGainSetting(ReplayGainSetting As ReplayGainMode) As String
+        Select Case ReplayGainSetting
+            Case ReplayGainMode.Album
+                Return "Album"
+            Case ReplayGainMode.Track
+                Return "Track"
+            Case Else
+                Return "None"
+        End Select
+    End Function
 End Class

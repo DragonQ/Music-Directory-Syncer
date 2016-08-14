@@ -2,6 +2,7 @@
 Imports MusicFolderSyncer.Toolkit
 Imports MusicFolderSyncer.Codec.CodecType
 Imports MusicFolderSyncer.Logger.DebugLogLevel
+Imports MusicFolderSyncer.SyncSettings
 Imports System.IO
 Imports System.Environment
 Imports System.Threading
@@ -57,15 +58,28 @@ Public Class NewSyncWindow
     Private Sub NewSyncWindow_Loaded(sender As Object, e As RoutedEventArgs) Handles Me.Loaded
 
         ' Add all codecs (previously read from Codecs.xml) to cmbCodec
-        Dim CodecCount As Int32 = 0
+        Dim Count As Int32 = 0
         For Each MyCodec As Codec In Codecs
             If MyCodec.CompressionType = Lossy Then
                 cmbCodec.Items.Add(New Item(MyCodec.Name, MyCodec))
                 If MyCodec.Name = DefaultSyncSettings.Encoder.Name Then
-                    cmbCodec.SelectedIndex = CodecCount
+                    cmbCodec.SelectedIndex = Count
                 End If
-                CodecCount += 1
+                Count += 1
             End If
+        Next
+
+        ' Add all ReplayGain settings to cmbReplayGain
+        Dim Enums As Array = System.Enum.GetValues(GetType(ReplayGainMode))
+        Count = 0
+        For Each MyEnum In Enums
+            Dim ReplayGainSetting As ReplayGainMode = DirectCast(MyEnum, ReplayGainMode)
+            Dim Name As String = SyncSettings.GetReplayGainSetting(ReplayGainSetting)
+            cmbReplayGain.Items.Add(New Item(Name, ReplayGainSetting))
+            If ReplayGainSetting = DefaultSyncSettings.ReplayGain Then
+                cmbReplayGain.SelectedIndex = Count
+            End If
+            Count += 1
         Next
 
         ' Set run-time properties of window objects
@@ -296,6 +310,15 @@ Public Class NewSyncWindow
                         EnableDisableControls(True)
                         Exit Sub
                     End If
+                End If
+
+                If cmbReplayGain.SelectedIndex > -1 Then
+                    MySyncSettings.ReplayGain = CType(CType(cmbReplayGain.SelectedItem, Item).Value, ReplayGainMode)
+                Else
+                    System.Windows.MessageBox.Show("You have not specified a valid ReplayGain setting for this sync!", "New Sync", MessageBoxButton.OKCancel, MessageBoxImage.Error)
+                    MySyncSettings = Nothing
+                    EnableDisableControls(True)
+                    Exit Sub
                 End If
 
                 'Change remaining sync settings as specified by the user

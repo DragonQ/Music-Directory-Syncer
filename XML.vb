@@ -1,7 +1,8 @@
 ﻿#Region " Namespaces "
+Imports MusicFolderSyncer.Toolkit
+Imports MusicFolderSyncer.SyncSettings
 Imports System.IO
 Imports System.Xml
-Imports MusicFolderSyncer.Toolkit
 #End Region
 
 Module XML
@@ -103,7 +104,7 @@ Module XML
             If Not DefaultSettings Is Nothing Then
                 NewSyncSettings = New SyncSettings(DefaultSettings)
             Else
-                NewSyncSettings = New SyncSettings(False, "", "", New List(Of Codec), New List(Of Codec.Tag), False, Nothing, Environment.ProcessorCount, "")
+                NewSyncSettings = New SyncSettings(False, "", "", New List(Of Codec), New List(Of Codec.Tag), False, Nothing, Environment.ProcessorCount, "", ReplayGainMode.None)
             End If
 
             'Create StringWriter to store XML text
@@ -122,6 +123,7 @@ Module XML
                         .MaxThreads = If(Setting.OptionalElement("Threads"), Nothing),
                         .EnableSync = If(Setting.OptionalElement("EnableSync"), Nothing),
                         .TranscodeLosslessFiles = If(Setting.OptionalElement("TranscodeLosslessFiles"), Nothing),
+                        .ReplayGain = If(Setting.OptionalElement("ReplayGainMode"), Nothing),
                         .ffmpegPath = If(Setting.Element("ffmpegPath"), Nothing)
                     }
 
@@ -132,6 +134,16 @@ Module XML
                         If Not Settings(0).SyncDirectory Is Nothing Then NewSyncSettings.SyncDirectory = Settings(0).SyncDirectory.Value
                         If Not Settings(0).MaxThreads Is Nothing Then NewSyncSettings.MaxThreads = CInt(Settings(0).MaxThreads)
                         If Not Settings(0).ffmpegPath Is Nothing Then NewSyncSettings.ffmpegPath = Settings(0).ffmpegPath.Value
+                        If Not Settings(0).ReplayGain Is Nothing Then
+                            Select Case Settings(0).ReplayGain
+                                Case Is = "Album"
+                                    NewSyncSettings.ReplayGain = ReplayGainMode.Album
+                                Case Is = "Track"
+                                    NewSyncSettings.ReplayGain = ReplayGainMode.Track
+                                Case Else
+                                    NewSyncSettings.ReplayGain = ReplayGainMode.None
+                            End Select
+                        End If
 
                         If Not Settings(0).TranscodeLosslessFiles Is Nothing Then
                             NewSyncSettings.TranscodeLosslessFiles = True
@@ -266,6 +278,7 @@ Module XML
                 MyWriter.WriteElementString("SourceDirectory", MySyncSettings.SourceDirectory)
                 MyWriter.WriteElementString("SyncDirectory", MySyncSettings.SyncDirectory)
                 MyWriter.WriteElementString("ffmpegPath", MySyncSettings.ffmpegPath)
+                MyWriter.WriteElementString("ReplayGainMode", MySyncSettings.GetReplayGainSetting())
 
                 'Write data for each codec/file type to be synced
                 MyWriter.WriteStartElement("FileTypes")
