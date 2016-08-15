@@ -6,18 +6,21 @@ Imports System.IO
 
 Public Class EditSyncSettingsWindow
 
+    Dim MySyncSettings As SyncSettings
+
 #Region " New "
-    Public Sub New()
+    Public Sub New(SyncSettings As SyncSettings)
 
         ' This call is required by the designer.
         InitializeComponent()
+        MySyncSettings = SyncSettings
 
     End Sub
 
     Private Sub EditSyncSettingsWindow_Loaded(sender As Object, e As RoutedEventArgs) Handles Me.Loaded
 
         ' Set run-time properties of window objects
-        txtSourceDirectory.Text = MySyncSettings.SourceDirectory
+        txtSourceDirectory.Text = MyGlobalSyncSettings.SourceDirectory
         txtSyncDirectory.Text = MySyncSettings.SyncDirectory
         spinThreads.Maximum = Environment.ProcessorCount
         spinThreads.Value = MySyncSettings.MaxThreads
@@ -31,7 +34,7 @@ Public Class EditSyncSettingsWindow
         Dim DefaultDirectory As String = txtSourceDirectory.Text
 
         If Not Directory.Exists(DefaultDirectory) Then
-            DefaultDirectory = DefaultSyncSettings.SourceDirectory
+            DefaultDirectory = MyGlobalSyncSettings.SourceDirectory
         End If
 
         Dim Browser As ReturnObject = CreateDirectoryBrowser(DefaultDirectory)
@@ -47,7 +50,7 @@ Public Class EditSyncSettingsWindow
         Dim DefaultDirectory As String = txtSyncDirectory.Text
 
         If Not Directory.Exists(DefaultDirectory) Then
-            DefaultDirectory = DefaultSyncSettings.SyncDirectory
+            DefaultDirectory = MySyncSettings.SyncDirectory
         End If
 
         Dim Browser As ReturnObject = CreateDirectoryBrowser(DefaultDirectory)
@@ -77,7 +80,7 @@ Public Class EditSyncSettingsWindow
             End If
 
             ' Apply settings
-            MySyncSettings.SourceDirectory = txtSourceDirectory.Text
+            MyGlobalSyncSettings.SourceDirectory = txtSourceDirectory.Text
             MySyncSettings.SyncDirectory = txtSyncDirectory.Text
             MySyncSettings.MaxThreads = CInt(spinThreads.Value)
 

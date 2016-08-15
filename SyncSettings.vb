@@ -1,7 +1,45 @@
-﻿Public Class SyncSettings
+﻿Public Class GlobalSyncSettings
 
     Property SyncIsEnabled As Boolean
     Property SourceDirectory As String
+    Property ffmpegPath As String
+    Dim SyncSettings As SyncSettings()
+
+#Region " New "
+    Public Sub New(MySyncIsEnabled As Boolean, MySourceDirectory As String, My_ffmpegPath As String, MySyncSettingsList As List(Of SyncSettings))
+
+        SyncIsEnabled = MySyncIsEnabled
+        SourceDirectory = MySourceDirectory
+        ffmpegPath = My_ffmpegPath
+        If Not MySyncSettingsList Is Nothing Then SyncSettings = MySyncSettingsList.ToArray()
+
+    End Sub
+
+    Public Sub New(NewSyncSettings As GlobalSyncSettings)
+
+        If Not NewSyncSettings Is Nothing Then
+            SyncIsEnabled = NewSyncSettings.SyncIsEnabled
+            SourceDirectory = NewSyncSettings.SourceDirectory
+            ffmpegPath = NewSyncSettings.ffmpegPath
+            SyncSettings = NewSyncSettings.GetSyncSettings()
+        End If
+
+    End Sub
+#End Region
+
+    Public Function GetSyncSettings() As SyncSettings()
+        Return SyncSettings
+    End Function
+
+    Public Sub SetSyncSettings(SyncSettingsList As List(Of SyncSettings))
+        If Not SyncSettingsList Is Nothing Then SyncSettings = SyncSettingsList.ToArray
+    End Sub
+
+End Class
+
+
+Public Class SyncSettings
+
     Property SyncDirectory As String
     Dim WatcherCodecFilter As Codec()
     Dim WatcherTags As Codec.Tag()
@@ -9,7 +47,6 @@
     Property ReplayGain As ReplayGainMode
     Property Encoder As Codec
     Property MaxThreads As Int32
-    Property ffmpegPath As String
 
     Enum ReplayGainMode
         None
@@ -18,18 +55,15 @@
     End Enum
 
 #Region " New "
-    Public Sub New(MySyncIsEnabled As Boolean, MySourceDirectory As String, MySyncDirectory As String, MyWatcherCodecs As List(Of Codec), MyWatcherTags As List(Of Codec.Tag),
-                   MyTranscodeLosslessFiles As Boolean, MyEncoder As Codec, MyMaxThreads As Int32, My_ffmpegPath As String, MyReplayGain As ReplayGainMode)
+    Public Sub New(MySyncDirectory As String, MyWatcherCodecs As List(Of Codec), MyWatcherTags As List(Of Codec.Tag),
+                   MyTranscodeLosslessFiles As Boolean, MyEncoder As Codec, MyMaxThreads As Int32, MyReplayGain As ReplayGainMode)
 
-        SyncIsEnabled = MySyncIsEnabled
-        SourceDirectory = MySourceDirectory
         SyncDirectory = MySyncDirectory
         WatcherCodecFilter = MyWatcherCodecs.ToArray
         WatcherTags = MyWatcherTags.ToArray
         TranscodeLosslessFiles = MyTranscodeLosslessFiles
         Encoder = MyEncoder
         MaxThreads = MyMaxThreads
-        ffmpegPath = My_ffmpegPath
         ReplayGain = MyReplayGain
 
     End Sub
@@ -37,15 +71,12 @@
     Public Sub New(NewSyncSettings As SyncSettings)
 
         If Not NewSyncSettings Is Nothing Then
-            SyncIsEnabled = NewSyncSettings.SyncIsEnabled
-            SourceDirectory = NewSyncSettings.SourceDirectory
             SyncDirectory = NewSyncSettings.SyncDirectory
             WatcherCodecFilter = NewSyncSettings.GetWatcherCodecs
             WatcherTags = NewSyncSettings.GetWatcherTags
             TranscodeLosslessFiles = NewSyncSettings.TranscodeLosslessFiles
             Encoder = NewSyncSettings.Encoder
             MaxThreads = NewSyncSettings.MaxThreads
-            ffmpegPath = NewSyncSettings.ffmpegPath
             ReplayGain = NewSyncSettings.ReplayGain
         End If
 

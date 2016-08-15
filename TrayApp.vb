@@ -120,7 +120,7 @@ Public Class TrayApp
         If MyNewSyncWindow.DialogResult = True Then
             ' Sync was successfully set up
             mnuEditSyncSettings.Enabled = True
-            If MySyncSettings.SyncIsEnabled Then
+            If MyGlobalSyncSettings.SyncIsEnabled Then
                 Dim WatcherStartResult As ReturnObject = StartWatcher()
 
                 If WatcherStartResult.Success Then
@@ -144,12 +144,12 @@ Public Class TrayApp
 #Region " File System Watcher "
     Private Function StartWatcher() As ReturnObject
 
-        If Not Directory.Exists(MySyncSettings.SourceDirectory) Then
-            Return New ReturnObject(False, "Directory """ + MySyncSettings.SourceDirectory + """ does not exist!", Nothing)
+        If Not Directory.Exists(MyGlobalSyncSettings.SourceDirectory) Then
+            Return New ReturnObject(False, "Directory """ + MyGlobalSyncSettings.SourceDirectory + """ does not exist!", Nothing)
         End If
 
         Try
-            FileWatcher = New FileSystemWatcher(MySyncSettings.SourceDirectory)
+            FileWatcher = New FileSystemWatcher(MyGlobalSyncSettings.SourceDirectory)
             FileWatcher.IncludeSubdirectories = True
             FileWatcher.NotifyFilter = NotifyFilters.FileName Or NotifyFilters.LastWrite Or NotifyFilters.DirectoryName
             FileWatcher.EnableRaisingEvents = True
@@ -159,7 +159,7 @@ Public Class TrayApp
             AddHandler FileWatcher.Renamed, AddressOf FileRenamed
             AddHandler FileWatcher.Deleted, AddressOf FileChanged
 
-            MyLog.Write("File system watcher started (monitoring directory """ & MySyncSettings.SourceDirectory & """ for audio files)", Information)
+            MyLog.Write("File system watcher started (monitoring directory """ & MyGlobalSyncSettings.SourceDirectory & """ for audio files)", Information)
             mnuStatus.Text = "Syncer is active"
             If Tray.Visible Then Tray.ShowBalloonTip(BalloonTime, ApplicationName, "Syncer active.", ToolTipIcon.Info)
         Catch ex As Exception
@@ -173,7 +173,7 @@ Public Class TrayApp
     Private Sub StopWatcher()
 
         FileWatcher.Dispose()
-        MySyncSettings.SyncIsEnabled = False
+        MyGlobalSyncSettings.SyncIsEnabled = False
         mnuStatus.Text = "Syncer is not active"
 
         Dim MyResult As ReturnObject = SaveSyncSettings()
@@ -192,7 +192,7 @@ Public Class TrayApp
 
         If FilterMatch(e.Name) Then
             MyLog.Write("File renamed: " & e.FullPath, Information)
-            Dim MyFileParser As New FileParser(FileID, e.FullPath)
+            Dim MyFileParser As New FileParser(MyGlobalSyncSettings, FileID, e.FullPath)
             RenameInSyncFolder(MyFileParser, e.OldFullPath)
             MyFileParser = Nothing
         End If
@@ -209,7 +209,7 @@ Public Class TrayApp
         'Handles changed and new files
 
         If FilterMatch(e.Name) Then
-            Dim MyFileParser As New FileParser(FileID, e.FullPath)
+            Dim MyFileParser As New FileParser(MyGlobalSyncSettings, FileID, e.FullPath)
             Select Case e.ChangeType
                 Case Is = IO.WatcherChangeTypes.Changed
                     MyLog.Write("File changed: " & e.FullPath, Information)
@@ -268,7 +268,7 @@ Public Class TrayApp
             If Not FileCodec Is Nothing Then
                 'File was meant to be synced, which means we now need to delete the synced version
 
-                Dim SyncFilePath As String = MySyncSettings.SyncDirectory & FilePath.Substring(MySyncSettings.SourceDirectory.Length)
+                Dim SyncFilePath As String = MySyncSettings.SyncDirectory & FilePath.Substring(MyGlobalSyncSettings.SourceDirectory.Length)
 
                 If MySyncSettings.TranscodeLosslessFiles AndAlso FileCodec.CompressionType = Lossless Then 'Need to replace extension with .ogg
                     Dim TranscodedFilePath As String = Path.Combine(Path.GetDirectoryName(SyncFilePath), Path.GetFileNameWithoutExtension(SyncFilePath)) &
@@ -302,8 +302,8 @@ Public Class TrayApp
             If Not FileCodec Is Nothing Then
 
                 If MyFileParser.CheckFileForSync(FileCodec) Then
-                    Dim SyncFilePath As String = MySyncSettings.SyncDirectory & NewFilePath.Substring(MySyncSettings.SourceDirectory.Length)
-                    Dim OldSyncFilePath As String = MySyncSettings.SyncDirectory & OldFilePath.Substring(MySyncSettings.SourceDirectory.Length)
+                    Dim SyncFilePath As String = MySyncSettings.SyncDirectory & NewFilePath.Substring(MyGlobalSyncSettings.SourceDirectory.Length)
+                    Dim OldSyncFilePath As String = MySyncSettings.SyncDirectory & OldFilePath.Substring(MyGlobalSyncSettings.SourceDirectory.Length)
 
                     If MySyncSettings.TranscodeLosslessFiles AndAlso FileCodec.CompressionType = Lossless Then 'Need to replace extension with .ogg
                         Dim TempString As String = Path.Combine(Path.GetDirectoryName(SyncFilePath), Path.GetFileNameWithoutExtension(SyncFilePath)) &
@@ -328,12 +328,12 @@ Public Class TrayApp
                         End If
 
                         MyLog.Write("...successfully added file to sync folder.", Information)
-                        If Tray.Visible Then Tray.ShowBalloonTip(BalloonTime, "File Processed:", NewFilePath.Substring(MySyncSettings.SourceDirectory.Length),
+                        If Tray.Visible Then Tray.ShowBalloonTip(BalloonTime, "File Processed:", NewFilePath.Substring(MyGlobalSyncSettings.SourceDirectory.Length),
                                                 ToolTipIcon.Info)
                     End If
 
                     MyLog.Write("...successfully renamed file in sync folder.", Information)
-                    If Tray.Visible Then Tray.ShowBalloonTip(BalloonTime, "File Renamed:", NewFilePath.Substring(MySyncSettings.SourceDirectory.Length),
+                    If Tray.Visible Then Tray.ShowBalloonTip(BalloonTime, "File Renamed:", NewFilePath.Substring(MyGlobalSyncSettings.SourceDirectory.Length),
                                                 ToolTipIcon.Info)
                 End If
 

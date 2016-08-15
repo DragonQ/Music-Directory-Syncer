@@ -82,30 +82,27 @@ Module XML
 
     End Function
 
-    Public Function ReadSyncSettings(Codecs As List(Of Codec), DefaultSettings As SyncSettings) As ReturnObject
+    Public Function ReadSyncSettings(Codecs As List(Of Codec), DefaultSettings As GlobalSyncSettings) As ReturnObject
         Return ReadSettings(Codecs, Path.Combine(System.AppDomain.CurrentDomain.BaseDirectory, "SyncSettings.xml"), DefaultSettings)
     End Function
 
     Public Function ReadDefaultSettings(Codecs As List(Of Codec)) As ReturnObject
-        Return ReadSettings(Codecs, Path.Combine(System.AppDomain.CurrentDomain.BaseDirectory, "DefaultSettings.xml"))
+        Dim DefaultSync As New SyncSettings("", New List(Of Codec), New List(Of Codec.Tag), False, Nothing, Environment.ProcessorCount, ReplayGainMode.None)
+        Dim DefaultSyncList As New List(Of SyncSettings)
+        DefaultSyncList.Add(DefaultSync)
+        Return ReadSettings(Codecs, Path.Combine(System.AppDomain.CurrentDomain.BaseDirectory, "DefaultSettings.xml"), New GlobalSyncSettings(False, "", "", DefaultSyncList))
     End Function
 
-    Public Function ReadSettings(Codecs As List(Of Codec), FilePath As String, Optional DefaultSettings As SyncSettings = Nothing) As ReturnObject
+    Public Function ReadSettings(Codecs As List(Of Codec), FilePath As String, DefaultSettings As GlobalSyncSettings) As ReturnObject
 
         Dim WatcherFilterList As New List(Of Codec)
         Dim TagList As New List(Of Codec.Tag)
-        Dim NewSyncSettings As SyncSettings
+        Dim NewSyncSettingsList As New List(Of SyncSettings)
+        Dim GlobalSyncSettings As New GlobalSyncSettings(DefaultSettings)
 
         Try
             'If SyncSettings.xml doesn't exist, return nothing
             If Not File.Exists(FilePath) Then Return New ReturnObject(True, "", Nothing)
-
-            'Apply all default values before searching for this sync's settings
-            If Not DefaultSettings Is Nothing Then
-                NewSyncSettings = New SyncSettings(DefaultSettings)
-            Else
-                NewSyncSettings = New SyncSettings(False, "", "", New List(Of Codec), New List(Of Codec.Tag), False, Nothing, Environment.ProcessorCount, "", ReplayGainMode.None)
-            End If
 
             'Create StringWriter to store XML text
             Dim SettingsFile As String = File.ReadAllText(FilePath)
@@ -114,28 +111,48 @@ Module XML
             Using SettingsFileReader As New StringReader(SettingsFile)
                 Dim SettingsXML As XDocument = XDocument.Load(SettingsFileReader)
 
-                'Find all settings
-                Dim Settings = From Setting In SettingsXML.Elements("MusicFolderSyncer")
+                'Find global settings
+                Dim GlobalSettings = From Setting In SettingsXML.Elements("MusicFolderSyncer")
+                                     Select New With
+                    {
+                        .EnableSync = If(Setting.OptionalElement("EnableSync"), Nothing),
+                        .SourceDirectory = If(Setting.Element("SourceDirectory"), Nothing),
+                        .ffmpegPath = If(Setting.Element("ffmpegPath"), Nothing)
+                    }
+
+                If GlobalSettings.Count > 0 Then
+                    If GlobalSettings.Count = 1 Then
+                        If Not GlobalSettings(0).EnableSync Is Nothing Then GlobalSyncSettings.SyncIsEnabled = True
+                        If Not GlobalSettings(0).SourceDirectory Is Nothing Then GlobalSyncSettings.SourceDirectory = GlobalSettings(0).SourceDirectory.Value
+                        If Not GlobalSettings(0).ffmpegPath Is Nothing Then GlobalSyncSettings.ffmpegPath = GlobalSettings(0).ffmpegPath.Value
+                    Else
+                        Throw New Exception("Settings file is malformed: too many <MusicFolderSyncer> elements.")
+                    End If
+                Else
+                    Throw New Exception("Settings file is malformed: missing <MusicFolderSyncer> element.")
+                End If
+
+                'Find all sync settings
+                Dim Settings = From Setting In SettingsXML.Elements("MusicFolderSyncer").Elements("SyncSettings").Elements("SyncSetting")
                                Select New With
                     {
                         .SourceDirectory = If(Setting.Element("SourceDirectory"), Nothing),
                         .SyncDirectory = If(Setting.Element("SyncDirectory"), Nothing),
                         .MaxThreads = If(Setting.OptionalElement("Threads"), Nothing),
-                        .EnableSync = If(Setting.OptionalElement("EnableSync"), Nothing),
                         .TranscodeLosslessFiles = If(Setting.OptionalElement("TranscodeLosslessFiles"), Nothing),
-                        .ReplayGain = If(Setting.OptionalElement("ReplayGainMode"), Nothing),
-                        .ffmpegPath = If(Setting.Element("ffmpegPath"), Nothing)
+                        .ReplayGain = If(Setting.OptionalElement("ReplayGainMode"), Nothing)
                     }
 
                 If Settings.Count > 0 Then
-                    If Settings.Count = 1 Then
-                        If Not Settings(0).EnableSync Is Nothing Then NewSyncSettings.SyncIsEnabled = True
-                        If Not Settings(0).SourceDirectory Is Nothing Then NewSyncSettings.SourceDirectory = Settings(0).SourceDirectory.Value
-                        If Not Settings(0).SyncDirectory Is Nothing Then NewSyncSettings.SyncDirectory = Settings(0).SyncDirectory.Value
-                        If Not Settings(0).MaxThreads Is Nothing Then NewSyncSettings.MaxThreads = CInt(Settings(0).MaxThreads)
-                        If Not Settings(0).ffmpegPath Is Nothing Then NewSyncSettings.ffmpegPath = Settings(0).ffmpegPath.Value
-                        If Not Settings(0).ReplayGain Is Nothing Then
-                            Select Case Settings(0).ReplayGain
+                    For Each MySetting In Settings
+                        'Apply all default values before searching for this sync's settings
+                        Dim NewSyncSettings As New SyncSettings(DefaultSettings.GetSyncSettings(0))
+
+                        If Not MySetting.SyncDirectory Is Nothing Then NewSyncSettings.SyncDirectory = MySetting.SyncDirectory.Value
+                        If Not MySetting.MaxThreads Is Nothing Then NewSyncSettings.MaxThreads = CInt(MySetting.MaxThreads)
+
+                        If Not MySetting.ReplayGain Is Nothing Then
+                            Select Case MySetting.ReplayGain
                                 Case Is = "Album"
                                     NewSyncSettings.ReplayGain = ReplayGainMode.Album
                                 Case Is = "Track"
@@ -145,7 +162,7 @@ Module XML
                             End Select
                         End If
 
-                        If Not Settings(0).TranscodeLosslessFiles Is Nothing Then
+                        If Not MySetting.TranscodeLosslessFiles Is Nothing Then
                             NewSyncSettings.TranscodeLosslessFiles = True
 
                             'Find transcoding settings
@@ -182,9 +199,7 @@ Module XML
                                         End If
                                     Next
 
-                                    If CodecFound Then
-
-                                    Else
+                                    If Not CodecFound Then
                                         Throw New Exception("Codec not recognised: " & TranscodeSettings(0).CodecName.Value)
                                     End If
                                 Else
@@ -196,57 +211,61 @@ Module XML
 
                         End If
 
-                    Else
-                        Throw New Exception("Settings file is malformed: too many <MusicFolderSyncer> elements.")
-                    End If
-                Else
-                    Throw New Exception("Settings file is malformed: missing <MusicFolderSyncer> element.")
-                End If
 
 
-                'Find all <CodecName> elements within <FileTypes>
-                Dim ImportedCodecs = From ImportedCodec In SettingsXML.Elements("MusicFolderSyncer").Elements("FileTypes").Elements("CodecName")
-                                     Select New With
-                    {
-                    .Name = ImportedCodec.Value
-                    }
+                        'Find all <CodecName> elements within <FileTypes>
+                        Dim ImportedCodecs = From ImportedCodec In SettingsXML.Elements("MusicFolderSyncer").Elements("FileTypes").Elements("CodecName")
+                                             Select New With
+                            {
+                            .Name = ImportedCodec.Value
+                            }
 
-                'Add list of codec names to sync to the global filter list
-                If ImportedCodecs.Count > 0 Then
-                    For Each ImportedCodec In ImportedCodecs
-                        Dim CodecFound As Boolean = False
+                        'Add list of codec names to sync to the global filter list
+                        If ImportedCodecs.Count > 0 Then
+                            For Each ImportedCodec In ImportedCodecs
+                                Dim CodecFound As Boolean = False
 
-                        For Each MyCodec As Codec In Codecs
-                            If ImportedCodec.Name = MyCodec.Name Then
-                                WatcherFilterList.Add(MyCodec)
-                                CodecFound = True
-                                Exit For
-                            End If
+                                For Each MyCodec As Codec In Codecs
+                                    If ImportedCodec.Name = MyCodec.Name Then
+                                        WatcherFilterList.Add(MyCodec)
+                                        CodecFound = True
+                                        Exit For
+                                    End If
+                                Next
+
+                                If Not CodecFound Then Throw New Exception("Codec not recognised: " & ImportedCodec.Name)
+                            Next
+                        Else
+                            Throw New Exception("Settings file is malformed: missing <FileTypes> element.")
+                        End If
+
+                        NewSyncSettings.SetWatcherCodecs(WatcherFilterList)
+
+                        Dim Tags = From Tag In SettingsXML.Elements("MusicFolderSyncer").Elements("Tags").Elements("Tag")
+                                   Select New With
+                            {
+                                .Name = Tag.Element("Name").Value,
+                                .Value = If(Tag.OptionalElement("Value"), Nothing)
+                            }
+
+                        For Each Tag In Tags
+                            TagList.Add(New Codec.Tag(Tag.Name, Tag.Value))
                         Next
 
-                        If Not CodecFound Then Throw New Exception("Codec not recognised: " & ImportedCodec.Name)
+                        NewSyncSettings.SetWatcherTags(TagList)
+                        NewSyncSettingsList.Add(NewSyncSettings)
                     Next
                 Else
-                    Throw New Exception("Settings file is malformed: missing <FileTypes> element.")
+                    Throw New Exception("Settings file is malformed: no <SyncSettings> elements.")
                 End If
-
-                NewSyncSettings.SetWatcherCodecs(WatcherFilterList)
-
-                Dim Tags = From Tag In SettingsXML.Elements("MusicFolderSyncer").Elements("Tags").Elements("Tag")
-                           Select New With
-                    {
-                        .Name = Tag.Element("Name").Value,
-                        .Value = If(Tag.OptionalElement("Value"), Nothing)
-                    }
-
-                For Each Tag In Tags
-                    TagList.Add(New Codec.Tag(Tag.Name, Tag.Value))
-                Next
             End Using
 
-            NewSyncSettings.SetWatcherTags(TagList)
-
-            Return New ReturnObject(True, "", NewSyncSettings)
+            If NewSyncSettingsList.Count > 0 Then
+                GlobalSyncSettings.SetSyncSettings(NewSyncSettingsList)
+                Return New ReturnObject(True, "", GlobalSyncSettings)
+            Else
+                Throw New Exception("No sync settings found!")
+            End If
         Catch ex As Exception
             Return New ReturnObject(False, ex.Message, Nothing)
         End Try
@@ -270,42 +289,56 @@ Module XML
                 MyWriter.WriteStartDocument()
                 MyWriter.WriteStartElement("MusicFolderSyncer")
 
-                If MySyncSettings.SyncIsEnabled Then
+                If MyGlobalSyncSettings.SyncIsEnabled Then
                     MyWriter.WriteStartElement("EnableSync")
                     MyWriter.WriteEndElement()
                 End If
-                MyWriter.WriteElementString("Threads", MySyncSettings.MaxThreads.ToString(EnglishGB))
-                MyWriter.WriteElementString("SourceDirectory", MySyncSettings.SourceDirectory)
-                MyWriter.WriteElementString("SyncDirectory", MySyncSettings.SyncDirectory)
-                MyWriter.WriteElementString("ffmpegPath", MySyncSettings.ffmpegPath)
-                MyWriter.WriteElementString("ReplayGainMode", MySyncSettings.GetReplayGainSetting())
+                MyWriter.WriteElementString("SourceDirectory", MyGlobalSyncSettings.SourceDirectory)
+                MyWriter.WriteElementString("ffmpegPath", MyGlobalSyncSettings.ffmpegPath)
 
-                'Write data for each codec/file type to be synced
-                MyWriter.WriteStartElement("FileTypes")
-                For Each MyCodec As Codec In MySyncSettings.GetWatcherCodecs
-                    MyWriter.WriteElementString("CodecName", MyCodec.Name)
-                Next
-                MyWriter.WriteEndElement()
+                'Write data for each defined sync
+                Dim SyncSettings As SyncSettings() = MyGlobalSyncSettings.GetSyncSettings()
 
-                'Write data for each file tag to be synced
-                MyWriter.WriteStartElement("Tags")
-                For Each MyTag As Codec.Tag In MySyncSettings.GetWatcherTags
-                    MyWriter.WriteStartElement("Tag")
-                    MyWriter.WriteElementString("Name", MyTag.Name)
-                    If Not MyTag.Value Is Nothing Then MyWriter.WriteElementString("Value", MyTag.Value)
-                    MyWriter.WriteEndElement()
-                Next
-                MyWriter.WriteEndElement()
+                MyWriter.WriteStartElement("SyncSettings")
+                If SyncSettings.Count > 0 Then
+                    For Each SyncSetting In SyncSettings
+                        MyWriter.WriteStartElement("SyncSetting")
+                        MyWriter.WriteElementString("Threads", SyncSetting.MaxThreads.ToString(EnglishGB))
+                        MyWriter.WriteElementString("SyncDirectory", SyncSetting.SyncDirectory)
 
-                If MySyncSettings.TranscodeLosslessFiles Then
-                    MyWriter.WriteStartElement("TranscodeLosslessFiles")
-                    MyWriter.WriteEndElement()
-                    MyWriter.WriteStartElement("Encoder")
-                    MyWriter.WriteElementString("CodecName", MySyncSettings.Encoder.Name)
-                    MyWriter.WriteElementString("CodecProfile", MySyncSettings.Encoder.GetProfiles(0).Name)
-                    MyWriter.WriteElementString("Extension", MySyncSettings.Encoder.GetFileExtensions(0))
-                    MyWriter.WriteEndElement()
+                        MyWriter.WriteElementString("ReplayGainMode", SyncSetting.GetReplayGainSetting())
+
+                        'Write data for each codec/file type to be synced
+                        MyWriter.WriteStartElement("FileTypes")
+                        For Each MyCodec As Codec In SyncSetting.GetWatcherCodecs
+                            MyWriter.WriteElementString("CodecName", MyCodec.Name)
+                        Next
+                        MyWriter.WriteEndElement()
+
+                        'Write data for each file tag to be synced
+                        MyWriter.WriteStartElement("Tags")
+                        For Each MyTag As Codec.Tag In SyncSetting.GetWatcherTags
+                            MyWriter.WriteStartElement("Tag")
+                            MyWriter.WriteElementString("Name", MyTag.Name)
+                            If Not MyTag.Value Is Nothing Then MyWriter.WriteElementString("Value", MyTag.Value)
+                            MyWriter.WriteEndElement()
+                        Next
+                        MyWriter.WriteEndElement()
+
+                        If SyncSetting.TranscodeLosslessFiles Then
+                            MyWriter.WriteStartElement("TranscodeLosslessFiles")
+                            MyWriter.WriteEndElement()
+                            MyWriter.WriteStartElement("Encoder")
+                            MyWriter.WriteElementString("CodecName", SyncSetting.Encoder.Name)
+                            MyWriter.WriteElementString("CodecProfile", SyncSetting.Encoder.GetProfiles(0).Name)
+                            MyWriter.WriteElementString("Extension", SyncSetting.Encoder.GetFileExtensions(0))
+                            MyWriter.WriteEndElement()
+                        End If
+
+                        MyWriter.WriteEndElement()
+                    Next
                 End If
+                MyWriter.WriteEndElement()
 
                 'End document
                 MyWriter.WriteEndElement()

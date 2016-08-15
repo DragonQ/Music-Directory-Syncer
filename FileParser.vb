@@ -10,11 +10,15 @@ Class FileParser
 
     Private ProcessID As Int32
     ReadOnly Property FilePath As String
+    Private GlobalSyncSettings As GlobalSyncSettings
+    Private SyncSettings As SyncSettings()
 
 #Region " New "
-    Public Sub New(ByVal NewProcessID As Int32, ByVal NewFilePath As String)
+    Public Sub New(ByRef NewGlobalSyncSettings As GlobalSyncSettings, ByVal NewProcessID As Int32, ByVal NewFilePath As String)
         ProcessID = NewProcessID
         FilePath = NewFilePath
+        GlobalSyncSettings = NewGlobalSyncSettings
+        SyncSettings = GlobalSyncSettings.GetSyncSettings()
     End Sub
 #End Region
 
@@ -26,35 +30,37 @@ Class FileParser
 
         If Not FileCodec Is Nothing Then
             Try
-                If CheckFileForSync(FileCodec) Then
-                    Dim SyncFilePath As String = MySyncSettings.SyncDirectory & FilePath.Substring(MySyncSettings.SourceDirectory.Length)
+                Dim NewFilesSize As Int64 = 0
+                For Each SyncSetting In SyncSettings
+                    If CheckFileForSync(FileCodec, SyncSetting) Then
+                        Dim SyncFilePath As String = SyncSetting.SyncDirectory & FilePath.Substring(GlobalSyncSettings.SourceDirectory.Length)
 
-                    If MySyncSettings.TranscodeLosslessFiles AndAlso FileCodec.CompressionType = Codec.CodecType.Lossless Then 'Need to transcode file
-                        MyLog.Write(ProcessID, "...transcoding file to " & MySyncSettings.Encoder.Name & "...", Debug)
-                        TranscodeFile(SyncFilePath)
+                        If SyncSetting.TranscodeLosslessFiles AndAlso FileCodec.CompressionType = Codec.CodecType.Lossless Then 'Need to transcode file
+                            MyLog.Write(ProcessID, "...transcoding file to " & SyncSetting.Encoder.Name & "...", Debug)
+                            TranscodeFile(SyncFilePath, SyncSetting)
 
-                        SyncFilePath = Path.Combine(Path.GetDirectoryName(SyncFilePath), Path.GetFileNameWithoutExtension(SyncFilePath)) &
-                            MySyncSettings.Encoder.GetFileExtensions(0)
-                    Else
-                        Directory.CreateDirectory(Path.GetDirectoryName(SyncFilePath))
-                        File.Copy(FilePath, SyncFilePath, True)
+                            SyncFilePath = Path.Combine(Path.GetDirectoryName(SyncFilePath), Path.GetFileNameWithoutExtension(SyncFilePath)) &
+                                SyncSetting.Encoder.GetFileExtensions(0)
+                        Else
+                            Directory.CreateDirectory(Path.GetDirectoryName(SyncFilePath))
+                            File.Copy(FilePath, SyncFilePath, True)
+                        End If
+
+                        Dim NewFile As New FileInfo(SyncFilePath)
+                        NewFilesSize += NewFile.Length
+                        'Interlocked.Add(SyncFolderSize, NewFile.Length)
+                        MyLog.Write(ProcessID, "...successfully added file to sync folder...", Debug)
                     End If
+                Next
 
-                    Dim NewFile As New FileInfo(SyncFilePath)
-                    'Interlocked.Add(SyncFolderSize, NewFile.Length)
-                    MyLog.Write(ProcessID, "...successfully added file to sync folder...", Debug)
-                    MyReturnObject = New ReturnObject(True, "", NewFile.Length)
-                Else
-                    MyReturnObject = New ReturnObject(True, "", 0)
-                End If
-
-                MyLog.Write(ProcessID, "File processed: """ & FilePath.Substring(MySyncSettings.SourceDirectory.Length) & """", Information)
+                MyReturnObject = New ReturnObject(True, "", NewFilesSize)
+                MyLog.Write(ProcessID, "File processed: """ & FilePath.Substring(GlobalSyncSettings.SourceDirectory.Length) & """", Information)
             Catch ex As Exception
-                MyLog.Write(ProcessID, "Processing failed: """ & FilePath.Substring(MySyncSettings.SourceDirectory.Length) & """. Exception: " & ex.Message, Warning)
+                MyLog.Write(ProcessID, "Processing failed: """ & FilePath.Substring(GlobalSyncSettings.SourceDirectory.Length) & """. Exception: " & ex.Message, Warning)
                 MyReturnObject = New ReturnObject(False, ex.Message, 0)
             End Try
         Else
-            MyLog.Write(ProcessID, "Ignoring file: """ & FilePath.Substring(MySyncSettings.SourceDirectory.Length) & """", Information)
+            MyLog.Write(ProcessID, "Ignoring file: """ & FilePath.Substring(GlobalSyncSettings.SourceDirectory.Length) & """", Information)
             MyReturnObject = New ReturnObject(True, "", 0)
         End If
 
@@ -62,14 +68,14 @@ Class FileParser
 
     End Function
 
-    Public Sub TranscodeFile(FileTo As String)
+    Private Sub TranscodeFile(FileTo As String, SyncSetting As SyncSettings)
 
         Dim FileFrom As String = FilePath
         Dim OutputFilePath As String = ""
 
         Try
             Dim OutputDirectory As String = Path.GetDirectoryName(FileTo)
-            OutputFilePath = Path.Combine(OutputDirectory, Path.GetFileNameWithoutExtension(FileTo)) & MySyncSettings.Encoder.GetFileExtensions(0)
+            OutputFilePath = Path.Combine(OutputDirectory, Path.GetFileNameWithoutExtension(FileTo)) & SyncSetting.Encoder.GetFileExtensions(0)
             Directory.CreateDirectory(OutputDirectory)
         Catch ex As Exception
             Dim MyError As String = ex.Message
@@ -80,16 +86,16 @@ Class FileParser
         End Try
 
         Try
-            Dim ffmpeg As New ProcessStartInfo(MySyncSettings.ffmpegPath)
+            Dim ffmpeg As New ProcessStartInfo(GlobalSyncSettings.ffmpegPath)
             ffmpeg.CreateNoWindow = True
             ffmpeg.UseShellExecute = False
 
             Dim FiltersString As String = ""
-            If MySyncSettings.ReplayGain <> ReplayGainMode.None Then
-                FiltersString = " -af volume=replaygain=" & MySyncSettings.GetReplayGainSetting().ToLower
+            If SyncSetting.ReplayGain <> ReplayGainMode.None Then
+                FiltersString = " -af volume=replaygain=" & SyncSetting.GetReplayGainSetting().ToLower
             End If
 
-            ffmpeg.Arguments = "-i """ & FileFrom & """ -vn -c:a " & MySyncSettings.Encoder.GetProfiles(0).Argument & FiltersString & " -hide_banner """ & OutputFilePath & """"
+            ffmpeg.Arguments = "-i """ & FileFrom & """ -vn -c:a " & SyncSetting.Encoder.GetProfiles(0).Argument & FiltersString & " -hide_banner """ & OutputFilePath & """"
             'libvorbis -aq: 4 = 128 kbps, 5 = 160 kbps, 6 = 192 kbps, 7 = 224 kbps, 8 = 256 kbps
 
             MyLog.Write(ProcessID, "...ffmpeg arguments: """ & ffmpeg.Arguments & """...", Debug)
@@ -114,10 +120,10 @@ Class FileParser
 #End Region
 
 #Region " File Checks "
-    Public Function CheckFileForSync(ByVal FileCodec As Codec) As Boolean
+    Public Function CheckFileForSync(ByVal FileCodec As Codec, SyncSetting As SyncSettings) As Boolean
 
         Try
-            If CheckFileTags(FileCodec) Then
+            If CheckFileTags(FileCodec, SyncSetting) Then
                 MyLog.Write(ProcessID, "...file has correct tags, now syncing...", Debug)
                 Return True
             Else
@@ -149,9 +155,9 @@ Class FileParser
 
     End Function
 
-    Private Function CheckFileTags(MyCodec As Codec) As Boolean
+    Private Function CheckFileTags(MyCodec As Codec, SyncSetting As SyncSettings) As Boolean
 
-        Dim TagsObject As ReturnObject = MyCodec.MatchTag(FilePath, MySyncSettings.GetWatcherTags)
+        Dim TagsObject As ReturnObject = MyCodec.MatchTag(FilePath, SyncSetting.GetWatcherTags)
 
         If TagsObject.Success Then
             Return CType(TagsObject.MyObject, Boolean)

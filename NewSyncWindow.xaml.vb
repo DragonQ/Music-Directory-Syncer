@@ -23,6 +23,8 @@ Public Class NewSyncWindow
     Dim SyncTimer As New Stopwatch()
     Dim TagsToSync As ObservableCollection(Of Codec.Tag)
     Dim FileTypesToSync As ObservableCollection(Of Codec)
+    Dim MySyncSettings As SyncSettings
+
 
 #Region " New "
     Public Sub New()
@@ -38,17 +40,20 @@ Public Class NewSyncWindow
         AddHandler SyncBackgroundWorker.ProgressChanged, AddressOf SyncFolderProgressChanged
         AddHandler SyncBackgroundWorker.RunWorkerCompleted, AddressOf SyncFolderCompleted
 
+        ' Define default sync settings to start with
+        MySyncSettings = DefaultGlobalSyncSettings.GetSyncSettings(0)
+
         ' Define collection for FileTypesToSync, which is bound to lstFileTypesToSync
         FileTypesToSync = New ObservableCollection(Of Codec)
         AddHandler FileTypesToSync.CollectionChanged, AddressOf FileTypesToSyncResized
-        Dim CodecsFilter As Codec() = DefaultSyncSettings.GetWatcherCodecs
+        Dim CodecsFilter As Codec() = MySyncSettings.GetWatcherCodecs
         For Each MyFilter As Codec In CodecsFilter
             FileTypesToSync.Add(MyFilter)
         Next
 
         ' Define collection for TagsToSync, which is bound to dataTagsToSync
         TagsToSync = New ObservableCollection(Of Codec.Tag)
-        Dim Tags As Codec.Tag() = DefaultSyncSettings.GetWatcherTags
+        Dim Tags As Codec.Tag() = MySyncSettings.GetWatcherTags
         For Each MyTag As Codec.Tag In Tags
             TagsToSync.Add(MyTag)
         Next
@@ -62,7 +67,7 @@ Public Class NewSyncWindow
         For Each MyCodec As Codec In Codecs
             If MyCodec.CompressionType = Lossy Then
                 cmbCodec.Items.Add(New Item(MyCodec.Name, MyCodec))
-                If MyCodec.Name = DefaultSyncSettings.Encoder.Name Then
+                If MyCodec.Name = MySyncSettings.Encoder.Name Then
                     cmbCodec.SelectedIndex = Count
                 End If
                 Count += 1
@@ -76,7 +81,7 @@ Public Class NewSyncWindow
             Dim ReplayGainSetting As ReplayGainMode = DirectCast(MyEnum, ReplayGainMode)
             Dim Name As String = SyncSettings.GetReplayGainSetting(ReplayGainSetting)
             cmbReplayGain.Items.Add(New Item(Name, ReplayGainSetting))
-            If ReplayGainSetting = DefaultSyncSettings.ReplayGain Then
+            If ReplayGainSetting = MySyncSettings.ReplayGain Then
                 cmbReplayGain.SelectedIndex = Count
             End If
             Count += 1
@@ -84,12 +89,12 @@ Public Class NewSyncWindow
 
         ' Set run-time properties of window objects
         If TagsToSync.Count > 0 Then btnRemoveTag.IsEnabled = True
-        spinThreads.Maximum = DefaultSyncSettings.MaxThreads
+        spinThreads.Maximum = MySyncSettings.MaxThreads
         spinThreads.Value = spinThreads.Maximum
-        txt_ffmpegPath.Text = DefaultSyncSettings.ffmpegPath
-        txtSourceDirectory.Text = DefaultSyncSettings.SourceDirectory
-        txtSyncDirectory.Text = DefaultSyncSettings.SyncDirectory
-        tckTranscode.IsChecked = DefaultSyncSettings.TranscodeLosslessFiles
+        txt_ffmpegPath.Text = DefaultGlobalSyncSettings.ffmpegPath
+        txtSourceDirectory.Text = DefaultGlobalSyncSettings.SourceDirectory
+        txtSyncDirectory.Text = MySyncSettings.SyncDirectory
+        tckTranscode.IsChecked = MySyncSettings.TranscodeLosslessFiles
         txtSourceDirectory.Focus()
 
     End Sub
@@ -178,7 +183,7 @@ Public Class NewSyncWindow
         Dim DefaultDirectory As String = txtSourceDirectory.Text
 
         If Not Directory.Exists(DefaultDirectory) Then
-            DefaultDirectory = DefaultSyncSettings.SourceDirectory
+            DefaultDirectory = DefaultGlobalSyncSettings.SourceDirectory
         End If
 
         Dim Browser As ReturnObject = CreateDirectoryBrowser(DefaultDirectory)
@@ -194,7 +199,7 @@ Public Class NewSyncWindow
         Dim DefaultDirectory As String = txtSyncDirectory.Text
 
         If Not Directory.Exists(DefaultDirectory) Then
-            DefaultDirectory = DefaultSyncSettings.SyncDirectory
+            DefaultDirectory = MySyncSettings.SyncDirectory
         End If
 
         Dim Browser As ReturnObject = CreateDirectoryBrowser(DefaultDirectory)
@@ -210,7 +215,7 @@ Public Class NewSyncWindow
         Dim DefaultPath As String = txt_ffmpegPath.Text
 
         If Not File.Exists(DefaultPath) Then
-            DefaultPath = DefaultSyncSettings.ffmpegPath
+            DefaultPath = DefaultGlobalSyncSettings.ffmpegPath
         End If
 
         Using SelectDirectoryDialog = New CommonOpenFileDialog()
@@ -293,7 +298,8 @@ Public Class NewSyncWindow
                 MyLog.Write("Creating new folder sync!", Warning)
 
                 'Create new SyncSettings object using the default sync settings for now.
-                MySyncSettings = New SyncSettings(DefaultSyncSettings)
+                MyGlobalSyncSettings = New GlobalSyncSettings(DefaultGlobalSyncSettings)
+                Dim MySyncSettings As SyncSettings = DefaultGlobalSyncSettings.GetSyncSettings(0)
 
                 MyLog.Write("Source directory: """ & txtSourceDirectory.Text & """.", Information)
                 MyLog.Write("Sync directory: """ & txtSyncDirectory.Text & """.", Information)
@@ -306,7 +312,7 @@ Public Class NewSyncWindow
                                                         CType(CType(cmbCodecProfile.SelectedItem, Item).Value, Codec.Profile))
                     Else
                         System.Windows.MessageBox.Show("You have not specified a valid encoder for this sync!", "New Sync", MessageBoxButton.OKCancel, MessageBoxImage.Error)
-                        MySyncSettings = Nothing
+                        MyGlobalSyncSettings = Nothing
                         EnableDisableControls(True)
                         Exit Sub
                     End If
@@ -316,18 +322,23 @@ Public Class NewSyncWindow
                     MySyncSettings.ReplayGain = CType(CType(cmbReplayGain.SelectedItem, Item).Value, ReplayGainMode)
                 Else
                     System.Windows.MessageBox.Show("You have not specified a valid ReplayGain setting for this sync!", "New Sync", MessageBoxButton.OKCancel, MessageBoxImage.Error)
-                    MySyncSettings = Nothing
+                    MyGlobalSyncSettings = Nothing
                     EnableDisableControls(True)
                     Exit Sub
                 End If
 
                 'Change remaining sync settings as specified by the user
-                MySyncSettings.SourceDirectory = txtSourceDirectory.Text
+                MyGlobalSyncSettings.SourceDirectory = txtSourceDirectory.Text
                 MySyncSettings.SyncDirectory = txtSyncDirectory.Text
                 MySyncSettings.MaxThreads = CInt(spinThreads.Value)
-                MySyncSettings.ffmpegPath = txt_ffmpegPath.Text
+                MyGlobalSyncSettings.ffmpegPath = txt_ffmpegPath.Text
                 MySyncSettings.SetWatcherTags(NewTagsToSync)
                 MySyncSettings.SetWatcherCodecs(NewFileTypesToSync)
+
+                'Update GlobalSyncSettings object
+                Dim MySyncSettingsList As New List(Of SyncSettings)
+                MySyncSettingsList.Add(MySyncSettings)
+                MyGlobalSyncSettings.SetSyncSettings(MySyncSettingsList)
 
                 'Begin sync process.
                 FilesCompletedProgressBar.Value = 0
@@ -366,7 +377,7 @@ Public Class NewSyncWindow
 #Region " Start New Sync [Background Worker] "
     Private Sub SyncFolder(sender As Object, e As DoWorkEventArgs)
 
-        Dim FolderPath As String = MySyncSettings.SourceDirectory
+        Dim FolderPath As String = MyGlobalSyncSettings.SourceDirectory
         Dim MyFiles As FileData() = Nothing
         Dim MyFilesToProcess As New List(Of String)
         Dim CodecsToCheck As Codec() = MySyncSettings.GetWatcherCodecs
@@ -545,7 +556,7 @@ Public Class NewSyncWindow
             Dim TransferResult As ReturnObject
 
             Try
-                Dim MyFileParser As New FileParser(ProcessID, FilePath)
+                Dim MyFileParser As New FileParser(MyGlobalSyncSettings, ProcessID, FilePath)
                 TransferResult = MyFileParser.TransferToSyncFolder(CodecsToCheck)
 
                 If TransferResult.Success Then
@@ -582,7 +593,7 @@ Public Class NewSyncWindow
                 Dim taskkill As New ProcessStartInfo("taskkill")
                 taskkill.CreateNoWindow = True
                 taskkill.UseShellExecute = False
-                taskkill.Arguments = " /F /IM " & Path.GetFileName(MySyncSettings.ffmpegPath) & " /T"
+                taskkill.Arguments = " /F /IM " & Path.GetFileName(MyGlobalSyncSettings.ffmpegPath) & " /T"
 
                 MyLog.Write("Sync cancelled, now force-closing ffmpeg instances...", Warning)
 
@@ -630,9 +641,9 @@ Public Class NewSyncWindow
                                "Do you want to enable background sync " &
                                     "for this folder? This will ensure your sync folder is always up-to-date.", "Sync Complete!",
                                     MessageBoxButton.OKCancel, MessageBoxImage.Information) = MessageBoxResult.OK Then
-                MySyncSettings.SyncIsEnabled = True
+                MyGlobalSyncSettings.SyncIsEnabled = True
             Else
-                MySyncSettings.SyncIsEnabled = False
+                MyGlobalSyncSettings.SyncIsEnabled = False
             End If
 
             Dim MyResult As ReturnObject = SaveSyncSettings()

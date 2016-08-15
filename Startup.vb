@@ -18,8 +18,8 @@ Module Startup
 
     Public Const ApplicationName As String = "Music Folder Syncer"
     Public MyLog As Logger
-    Public MySyncSettings As SyncSettings
-    Public DefaultSyncSettings As SyncSettings
+    Public MyGlobalSyncSettings As GlobalSyncSettings
+    Public DefaultGlobalSyncSettings As GlobalSyncSettings
     Public Codecs As List(Of Codec)
     Public Const MaxFileID As Int32 = 99999
 
@@ -43,14 +43,14 @@ Module Startup
         ' Read DefaultSettings.xml file to import default sync settings
         Dim DefaultSettings As ReturnObject = XML.ReadDefaultSettings(Codecs)
         If DefaultSettings.Success AndAlso Not DefaultSettings.MyObject Is Nothing Then
-            DefaultSyncSettings = DirectCast(DefaultSettings.MyObject, SyncSettings)
+            DefaultGlobalSyncSettings = DirectCast(DefaultSettings.MyObject, GlobalSyncSettings)
         Else
             MessageBox.Show(DefaultSettings.ErrorMessage, "Default Sync Settings Error", MessageBoxButton.OK, MessageBoxImage.Error)
             Exit Sub
         End If
 
         ' Read SyncSettings.xml file to import current sync settings (if there is one)
-        Dim Settings As ReturnObject = XML.ReadSyncSettings(Codecs, DefaultSyncSettings)
+        Dim Settings As ReturnObject = XML.ReadSyncSettings(Codecs, DefaultGlobalSyncSettings)
         If Settings.Success Then
             If Settings.MyObject Is Nothing Then
                 MyLog.Write("Settings file not found; launching new sync window.", Information)
@@ -58,7 +58,7 @@ Module Startup
                                 "No Sync Settings Found", MessageBoxButton.OK, MessageBoxImage.Information)
                 System.Windows.Forms.Application.Run(New TrayApp(True))
             Else
-                MySyncSettings = DirectCast(Settings.MyObject, SyncSettings)
+                MyGlobalSyncSettings = DirectCast(Settings.MyObject, GlobalSyncSettings)
                 Forms.Application.Run(New TrayApp(False))
             End If
         Else
