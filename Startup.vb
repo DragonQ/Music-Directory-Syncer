@@ -13,20 +13,20 @@ Imports Microsoft.WindowsAPICodePack.Dialogs
 Module Startup
 
     Public EnglishGB As System.Globalization.CultureInfo = System.Globalization.CultureInfo.CreateSpecificCulture("en-GB")
-    Private Const DebugLevel As Logger.DebugLogLevel = Information
+    Private Const LogLevel As Logger.DebugLogLevel = Information
     Public MyLogFilePath As String = Path.Combine(System.AppDomain.CurrentDomain.BaseDirectory, ApplicationName & ".log")
 
     Public Const ApplicationName As String = "Music Folder Syncer"
     Public MyLog As Logger
-    Public MyGlobalSyncSettings As GlobalSyncSettings
-    Public DefaultGlobalSyncSettings As GlobalSyncSettings
+    Public UserGlobalSyncSettings As GlobalSyncSettings = Nothing
+    Public DefaultGlobalSyncSettings As GlobalSyncSettings = Nothing
     Public Codecs As List(Of Codec)
     Public Const MaxFileID As Int32 = 99999
 
 #Region " Sub Main "
     Sub Main()
 
-        MyLog = New Logger(MyLogFilePath, DebugLevel)
+        MyLog = New Logger(MyLogFilePath, LogLevel)
 
         MyLog.Write("===============================================================")
         MyLog.Write("  PROGRAM LAUNCHED")
@@ -58,7 +58,7 @@ Module Startup
                                 "No Sync Settings Found", MessageBoxButton.OK, MessageBoxImage.Information)
                 System.Windows.Forms.Application.Run(New TrayApp(True))
             Else
-                MyGlobalSyncSettings = DirectCast(Settings.MyObject, GlobalSyncSettings)
+                UserGlobalSyncSettings = DirectCast(Settings.MyObject, GlobalSyncSettings)
                 Forms.Application.Run(New TrayApp(False))
             End If
         Else

@@ -11,15 +11,15 @@ Class FileParser
 
     Private ProcessID As Int32
     ReadOnly Property FilePath As String
-    Private GlobalSyncSettings As GlobalSyncSettings
+    Private MyGlobalSyncSettings As GlobalSyncSettings
     Private SyncSettings As SyncSettings()
 
 #Region " New "
     Public Sub New(ByRef NewGlobalSyncSettings As GlobalSyncSettings, ByVal NewProcessID As Int32, ByVal NewFilePath As String)
         ProcessID = NewProcessID
         FilePath = NewFilePath
-        GlobalSyncSettings = NewGlobalSyncSettings
-        SyncSettings = GlobalSyncSettings.GetSyncSettings()
+        MyGlobalSyncSettings = NewGlobalSyncSettings
+        SyncSettings = MyGlobalSyncSettings.GetSyncSettings()
     End Sub
 #End Region
 
@@ -34,7 +34,7 @@ Class FileParser
                 Dim FileCodec As Codec = CheckFileCodec(SyncSetting.GetWatcherCodecs())
                 If Not FileCodec Is Nothing Then
                     If CheckFileForSync(FileCodec, SyncSetting) Then
-                        Dim SyncFilePath As String = SyncSetting.SyncDirectory & FilePath.Substring(GlobalSyncSettings.SourceDirectory.Length)
+                        Dim SyncFilePath As String = SyncSetting.SyncDirectory & FilePath.Substring(MyGlobalSyncSettings.SourceDirectory.Length)
 
                         If SyncSetting.TranscodeLosslessFiles AndAlso FileCodec.CompressionType = Lossless Then 'Need to transcode file
                             MyLog.Write(ProcessID, "...transcoding file to " & SyncSetting.Encoder.Name & "...", Debug)
@@ -53,14 +53,14 @@ Class FileParser
                         MyLog.Write(ProcessID, "...successfully added file to sync folder...", Debug)
                     End If
                 Else
-                    MyLog.Write(ProcessID, "Ignoring file: """ & FilePath.Substring(GlobalSyncSettings.SourceDirectory.Length) & """", Information)
+                    MyLog.Write(ProcessID, "Ignoring file: """ & FilePath.Substring(MyGlobalSyncSettings.SourceDirectory.Length) & """", Information)
                 End If
             Next
 
             MyReturnObject = New ReturnObject(True, "", NewFilesSize)
-            MyLog.Write(ProcessID, "File processed: """ & FilePath.Substring(GlobalSyncSettings.SourceDirectory.Length) & """", Information)
+            MyLog.Write(ProcessID, "File processed: """ & FilePath.Substring(MyGlobalSyncSettings.SourceDirectory.Length) & """", Information)
         Catch ex As Exception
-            MyLog.Write(ProcessID, "Processing failed: """ & FilePath.Substring(GlobalSyncSettings.SourceDirectory.Length) & """. Exception: " & ex.Message, Warning)
+            MyLog.Write(ProcessID, "Processing failed: """ & FilePath.Substring(MyGlobalSyncSettings.SourceDirectory.Length) & """. Exception: " & ex.Message, Warning)
             MyReturnObject = New ReturnObject(False, ex.Message, 0)
         End Try
 
@@ -77,7 +77,7 @@ Class FileParser
                 Dim FileCodec As Codec = CheckFileCodec(SyncSetting.GetWatcherCodecs())
                 If Not FileCodec Is Nothing Then
                     'File was meant to be synced, which means we now need to delete the synced version
-                    Dim SyncFilePath As String = SyncSetting.SyncDirectory & FilePath.Substring(GlobalSyncSettings.SourceDirectory.Length)
+                    Dim SyncFilePath As String = SyncSetting.SyncDirectory & FilePath.Substring(MyGlobalSyncSettings.SourceDirectory.Length)
 
                     If SyncSetting.TranscodeLosslessFiles AndAlso FileCodec.CompressionType = Lossless Then 'Need to replace extension with .ogg
                         Dim TranscodedFilePath As String = Path.Combine(Path.GetDirectoryName(SyncFilePath), Path.GetFileNameWithoutExtension(SyncFilePath)) &
@@ -98,9 +98,9 @@ Class FileParser
             Next
 
             MyReturnObject = New ReturnObject(True, "", 0)
-            MyLog.Write(ProcessID, "File deleted: """ & FilePath.Substring(GlobalSyncSettings.SourceDirectory.Length) & """", Information)
+            MyLog.Write(ProcessID, "File deleted: """ & FilePath.Substring(MyGlobalSyncSettings.SourceDirectory.Length) & """", Information)
         Catch ex As Exception
-            MyLog.Write(ProcessID, "File deletion failed: """ & FilePath.Substring(GlobalSyncSettings.SourceDirectory.Length) & """. Exception: " & ex.Message, Warning)
+            MyLog.Write(ProcessID, "File deletion failed: """ & FilePath.Substring(MyGlobalSyncSettings.SourceDirectory.Length) & """. Exception: " & ex.Message, Warning)
             MyReturnObject = New ReturnObject(False, ex.Message, 0)
         End Try
 
@@ -153,9 +153,9 @@ Class FileParser
             Next
 
             MyReturnObject = New ReturnObject(True, "", 0)
-            MyLog.Write(ProcessID, "File renamed: """ & FilePath.Substring(GlobalSyncSettings.SourceDirectory.Length) & """", Information)
+            MyLog.Write(ProcessID, "File renamed: """ & FilePath.Substring(MyGlobalSyncSettings.SourceDirectory.Length) & """", Information)
         Catch ex As Exception
-            MyLog.Write(ProcessID, "File rename failed: """ & FilePath.Substring(GlobalSyncSettings.SourceDirectory.Length) & """. Exception: " & ex.Message, Warning)
+            MyLog.Write(ProcessID, "File rename failed: """ & FilePath.Substring(MyGlobalSyncSettings.SourceDirectory.Length) & """. Exception: " & ex.Message, Warning)
             MyReturnObject = New ReturnObject(False, ex.Message, 0)
         End Try
 
@@ -181,7 +181,7 @@ Class FileParser
         End Try
 
         Try
-            Dim ffmpeg As New ProcessStartInfo(GlobalSyncSettings.ffmpegPath)
+            Dim ffmpeg As New ProcessStartInfo(MyGlobalSyncSettings.ffmpegPath)
             ffmpeg.CreateNoWindow = True
             ffmpeg.UseShellExecute = False
 
