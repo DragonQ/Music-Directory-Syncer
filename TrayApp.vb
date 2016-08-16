@@ -160,8 +160,18 @@ Public Class TrayApp
             AddHandler FileWatcher.Deleted, AddressOf FileChanged
 
             MyLog.Write("File system watcher started (monitoring directory """ & MyGlobalSyncSettings.SourceDirectory & """ for audio files)", Information)
+            MyGlobalSyncSettings.SyncIsEnabled = True
             mnuStatus.Text = "Syncer is active"
-            If Tray.Visible Then Tray.ShowBalloonTip(BalloonTime, ApplicationName, "Syncer active.", ToolTipIcon.Info)
+
+            Dim MyResult As ReturnObject = SaveSyncSettings()
+
+            If MyResult.Success Then
+                MyLog.Write("Syncer started.", Warning)
+                If Tray.Visible Then Tray.ShowBalloonTip(BalloonTime, ApplicationName, "Syncer has been enabled.", ToolTipIcon.Info)
+            Else
+                MyLog.Write("Could not update sync settings. Error: " & MyResult.ErrorMessage, Warning)
+                If Tray.Visible Then Tray.ShowBalloonTip(BalloonTime, ApplicationName, "Syncer has been enabled but settings file could not be updated.", ToolTipIcon.Error)
+            End If
         Catch ex As Exception
             Return New ReturnObject(False, ex.Message, Nothing)
         End Try
