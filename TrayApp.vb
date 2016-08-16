@@ -112,12 +112,14 @@ Public Class TrayApp
     Private Sub ShowNewSyncWindow()
 
         Dim MyGlobalSyncSettings As GlobalSyncSettings
+        Dim NewSync As Boolean = True
         If UserGlobalSyncSettings Is Nothing Then
             MyGlobalSyncSettings = DefaultGlobalSyncSettings
         Else
             MyGlobalSyncSettings = UserGlobalSyncSettings
+            NewSync = False
         End If
-        Dim MyNewSyncWindow As New NewSyncWindow(MyGlobalSyncSettings)
+        Dim MyNewSyncWindow As New NewSyncWindow(MyGlobalSyncSettings, NewSync)
         Tray.Visible = False
         MyNewSyncWindow.ShowDialog()
 

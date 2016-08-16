@@ -56,7 +56,7 @@
                 <CheckBox x:Name="tckTreatWMA_AsLossless" Content="Treat .wma files as lossless" HorizontalAlignment="Left" Width="189" Margin="6,4,0,0" IsEnabled="False" Height="20" VerticalAlignment="Top" TabIndex="39"/>
                 <Label Content="ffmpeg Location:" HorizontalAlignment="Left" Height="26" Margin="0,54,0,0" VerticalAlignment="Top" Width="100" HorizontalContentAlignment="Right"/>
                 <TextBox x:Name="txt_ffmpegPath" Height="21" Margin="105,58,86,0" VerticalAlignment="Top" TabIndex="43" MaxLines="1"/>
-                <Button x:Name="btnBrowseFFMPEG" Content="Browse..." Margin="0,58,10,0" VerticalAlignment="Top" Height="21" HorizontalAlignment="Right" Width="71" TabIndex="44" Click="btnBrowseFFMPEG_Click"/>
+                <Button x:Name="btnBrowse_ffmpeg" Content="Browse..." Margin="0,58,10,0" VerticalAlignment="Top" Height="21" HorizontalAlignment="Right" Width="71" TabIndex="44" Click="btnBrowseFFMPEG_Click"/>
             </Grid>
         </GroupBox>
         <Label Content="Threads:" HorizontalAlignment="Right" Margin="0,0,267,106" Width="54" HorizontalContentAlignment="Right" Height="26" VerticalAlignment="Bottom"/>

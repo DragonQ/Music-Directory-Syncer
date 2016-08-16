@@ -26,9 +26,10 @@ Public Class NewSyncWindow
     Dim MyGlobalSyncSettings As GlobalSyncSettings
     Dim MySyncSettings As SyncSettings
     Dim MySyncSettingsList As List(Of SyncSettings)
+    Dim NewSync As Boolean
 
 #Region " New "
-    Public Sub New(NewGlobalSyncSettings As GlobalSyncSettings)
+    Public Sub New(NewGlobalSyncSettings As GlobalSyncSettings, MyNewSync As Boolean)
 
         ' This call is required by the designer.
         InitializeComponent()
@@ -42,9 +43,10 @@ Public Class NewSyncWindow
         AddHandler SyncBackgroundWorker.RunWorkerCompleted, AddressOf SyncFolderCompleted
 
         ' Define default sync settings to start with
-        MyGlobalSyncSettings = NewGlobalSyncSettings ' Is Nothing Then MyGlobalSyncSettings = New GlobalSyncSettings(DefaultGlobalSyncSettings)
+        MyGlobalSyncSettings = NewGlobalSyncSettings
         MySyncSettingsList = MyGlobalSyncSettings.GetSyncSettings().ToList
         MySyncSettings = MySyncSettingsList(0)
+        NewSync = MyNewSync
 
         ' Define collection for FileTypesToSync, which is bound to lstFileTypesToSync
         FileTypesToSync = New ObservableCollection(Of Codec)
@@ -99,6 +101,14 @@ Public Class NewSyncWindow
         txtSyncDirectory.Text = MySyncSettings.SyncDirectory
         tckTranscode.IsChecked = MySyncSettings.TranscodeLosslessFiles
         txtSourceDirectory.Focus()
+
+        ' Disable fields if this is an additional sync setup
+        If Not NewSync Then
+            txt_ffmpegPath.IsEnabled = False
+            btnBrowse_ffmpeg.IsEnabled = False
+            txtSourceDirectory.IsEnabled = False
+            btnBrowseSourceDirectory.IsEnabled = False
+        End If
 
     End Sub
 #End Region
@@ -338,10 +348,12 @@ Public Class NewSyncWindow
         boxTags.IsEnabled = Enable
 
         'Directory controls
-        txtSourceDirectory.IsEnabled = Enable
         txtSyncDirectory.IsEnabled = Enable
-        btnBrowseSourceDirectory.IsEnabled = Enable
         btnBrowseSyncDirectory.IsEnabled = Enable
+        If Not NewSync Then
+            txtSourceDirectory.IsEnabled = Enable
+            btnBrowseSourceDirectory.IsEnabled = Enable
+        End If
 
         'Miscellaneous controls
         btnNewSync.IsEnabled = Enable
