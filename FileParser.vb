@@ -2,6 +2,7 @@
 Imports MusicFolderSyncer.Logger.DebugLogLevel
 Imports MusicFolderSyncer.Toolkit
 Imports MusicFolderSyncer.SyncSettings
+Imports MusicFolderSyncer.Codec.CodecType
 Imports System.IO
 Imports System.Environment
 #End Region
@@ -23,19 +24,19 @@ Class FileParser
 #End Region
 
 #Region " Transfer File To Sync Folder "
-    Public Function TransferToSyncFolder(ByRef CodecsToCheck As Codec()) As ReturnObject
+    Public Function TransferToSyncFolder() As ReturnObject
 
-        Dim FileCodec As Codec = CheckFileCodec(CodecsToCheck)
         Dim MyReturnObject As ReturnObject
 
-        If Not FileCodec Is Nothing Then
-            Try
-                Dim NewFilesSize As Int64 = 0
-                For Each SyncSetting In SyncSettings
+        Try
+            Dim NewFilesSize As Int64 = 0
+            For Each SyncSetting In SyncSettings
+                Dim FileCodec As Codec = CheckFileCodec(SyncSetting.GetWatcherCodecs())
+                If Not FileCodec Is Nothing Then
                     If CheckFileForSync(FileCodec, SyncSetting) Then
                         Dim SyncFilePath As String = SyncSetting.SyncDirectory & FilePath.Substring(GlobalSyncSettings.SourceDirectory.Length)
 
-                        If SyncSetting.TranscodeLosslessFiles AndAlso FileCodec.CompressionType = Codec.CodecType.Lossless Then 'Need to transcode file
+                        If SyncSetting.TranscodeLosslessFiles AndAlso FileCodec.CompressionType = Lossless Then 'Need to transcode file
                             MyLog.Write(ProcessID, "...transcoding file to " & SyncSetting.Encoder.Name & "...", Debug)
                             TranscodeFile(SyncFilePath, SyncSetting)
 
@@ -51,18 +52,112 @@ Class FileParser
                         'Interlocked.Add(SyncFolderSize, NewFile.Length)
                         MyLog.Write(ProcessID, "...successfully added file to sync folder...", Debug)
                     End If
-                Next
+                Else
+                    MyLog.Write(ProcessID, "Ignoring file: """ & FilePath.Substring(GlobalSyncSettings.SourceDirectory.Length) & """", Information)
+                End If
+            Next
 
-                MyReturnObject = New ReturnObject(True, "", NewFilesSize)
-                MyLog.Write(ProcessID, "File processed: """ & FilePath.Substring(GlobalSyncSettings.SourceDirectory.Length) & """", Information)
-            Catch ex As Exception
-                MyLog.Write(ProcessID, "Processing failed: """ & FilePath.Substring(GlobalSyncSettings.SourceDirectory.Length) & """. Exception: " & ex.Message, Warning)
-                MyReturnObject = New ReturnObject(False, ex.Message, 0)
-            End Try
-        Else
-            MyLog.Write(ProcessID, "Ignoring file: """ & FilePath.Substring(GlobalSyncSettings.SourceDirectory.Length) & """", Information)
+            MyReturnObject = New ReturnObject(True, "", NewFilesSize)
+            MyLog.Write(ProcessID, "File processed: """ & FilePath.Substring(GlobalSyncSettings.SourceDirectory.Length) & """", Information)
+        Catch ex As Exception
+            MyLog.Write(ProcessID, "Processing failed: """ & FilePath.Substring(GlobalSyncSettings.SourceDirectory.Length) & """. Exception: " & ex.Message, Warning)
+            MyReturnObject = New ReturnObject(False, ex.Message, 0)
+        End Try
+
+        Return MyReturnObject
+
+    End Function
+
+    Public Function DeleteInSyncFolder() As ReturnObject
+
+        Dim MyReturnObject As ReturnObject
+
+        Try
+            For Each SyncSetting In SyncSettings
+                Dim FileCodec As Codec = CheckFileCodec(SyncSetting.GetWatcherCodecs())
+                If Not FileCodec Is Nothing Then
+                    'File was meant to be synced, which means we now need to delete the synced version
+                    Dim SyncFilePath As String = SyncSetting.SyncDirectory & FilePath.Substring(GlobalSyncSettings.SourceDirectory.Length)
+
+                    If SyncSetting.TranscodeLosslessFiles AndAlso FileCodec.CompressionType = Lossless Then 'Need to replace extension with .ogg
+                        Dim TranscodedFilePath As String = Path.Combine(Path.GetDirectoryName(SyncFilePath), Path.GetFileNameWithoutExtension(SyncFilePath)) &
+                                                        SyncSetting.Encoder.GetFileExtensions(0)
+                        SyncFilePath = TranscodedFilePath
+                    End If
+
+                    'Delete file if it exists in sync folder
+                    If File.Exists(SyncFilePath) Then
+                        File.Delete(SyncFilePath)
+                        MyLog.Write("...file in sync folder deleted: """ & SyncFilePath.Substring(SyncSetting.SyncDirectory.Length) & """.", Information)
+                    Else
+                        MyLog.Write("...file doesn't exist in sync folder: """ & SyncFilePath.Substring(SyncSetting.SyncDirectory.Length) & """.", Information)
+                    End If
+                Else
+                    Throw New Exception("File was being watched but could not determine its codec.")
+                End If
+            Next
+
             MyReturnObject = New ReturnObject(True, "", 0)
-        End If
+            MyLog.Write(ProcessID, "File deleted: """ & FilePath.Substring(GlobalSyncSettings.SourceDirectory.Length) & """", Information)
+        Catch ex As Exception
+            MyLog.Write(ProcessID, "File deletion failed: """ & FilePath.Substring(GlobalSyncSettings.SourceDirectory.Length) & """. Exception: " & ex.Message, Warning)
+            MyReturnObject = New ReturnObject(False, ex.Message, 0)
+        End Try
+
+        Return MyReturnObject
+
+    End Function
+
+    Public Function RenameInSyncFolder(OldFilePath As String) As ReturnObject
+
+        Dim MyReturnObject As ReturnObject
+
+        Try
+            For Each SyncSetting In SyncSettings
+                Dim FileCodec As Codec = CheckFileCodec(SyncSetting.GetWatcherCodecs())
+                If Not FileCodec Is Nothing Then
+                    If CheckFileForSync(FileCodec, SyncSetting) Then
+                        Dim SyncFilePath As String = SyncSetting.SyncDirectory & FilePath.Substring(MyGlobalSyncSettings.SourceDirectory.Length)
+                        Dim OldSyncFilePath As String = SyncSetting.SyncDirectory & OldFilePath.Substring(MyGlobalSyncSettings.SourceDirectory.Length)
+
+                        If SyncSetting.TranscodeLosslessFiles AndAlso FileCodec.CompressionType = Lossless Then 'Need to replace extension with .ogg
+                            Dim TempString As String = Path.Combine(Path.GetDirectoryName(SyncFilePath), Path.GetFileNameWithoutExtension(SyncFilePath)) &
+                                SyncSetting.Encoder.GetFileExtensions(0)
+                            SyncFilePath = TempString
+                            TempString = Path.Combine(Path.GetDirectoryName(OldSyncFilePath), Path.GetFileNameWithoutExtension(OldSyncFilePath)) &
+                                SyncSetting.Encoder.GetFileExtensions(0)
+                            OldSyncFilePath = TempString
+                        End If
+
+                        If File.Exists(OldSyncFilePath) Then
+                            File.Move(OldSyncFilePath, SyncFilePath)
+                        Else
+                            MyLog.Write("...old file doesn't exist in sync folder: """ & OldSyncFilePath & """, creating now...", Warning)
+
+                            If SyncSetting.TranscodeLosslessFiles AndAlso FileCodec.CompressionType = Lossless Then 'Need to transcode file
+                                MyLog.Write("...transcoding file to " & SyncSetting.Encoder.Name & "...", Debug)
+                                TranscodeFile(SyncFilePath, SyncSetting)
+                            Else
+                                Directory.CreateDirectory(Path.GetDirectoryName(SyncFilePath))
+                                File.Copy(FilePath, SyncFilePath, True)
+                            End If
+
+                            MyLog.Write("...successfully added file to sync folder.", Information)
+                        End If
+
+                        MyLog.Write("...successfully renamed file in sync folder.", Information)
+                    End If
+                Else
+                    Throw New Exception("File was being watched but could not determine its codec.")
+                End If
+            Next
+
+            MyReturnObject = New ReturnObject(True, "", 0)
+            MyLog.Write(ProcessID, "File renamed: """ & FilePath.Substring(GlobalSyncSettings.SourceDirectory.Length) & """", Information)
+        Catch ex As Exception
+            MyLog.Write(ProcessID, "File rename failed: """ & FilePath.Substring(GlobalSyncSettings.SourceDirectory.Length) & """. Exception: " & ex.Message, Warning)
+            MyReturnObject = New ReturnObject(False, ex.Message, 0)
+        End Try
 
         Return MyReturnObject
 

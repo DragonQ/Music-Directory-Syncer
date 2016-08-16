@@ -557,7 +557,7 @@ Public Class NewSyncWindow
 
             Try
                 Dim MyFileParser As New FileParser(MyGlobalSyncSettings, ProcessID, FilePath)
-                TransferResult = MyFileParser.TransferToSyncFolder(CodecsToCheck)
+                TransferResult = MyFileParser.TransferToSyncFolder()
 
                 If TransferResult.Success Then
                     Dim NewSize As Int64 = CType(TransferResult.MyObject, Int64)

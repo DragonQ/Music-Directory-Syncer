@@ -193,7 +193,12 @@ Public Class TrayApp
         If FilterMatch(e.Name) Then
             MyLog.Write("File renamed: " & e.FullPath, Information)
             Dim MyFileParser As New FileParser(MyGlobalSyncSettings, FileID, e.FullPath)
-            RenameInSyncFolder(MyFileParser, e.OldFullPath)
+            Dim Result As ReturnObject = MyFileParser.RenameInSyncFolder(e.OldFullPath) 'RenameInSyncFolder(MyFileParser, e.OldFullPath)
+            If Result.Success Then
+                If Tray.Visible Then Tray.ShowBalloonTip(BalloonTime, "File renamed:", e.FullPath.Substring(MyGlobalSyncSettings.SourceDirectory.Length), ToolTipIcon.Info)
+            Else
+                If Tray.Visible Then Tray.ShowBalloonTip(BalloonTime, "File rename failed:", e.FullPath.Substring(MyGlobalSyncSettings.SourceDirectory.Length), ToolTipIcon.Error)
+            End If
             MyFileParser = Nothing
         End If
 
@@ -213,26 +218,35 @@ Public Class TrayApp
             Select Case e.ChangeType
                 Case Is = IO.WatcherChangeTypes.Changed
                     MyLog.Write("File changed: " & e.FullPath, Information)
-                    DeleteInSyncFolder(MyFileParser, e.FullPath)
-                    Dim Result As ReturnObject = MyFileParser.TransferToSyncFolder(MySyncSettings.GetWatcherCodecs)
+                    Dim Result As ReturnObject = MyFileParser.DeleteInSyncFolder()
 
                     If Result.Success Then
-                        If Tray.Visible Then Tray.ShowBalloonTip(BalloonTime, "File processed:", e.FullPath.Substring(MySyncSettings.SourceDirectory.Length), ToolTipIcon.Info)
+                        Result = MyFileParser.TransferToSyncFolder()
+                    End If
+
+                    If Result.Success Then
+                        If Tray.Visible Then Tray.ShowBalloonTip(BalloonTime, "File processed:", e.FullPath.Substring(MyGlobalSyncSettings.SourceDirectory.Length), ToolTipIcon.Info)
                     Else
-                        If Tray.Visible Then Tray.ShowBalloonTip(BalloonTime, "File processing failed:", e.FullPath.Substring(MySyncSettings.SourceDirectory.Length), ToolTipIcon.Error)
+                        If Tray.Visible Then Tray.ShowBalloonTip(BalloonTime, "File processing failed:", e.FullPath.Substring(MyGlobalSyncSettings.SourceDirectory.Length), ToolTipIcon.Error)
                     End If
                 Case Is = IO.WatcherChangeTypes.Created
                     MyLog.Write("File created: " & e.FullPath, Information)
-                    Dim Result As ReturnObject = MyFileParser.TransferToSyncFolder(MySyncSettings.GetWatcherCodecs)
+                    Dim Result As ReturnObject = MyFileParser.TransferToSyncFolder()
 
                     If Result.Success Then
-                        If Tray.Visible Then Tray.ShowBalloonTip(BalloonTime, "File processed:", e.FullPath.Substring(MySyncSettings.SourceDirectory.Length), ToolTipIcon.Info)
+                        If Tray.Visible Then Tray.ShowBalloonTip(BalloonTime, "File processed:", e.FullPath.Substring(MyGlobalSyncSettings.SourceDirectory.Length), ToolTipIcon.Info)
                     Else
-                        If Tray.Visible Then Tray.ShowBalloonTip(BalloonTime, "File processing failed:", e.FullPath.Substring(MySyncSettings.SourceDirectory.Length), ToolTipIcon.Error)
+                        If Tray.Visible Then Tray.ShowBalloonTip(BalloonTime, "File processing failed:", e.FullPath.Substring(MyGlobalSyncSettings.SourceDirectory.Length), ToolTipIcon.Error)
                     End If
                 Case Is = IO.WatcherChangeTypes.Deleted
                     MyLog.Write("File deleted: " & e.FullPath, Information)
-                    DeleteInSyncFolder(MyFileParser, e.FullPath)
+                    Dim Result As ReturnObject = MyFileParser.DeleteInSyncFolder()
+
+                    If Result.Success Then
+                        If Tray.Visible Then Tray.ShowBalloonTip(BalloonTime, "File deleted:", e.FullPath.Substring(MyGlobalSyncSettings.SourceDirectory.Length), ToolTipIcon.Info)
+                    Else
+                        If Tray.Visible Then Tray.ShowBalloonTip(BalloonTime, "File deletion failed:", e.FullPath.Substring(MyGlobalSyncSettings.SourceDirectory.Length), ToolTipIcon.Error)
+                    End If
             End Select
             MyFileParser = Nothing
         End If
@@ -249,95 +263,26 @@ Public Class TrayApp
 
         Dim Match As Boolean = False
         Dim FileExtension As String = Path.GetExtension(FileName).ToLower(EnglishGB)
+        Dim SyncSettings As SyncSettings() = MyGlobalSyncSettings.GetSyncSettings()
 
-        For Each Filter As String In MySyncSettings.GetFileExtensions()
-            If FileExtension = Filter.ToLower(EnglishGB) Then
-                Return True
-            End If
+        For Each SyncSetting As SyncSettings In SyncSettings
+            For Each Filter As String In SyncSetting.GetFileExtensions()
+                If FileExtension = Filter.ToLower(EnglishGB) Then
+                    Return True
+                End If
+            Next
         Next
 
         Return False
 
     End Function
 
-    Private Sub DeleteInSyncFolder(ByRef MyFileParser As FileParser, ByVal FilePath As String)
-
-        Try
-            Dim FileCodec As Codec = MyFileParser.CheckFileCodec(MySyncSettings.GetWatcherCodecs)
-
-            If Not FileCodec Is Nothing Then
-                'File was meant to be synced, which means we now need to delete the synced version
-
-                Dim SyncFilePath As String = MySyncSettings.SyncDirectory & FilePath.Substring(MyGlobalSyncSettings.SourceDirectory.Length)
-
-                If MySyncSettings.TranscodeLosslessFiles AndAlso FileCodec.CompressionType = Lossless Then 'Need to replace extension with .ogg
-                    Dim TranscodedFilePath As String = Path.Combine(Path.GetDirectoryName(SyncFilePath), Path.GetFileNameWithoutExtension(SyncFilePath)) &
-                                                    MySyncSettings.Encoder.GetFileExtensions(0)
-                    SyncFilePath = TranscodedFilePath
-                End If
-
-                'Delete file if it exists in sync folder
-                If File.Exists(SyncFilePath) Then
-                    File.Delete(SyncFilePath)
-                    MyLog.Write("...file in sync folder deleted: """ & SyncFilePath.Substring(MySyncSettings.SyncDirectory.Length) & """.", Information)
-                    If Tray.Visible Then Tray.ShowBalloonTip(BalloonTime, "File Deleted:", SyncFilePath.Substring(MySyncSettings.SyncDirectory.Length), ToolTipIcon.Info)
-                Else
-                    MyLog.Write("...file doesn't exist in sync folder: """ & SyncFilePath.Substring(MySyncSettings.SyncDirectory.Length) & """.", Information)
-                End If
-            Else
-                Throw New Exception("File was being watched but could not determine its codec.")
-            End If
-        Catch ex As Exception
-            MyLog.Write("...couldn't delete file in sync folder. Exception: " & ex.Message, Warning)
-        End Try
-
-    End Sub
-
     Private Sub RenameInSyncFolder(ByRef MyFileParser As FileParser, ByVal OldFilePath As String)
 
+
+
         Try
-            Dim FileCodec As Codec = MyFileParser.CheckFileCodec(MySyncSettings.GetWatcherCodecs)
-            Dim NewFilePath As String = MyFileParser.FilePath
 
-            If Not FileCodec Is Nothing Then
-
-                If MyFileParser.CheckFileForSync(FileCodec) Then
-                    Dim SyncFilePath As String = MySyncSettings.SyncDirectory & NewFilePath.Substring(MyGlobalSyncSettings.SourceDirectory.Length)
-                    Dim OldSyncFilePath As String = MySyncSettings.SyncDirectory & OldFilePath.Substring(MyGlobalSyncSettings.SourceDirectory.Length)
-
-                    If MySyncSettings.TranscodeLosslessFiles AndAlso FileCodec.CompressionType = Lossless Then 'Need to replace extension with .ogg
-                        Dim TempString As String = Path.Combine(Path.GetDirectoryName(SyncFilePath), Path.GetFileNameWithoutExtension(SyncFilePath)) &
-                            MySyncSettings.Encoder.GetFileExtensions(0)
-                        SyncFilePath = TempString
-                        TempString = Path.Combine(Path.GetDirectoryName(OldSyncFilePath), Path.GetFileNameWithoutExtension(OldSyncFilePath)) &
-                            MySyncSettings.Encoder.GetFileExtensions(0)
-                        OldSyncFilePath = TempString
-                    End If
-
-                    If File.Exists(OldSyncFilePath) Then
-                        File.Move(OldSyncFilePath, SyncFilePath)
-                    Else
-                        MyLog.Write("...old file doesn't exist in sync folder: """ & OldSyncFilePath & """, creating now...", Warning)
-
-                        If MySyncSettings.TranscodeLosslessFiles AndAlso FileCodec.CompressionType = Lossless Then 'Need to transcode file
-                            MyLog.Write("...transcoding file to " & MySyncSettings.Encoder.Name & "...", Debug)
-                            MyFileParser.TranscodeFile(SyncFilePath)
-                        Else
-                            Directory.CreateDirectory(Path.GetDirectoryName(SyncFilePath))
-                            File.Copy(NewFilePath, SyncFilePath, True)
-                        End If
-
-                        MyLog.Write("...successfully added file to sync folder.", Information)
-                        If Tray.Visible Then Tray.ShowBalloonTip(BalloonTime, "File Processed:", NewFilePath.Substring(MyGlobalSyncSettings.SourceDirectory.Length),
-                                                ToolTipIcon.Info)
-                    End If
-
-                    MyLog.Write("...successfully renamed file in sync folder.", Information)
-                    If Tray.Visible Then Tray.ShowBalloonTip(BalloonTime, "File Renamed:", NewFilePath.Substring(MyGlobalSyncSettings.SourceDirectory.Length),
-                                                ToolTipIcon.Info)
-                End If
-
-            End If
         Catch ex As Exception
             MyLog.Write("...failed to add file to sync folder. Exception: " & ex.Message, Warning)
         End Try
