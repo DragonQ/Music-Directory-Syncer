@@ -272,7 +272,7 @@ Module XML
 
     End Function
 
-    Public Function SaveSyncSettings() As ReturnObject
+    Public Function SaveSyncSettings(MyGlobalSyncSettings As GlobalSyncSettings) As ReturnObject
 
         Try
             Dim XMLSettings As XmlWriterSettings = New XmlWriterSettings()
