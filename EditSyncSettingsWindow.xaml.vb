@@ -6,13 +6,15 @@ Imports System.IO
 
 Public Class EditSyncSettingsWindow
 
+    Dim MyGlobalSyncSettings As GlobalSyncSettings
     Dim MySyncSettings As SyncSettings
 
 #Region " New "
-    Public Sub New()
+    Public Sub New(NewGlobalSyncSettings As GlobalSyncSettings)
 
         ' This call is required by the designer.
         InitializeComponent()
+        MyGlobalSyncSettings = NewGlobalSyncSettings
 
     End Sub
 
@@ -79,9 +81,11 @@ Public Class EditSyncSettingsWindow
             MyGlobalSyncSettings.ffmpegPath = txt_ffmpegPath.Text
 
             ' Save settings to file
-            Dim MyResult As ReturnObject = SaveSyncSettings()
+            Dim MyResult As ReturnObject = SaveSyncSettings(MyGlobalSyncSettings)
 
             If MyResult.Success Then
+                'Set UserGlobalSyncSettings to our newly updated version now that it's been saved
+                UserGlobalSyncSettings = MyGlobalSyncSettings
                 MyLog.Write("Syncer settings updated.", Information)
                 Me.DialogResult = True
                 Me.Close()

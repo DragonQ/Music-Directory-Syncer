@@ -23,11 +23,12 @@ Public Class NewSyncWindow
     Dim SyncTimer As New Stopwatch()
     Dim TagsToSync As ObservableCollection(Of Codec.Tag)
     Dim FileTypesToSync As ObservableCollection(Of Codec)
+    Dim MyGlobalSyncSettings As GlobalSyncSettings
     Dim MySyncSettings As SyncSettings
-
+    Dim MySyncSettingsList As List(Of SyncSettings)
 
 #Region " New "
-    Public Sub New()
+    Public Sub New(NewGlobalSyncSettings As GlobalSyncSettings)
 
         ' This call is required by the designer.
         InitializeComponent()
@@ -41,7 +42,9 @@ Public Class NewSyncWindow
         AddHandler SyncBackgroundWorker.RunWorkerCompleted, AddressOf SyncFolderCompleted
 
         ' Define default sync settings to start with
-        MySyncSettings = DefaultGlobalSyncSettings.GetSyncSettings(0)
+        MyGlobalSyncSettings = NewGlobalSyncSettings ' Is Nothing Then MyGlobalSyncSettings = New GlobalSyncSettings(DefaultGlobalSyncSettings)
+        MySyncSettingsList = MyGlobalSyncSettings.GetSyncSettings().ToList
+        MySyncSettings = MySyncSettingsList(0)
 
         ' Define collection for FileTypesToSync, which is bound to lstFileTypesToSync
         FileTypesToSync = New ObservableCollection(Of Codec)
@@ -91,8 +94,8 @@ Public Class NewSyncWindow
         If TagsToSync.Count > 0 Then btnRemoveTag.IsEnabled = True
         spinThreads.Maximum = MySyncSettings.MaxThreads
         spinThreads.Value = spinThreads.Maximum
-        txt_ffmpegPath.Text = DefaultGlobalSyncSettings.ffmpegPath
-        txtSourceDirectory.Text = DefaultGlobalSyncSettings.SourceDirectory
+        txt_ffmpegPath.Text = MyGlobalSyncSettings.ffmpegPath
+        txtSourceDirectory.Text = MyGlobalSyncSettings.SourceDirectory
         txtSyncDirectory.Text = MySyncSettings.SyncDirectory
         tckTranscode.IsChecked = MySyncSettings.TranscodeLosslessFiles
         txtSourceDirectory.Focus()
@@ -183,7 +186,7 @@ Public Class NewSyncWindow
         Dim DefaultDirectory As String = txtSourceDirectory.Text
 
         If Not Directory.Exists(DefaultDirectory) Then
-            DefaultDirectory = DefaultGlobalSyncSettings.SourceDirectory
+            DefaultDirectory = MyGlobalSyncSettings.SourceDirectory
         End If
 
         Dim Browser As ReturnObject = CreateDirectoryBrowser(DefaultDirectory)
@@ -215,7 +218,7 @@ Public Class NewSyncWindow
         Dim DefaultPath As String = txt_ffmpegPath.Text
 
         If Not Directory.Exists(DefaultPath) Then
-            DefaultPath = DefaultGlobalSyncSettings.ffmpegPath
+            DefaultPath = MyGlobalSyncSettings.ffmpegPath
         End If
 
         Dim Browser As ReturnObject = CreateFileBrowser(DefaultPath)
@@ -276,11 +279,6 @@ Public Class NewSyncWindow
                 End If
 
                 MyLog.Write("Creating new folder sync!", Warning)
-
-                'Create new SyncSettings object using the default sync settings for now.
-                MyGlobalSyncSettings = New GlobalSyncSettings(DefaultGlobalSyncSettings)
-                Dim MySyncSettings As SyncSettings = DefaultGlobalSyncSettings.GetSyncSettings(0)
-
                 MyLog.Write("Source directory: """ & txtSourceDirectory.Text & """.", Information)
                 MyLog.Write("Sync directory: """ & txtSyncDirectory.Text & """.", Information)
 
@@ -316,7 +314,6 @@ Public Class NewSyncWindow
                 MySyncSettings.SetWatcherCodecs(NewFileTypesToSync)
 
                 'Update GlobalSyncSettings object
-                Dim MySyncSettingsList As New List(Of SyncSettings)
                 MySyncSettingsList.Add(MySyncSettings)
                 MyGlobalSyncSettings.SetSyncSettings(MySyncSettingsList)
 
@@ -360,7 +357,6 @@ Public Class NewSyncWindow
         Dim FolderPath As String = MyGlobalSyncSettings.SourceDirectory
         Dim MyFiles As FileData() = Nothing
         Dim MyFilesToProcess As New List(Of String)
-        Dim CodecsToCheck As Codec() = MySyncSettings.GetWatcherCodecs
 
         MyLog.Write("Scanning files in source directory.", Information)
 
@@ -482,7 +478,7 @@ Public Class NewSyncWindow
                 End If
 
                 ThreadsStarted += One
-                Dim InputObjects As Object() = {FileID, MyFile.Path, CodecsToCheck}
+                Dim InputObjects As Object() = {FileID, MyFile.Path}
                 ThreadPool.QueueUserWorkItem(New WaitCallback(AddressOf TransferToSyncFolderDelegate), InputObjects)
             Next
 
@@ -532,7 +528,6 @@ Public Class NewSyncWindow
             Dim InputObjects As Object() = CType(Input, Object())
             Dim ProcessID As Int32 = CType(InputObjects(0), Int32)
             Dim FilePath As String = CType(InputObjects(1), String)
-            Dim CodecsToCheck As Codec() = CType(InputObjects(2), Codec())
             Dim TransferResult As ReturnObject
 
             Try
@@ -570,13 +565,12 @@ Public Class NewSyncWindow
         'If the sync task was cancelled, then we need to force-close all instances of ffmpeg and exit application
         If e.Cancelled Then
             Try
+                MyLog.Write("Sync cancelled, now force-closing ffmpeg instances...", Warning)
+
                 Dim taskkill As New ProcessStartInfo("taskkill")
                 taskkill.CreateNoWindow = True
                 taskkill.UseShellExecute = False
                 taskkill.Arguments = " /F /IM " & Path.GetFileName(MyGlobalSyncSettings.ffmpegPath) & " /T"
-
-                MyLog.Write("Sync cancelled, now force-closing ffmpeg instances...", Warning)
-
                 Dim taskkillProcess As Process = Process.Start(taskkill)
                 taskkillProcess.WaitForExit()
 
@@ -626,9 +620,11 @@ Public Class NewSyncWindow
                 MyGlobalSyncSettings.SyncIsEnabled = False
             End If
 
-            Dim MyResult As ReturnObject = SaveSyncSettings()
+            Dim MyResult As ReturnObject = SaveSyncSettings(MyGlobalSyncSettings)
 
             If MyResult.Success Then
+                'Set UserGlobalSyncSettings to our newly updated version now that it's been saved
+                UserGlobalSyncSettings = MyGlobalSyncSettings
                 Me.DialogResult = True
                 MyLog.Write("Syncer settings updated.", Information)
                 Me.Close()
