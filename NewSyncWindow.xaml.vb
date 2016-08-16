@@ -214,35 +214,15 @@ Public Class NewSyncWindow
 
         Dim DefaultPath As String = txt_ffmpegPath.Text
 
-        If Not File.Exists(DefaultPath) Then
+        If Not Directory.Exists(DefaultPath) Then
             DefaultPath = DefaultGlobalSyncSettings.ffmpegPath
         End If
 
-        Using SelectDirectoryDialog = New CommonOpenFileDialog()
-            SelectDirectoryDialog.Title = "Select ffmpeg.exe Path"
-            SelectDirectoryDialog.IsFolderPicker = False
-            SelectDirectoryDialog.AddToMostRecentlyUsedList = False
-            SelectDirectoryDialog.AllowNonFileSystemItems = True
+        Dim Browser As ReturnObject = CreateFileBrowser(DefaultPath)
 
-            SelectDirectoryDialog.DefaultDirectory = Environment.GetFolderPath(Environment.SpecialFolder.ProgramFiles)
-            If File.Exists(DefaultPath) Then
-                SelectDirectoryDialog.InitialDirectory = Path.GetDirectoryName(DefaultPath)
-            Else
-                SelectDirectoryDialog.InitialDirectory = SelectDirectoryDialog.DefaultDirectory
-            End If
-
-            SelectDirectoryDialog.EnsureFileExists = True
-            SelectDirectoryDialog.EnsurePathExists = True
-            SelectDirectoryDialog.EnsureReadOnly = False
-            SelectDirectoryDialog.EnsureValidNames = True
-            SelectDirectoryDialog.Multiselect = False
-            SelectDirectoryDialog.ShowPlacesList = True
-            SelectDirectoryDialog.Filters.Add(New CommonFileDialogFilter("ffmpeg Executable", "*.exe"))
-
-            If SelectDirectoryDialog.ShowDialog() = CommonFileDialogResult.Ok Then
-                txt_ffmpegPath.Text = SelectDirectoryDialog.FileName
-            End If
-        End Using
+        If Browser.Success Then
+            txt_ffmpegPath.Text = CStr(Browser.MyObject)
+        End If
 
     End Sub
 

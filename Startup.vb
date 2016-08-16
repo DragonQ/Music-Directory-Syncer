@@ -98,4 +98,36 @@ Module Startup
 
     End Function
 
+    Public Function CreateFileBrowser(DefaultPath As String) As ReturnObject
+
+        Using SelectDirectoryDialog = New CommonOpenFileDialog()
+            SelectDirectoryDialog.Title = "Select ffmpeg.exe Path"
+            SelectDirectoryDialog.IsFolderPicker = False
+            SelectDirectoryDialog.AddToMostRecentlyUsedList = False
+            SelectDirectoryDialog.AllowNonFileSystemItems = True
+
+            SelectDirectoryDialog.DefaultDirectory = Environment.GetFolderPath(Environment.SpecialFolder.ProgramFiles)
+            If File.Exists(DefaultPath) Then
+                SelectDirectoryDialog.InitialDirectory = Path.GetDirectoryName(DefaultPath)
+            Else
+                SelectDirectoryDialog.InitialDirectory = SelectDirectoryDialog.DefaultDirectory
+            End If
+
+            SelectDirectoryDialog.EnsureFileExists = True
+            SelectDirectoryDialog.EnsurePathExists = True
+            SelectDirectoryDialog.EnsureReadOnly = False
+            SelectDirectoryDialog.EnsureValidNames = True
+            SelectDirectoryDialog.Multiselect = False
+            SelectDirectoryDialog.ShowPlacesList = True
+            SelectDirectoryDialog.Filters.Add(New CommonFileDialogFilter("ffmpeg Executable", "*.exe"))
+
+            If SelectDirectoryDialog.ShowDialog() = CommonFileDialogResult.Ok Then
+                Return New ReturnObject(True, "", SelectDirectoryDialog.FileName)
+            Else
+                Return New ReturnObject(False, "")
+            End If
+        End Using
+
+    End Function
+
 End Module
