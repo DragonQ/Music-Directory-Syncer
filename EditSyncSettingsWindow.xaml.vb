@@ -9,11 +9,10 @@ Public Class EditSyncSettingsWindow
     Dim MySyncSettings As SyncSettings
 
 #Region " New "
-    Public Sub New(SyncSettings As SyncSettings)
+    Public Sub New()
 
         ' This call is required by the designer.
         InitializeComponent()
-        MySyncSettings = SyncSettings
 
     End Sub
 
@@ -21,7 +20,7 @@ Public Class EditSyncSettingsWindow
 
         ' Set run-time properties of window objects
         txtSourceDirectory.Text = MyGlobalSyncSettings.SourceDirectory
-        txtSyncDirectory.Text = MySyncSettings.SyncDirectory
+        txt_ffmpegPath.Text = MySyncSettings.SyncDirectory
         spinThreads.Maximum = Environment.ProcessorCount
         spinThreads.Value = MySyncSettings.MaxThreads
 
@@ -45,18 +44,18 @@ Public Class EditSyncSettingsWindow
 
     End Sub
 
-    Private Sub btnBrowseSyncDirectory_Click(sender As Object, e As RoutedEventArgs)
+    Private Sub btnBrowse_ffmmpegPath_Click(sender As Object, e As RoutedEventArgs)
 
-        Dim DefaultDirectory As String = txtSyncDirectory.Text
+        Dim DefaultPath As String = txt_ffmpegPath.Text
 
-        If Not Directory.Exists(DefaultDirectory) Then
-            DefaultDirectory = MySyncSettings.SyncDirectory
+        If Not Directory.Exists(DefaultPath) Then
+            DefaultPath = MyGlobalSyncSettings.ffmpegPath
         End If
 
-        Dim Browser As ReturnObject = CreateDirectoryBrowser(DefaultDirectory)
+        Dim Browser As ReturnObject = CreateFileBrowser(DefaultPath)
 
         If Browser.Success Then
-            txtSyncDirectory.Text = CStr(Browser.MyObject)
+            txt_ffmpegPath.Text = CStr(Browser.MyObject)
         End If
 
     End Sub
@@ -71,18 +70,13 @@ Public Class EditSyncSettingsWindow
                 Throw New Exception("Specified source directory doesn't exist.")
             End If
 
-            If Not Directory.Exists(txtSyncDirectory.Text) Then
-                If (Path.IsPathRooted(txtSyncDirectory.Text) AndAlso Path.IsPathRooted(txtSyncDirectory.Text)) Then
-                    Directory.CreateDirectory(txtSyncDirectory.Text)
-                Else
-                    Throw New Exception("Specified sync directory is not valid.")
-                End If
+            If Not File.Exists(txt_ffmpegPath.Text) Then
+                Throw New Exception("Specified ffmpeg path is not valid.")
             End If
 
             ' Apply settings
             MyGlobalSyncSettings.SourceDirectory = txtSourceDirectory.Text
-            MySyncSettings.SyncDirectory = txtSyncDirectory.Text
-            MySyncSettings.MaxThreads = CInt(spinThreads.Value)
+            MyGlobalSyncSettings.ffmpegPath = txt_ffmpegPath.Text
 
             ' Save settings to file
             Dim MyResult As ReturnObject = SaveSyncSettings()
@@ -112,7 +106,7 @@ Public Class EditSyncSettingsWindow
         btnSave.IsEnabled = Enable
         btnCancel.IsEnabled = Enable
         txtSourceDirectory.IsEnabled = Enable
-        txtSyncDirectory.IsEnabled = Enable
+        txt_ffmpegPath.IsEnabled = Enable
         spinThreads.IsEnabled = Enable
     End Sub
 #End Region
