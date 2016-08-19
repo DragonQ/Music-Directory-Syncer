@@ -1,5 +1,5 @@
 ﻿#Region " Namespaces "
-Imports MusicFolderSyncer.Logger.DebugLogLevel
+Imports MusicFolderSyncer.Logger.LogLevel
 Imports MusicFolderSyncer.Toolkit
 Imports MusicFolderSyncer.SyncSettings
 Imports MusicFolderSyncer.Codec.CodecType
@@ -15,11 +15,15 @@ Class FileParser
     Private SyncSettings As SyncSettings()
 
 #Region " New "
-    Public Sub New(ByRef NewGlobalSyncSettings As GlobalSyncSettings, ByVal NewProcessID As Int32, ByVal NewFilePath As String)
+    Public Sub New(ByRef NewGlobalSyncSettings As GlobalSyncSettings, ByVal NewProcessID As Int32, ByVal NewFilePath As String, Optional NewSyncSettings As SyncSettings = Nothing)
         ProcessID = NewProcessID
         FilePath = NewFilePath
         MyGlobalSyncSettings = NewGlobalSyncSettings
-        SyncSettings = MyGlobalSyncSettings.GetSyncSettings()
+        If NewSyncSettings Is Nothing Then
+            SyncSettings = MyGlobalSyncSettings.GetSyncSettings()
+        Else
+            SyncSettings = {NewSyncSettings}
+        End If
     End Sub
 #End Region
 

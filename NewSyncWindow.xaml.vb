@@ -1,7 +1,7 @@
 ﻿#Region " Namespaces "
 Imports MusicFolderSyncer.Toolkit
 Imports MusicFolderSyncer.Codec.CodecType
-Imports MusicFolderSyncer.Logger.DebugLogLevel
+Imports MusicFolderSyncer.Logger.LogLevel
 Imports MusicFolderSyncer.SyncSettings
 Imports System.IO
 Imports System.Environment
@@ -44,8 +44,8 @@ Public Class NewSyncWindow
 
         ' Define default sync settings to start with
         MyGlobalSyncSettings = NewGlobalSyncSettings
-        MySyncSettingsList = MyGlobalSyncSettings.GetSyncSettings().ToList
-        MySyncSettings = MySyncSettingsList(0)
+        MySyncSettingsList = MyGlobalSyncSettings.GetSyncSettings().ToList()
+        MySyncSettings = New SyncSettings(MySyncSettingsList(0))
         NewSync = MyNewSync
 
         ' Define collection for FileTypesToSync, which is bound to lstFileTypesToSync
@@ -300,7 +300,6 @@ Public Class NewSyncWindow
                                                         CType(CType(cmbCodecProfile.SelectedItem, Item).Value, Codec.Profile))
                     Else
                         System.Windows.MessageBox.Show("You have not specified a valid encoder for this sync!", "New Sync", MessageBoxButton.OKCancel, MessageBoxImage.Error)
-                        MyGlobalSyncSettings = Nothing
                         EnableDisableControls(True)
                         Exit Sub
                     End If
@@ -310,7 +309,6 @@ Public Class NewSyncWindow
                     MySyncSettings.ReplayGain = CType(CType(cmbReplayGain.SelectedItem, Item).Value, ReplayGainMode)
                 Else
                     System.Windows.MessageBox.Show("You have not specified a valid ReplayGain setting for this sync!", "New Sync", MessageBoxButton.OKCancel, MessageBoxImage.Error)
-                    MyGlobalSyncSettings = Nothing
                     EnableDisableControls(True)
                     Exit Sub
                 End If
@@ -350,15 +348,15 @@ Public Class NewSyncWindow
         'Directory controls
         txtSyncDirectory.IsEnabled = Enable
         btnBrowseSyncDirectory.IsEnabled = Enable
-        If Not NewSync Then
+        If NewSync Then
             txtSourceDirectory.IsEnabled = Enable
             btnBrowseSourceDirectory.IsEnabled = Enable
+            spinThreads.IsEnabled = Enable
         End If
 
         'Miscellaneous controls
         btnNewSync.IsEnabled = Enable
         tckTranscode.IsEnabled = Enable
-        spinThreads.IsEnabled = Enable
 
     End Sub
 #End Region
@@ -490,7 +488,7 @@ Public Class NewSyncWindow
                 End If
 
                 ThreadsStarted += One
-                Dim InputObjects As Object() = {FileID, MyFile.Path}
+                Dim InputObjects As Object() = {FileID, MyFile.Path, MySyncSettings}
                 ThreadPool.QueueUserWorkItem(New WaitCallback(AddressOf TransferToSyncFolderDelegate), InputObjects)
             Next
 
@@ -540,10 +538,11 @@ Public Class NewSyncWindow
             Dim InputObjects As Object() = CType(Input, Object())
             Dim ProcessID As Int32 = CType(InputObjects(0), Int32)
             Dim FilePath As String = CType(InputObjects(1), String)
+            Dim SingleSyncSettings As SyncSettings = CType(InputObjects(2), SyncSettings)
             Dim TransferResult As ReturnObject
 
             Try
-                Dim MyFileParser As New FileParser(MyGlobalSyncSettings, ProcessID, FilePath)
+                Dim MyFileParser As New FileParser(MyGlobalSyncSettings, ProcessID, FilePath, SingleSyncSettings)
                 TransferResult = MyFileParser.TransferToSyncFolder()
 
                 If TransferResult.Success Then
@@ -646,7 +645,8 @@ Public Class NewSyncWindow
             End If
         Else
             System.Windows.MessageBox.Show("Sync failed! " & NewLine & NewLine & Result.ErrorMessage, "Sync Failed!",
-                    MessageBoxButton.OKCancel, MessageBoxImage.Error)
+                    MessageBoxButton.OK, MessageBoxImage.Error)
+            FilesCompletedProgressBar.IsIndeterminate = False
             EnableDisableControls(True)
         End If
 
