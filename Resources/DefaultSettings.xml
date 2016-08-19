@@ -2,6 +2,7 @@
 <MusicFolderSyncer>
   <ffmpegPath>C:\Program Files\ffmpeg\ffmpeg.exe</ffmpegPath>
   <!--<SourceDirectory>P:\Audio\Music</SourceDirectory>-->
+  <LogLevel>Information</LogLevel>
   <SyncSettings>
     <SyncSetting>
       <!--<Threads>4</Threads>-->
@@ -13,11 +14,11 @@
         <CodecName>AAC</CodecName>
         <CodecName>OGG</CodecName>
       </FileTypes>
-      <!--<Tags>
-        <Tag>
+      <Tags>
+        <!--<Tag>
           <Name>BEST_MUSIC</Name>
-        </Tag>
-      </Tags>-->
+        </Tag>-->
+      </Tags>
       <TranscodeLosslessFiles />
       <ReplayGainMode>None</ReplayGainMode>
       <Encoder>
