@@ -39,44 +39,36 @@ Module XML
                     {
                     .Name = Codec.Element("Name").Value,
                     .Type = Codec.Element("Type").Value,
-                    .Extensions = From Extension In Codec.Descendants("Extension")
+                    .Profiles = Codec.Element("Profiles"),
+                    .Extensions = Codec.Element("Extensions")
                     }
 
-                'Find all <Codec> elements and assign properties based on known sub-elements
-                Dim Codecs2 = From Codec In CodecsXML.Elements("MusicFolderSyncer").Elements("Codecs").Elements("Codec")
-                              Select New With
-                    {
-                    .Name = Codec.Element("Name").Value,
-                    .Profile = From Profile In Codec.Descendants("Profile")
-                               Select New With
+                For Each MyCodec In Codecs
+                    'Find all <Profile> elements within <Profiles>
+                    If MyCodec.Profiles Is Nothing Then
+                        Throw New Exception("Codecs file is malformed: missing <Profiles> element.")
+                    End If
+
+                    Dim elProfiles = From Profile In MyCodec.Profiles.Elements("Profile")
+                                     Select New With
                         {
                         .ProfileName = Profile.Element("Name").Value,
                         .ProfileArgument = Profile.Element("Argument").Value
                         }
-                    }
-
-                For Each MyCodec In Codecs
-                    Dim Extensions As New List(Of String)
                     Dim Profiles As New List(Of Codec.Profile)
+                    For Each Profile In elProfiles
+                        Profiles.Add(New Codec.Profile(Profile.ProfileName, Profile.ProfileArgument))
+                    Next
 
-                    For Each MyExtension In MyCodec.Extensions
-                        Extensions.Add(MyExtension.Value)
-                    Next
-                    For Each MyCodec2 In Codecs2
-                        If MyCodec2.Name = MyCodec.Name Then
-                            For Each MyProfile In MyCodec2.Profile
-                                Profiles.Add(New Codec.Profile(MyProfile.ProfileName, MyProfile.ProfileArgument))
-                            Next
-                            Exit For
-                        End If
-                    Next
+                    Dim Extensions = From Extension In MyCodec.Extensions.Elements("Extension") Select Extension.Value
+
                     CodecList.Add(New Codec(MyCodec.Name, MyCodec.Type, Profiles.ToArray, Extensions.ToArray))
                 Next
             End Using
 
             Return CodecList
         Catch ex As Exception
-            MyLog.Write("Could not read from Codecs.xml! Error: " & ex.Message, Logger.DebugLogLevel.Warning)
+            MyLog.Write("Could not read from Codecs.xml! Error: " & ex.Message, Logger.LogLevel.Warning)
             Return Nothing
         End Try
 
@@ -90,13 +82,11 @@ Module XML
         Dim DefaultSync As New SyncSettings("", New List(Of Codec), New List(Of Codec.Tag), False, Nothing, Environment.ProcessorCount, ReplayGainMode.None)
         Dim DefaultSyncList As New List(Of SyncSettings)
         DefaultSyncList.Add(DefaultSync)
-        Return ReadSettings(Codecs, Path.Combine(System.AppDomain.CurrentDomain.BaseDirectory, "DefaultSettings.xml"), New GlobalSyncSettings(False, "", "", DefaultSyncList))
+        Return ReadSettings(Codecs, Path.Combine(System.AppDomain.CurrentDomain.BaseDirectory, "DefaultSettings.xml"), New GlobalSyncSettings(False, "", "", DefaultSyncList, "Information"))
     End Function
 
     Public Function ReadSettings(Codecs As List(Of Codec), FilePath As String, DefaultSettings As GlobalSyncSettings) As ReturnObject
 
-        Dim WatcherFilterList As New List(Of Codec)
-        Dim TagList As New List(Of Codec.Tag)
         Dim NewSyncSettingsList As New List(Of SyncSettings)
         Dim GlobalSyncSettings As New GlobalSyncSettings(DefaultSettings)
 
@@ -117,7 +107,9 @@ Module XML
                     {
                         .EnableSync = If(Setting.OptionalElement("EnableSync"), Nothing),
                         .SourceDirectory = If(Setting.Element("SourceDirectory"), Nothing),
-                        .ffmpegPath = If(Setting.Element("ffmpegPath"), Nothing)
+                        .ffmpegPath = If(Setting.Element("ffmpegPath"), Nothing),
+                        .LogLevel = If(Setting.OptionalElement("LogLevel"), Nothing),
+                        .SyncSettings = If(Setting.Elements("SyncSettings"), Nothing)
                     }
 
                 If GlobalSettings.Count > 0 Then
@@ -125,6 +117,7 @@ Module XML
                         If Not GlobalSettings(0).EnableSync Is Nothing Then GlobalSyncSettings.SyncIsEnabled = True
                         If Not GlobalSettings(0).SourceDirectory Is Nothing Then GlobalSyncSettings.SourceDirectory = GlobalSettings(0).SourceDirectory.Value
                         If Not GlobalSettings(0).ffmpegPath Is Nothing Then GlobalSyncSettings.ffmpegPath = GlobalSettings(0).ffmpegPath.Value
+                        If Not GlobalSettings(0).LogLevel Is Nothing Then GlobalSyncSettings.SetLogLevel(GlobalSettings(0).LogLevel)
                     Else
                         Throw New Exception("Settings file is malformed: too many <MusicFolderSyncer> elements.")
                     End If
@@ -132,18 +125,22 @@ Module XML
                     Throw New Exception("Settings file is malformed: missing <MusicFolderSyncer> element.")
                 End If
 
-                'Find all sync settings
-                Dim Settings = From Setting In SettingsXML.Elements("MusicFolderSyncer").Elements("SyncSettings").Elements("SyncSetting")
+                Dim Settings = From Setting In GlobalSettings(0).SyncSettings.Elements("SyncSetting")
                                Select New With
                     {
                         .SourceDirectory = If(Setting.Element("SourceDirectory"), Nothing),
                         .SyncDirectory = If(Setting.Element("SyncDirectory"), Nothing),
                         .MaxThreads = If(Setting.OptionalElement("Threads"), Nothing),
                         .TranscodeLosslessFiles = If(Setting.OptionalElement("TranscodeLosslessFiles"), Nothing),
-                        .ReplayGain = If(Setting.OptionalElement("ReplayGainMode"), Nothing)
+                        .ReplayGain = If(Setting.OptionalElement("ReplayGainMode"), Nothing),
+                        .Encoder = If(Setting.Element("Encoder"), Nothing),
+                        .FileTypes = If(Setting.Element("FileTypes"), Nothing),
+                        .Tags = If(Setting.Element("Tags"), Nothing)
                     }
 
-                If Settings.Count > 0 Then
+                Dim SyncSettingsCount = Settings.Count
+
+                If SyncSettingsCount > 0 Then
                     For Each MySetting In Settings
                         'Apply all default values before searching for this sync's settings
                         Dim NewSyncSettings As New SyncSettings(DefaultSettings.GetSyncSettings(0))
@@ -166,93 +163,98 @@ Module XML
                             NewSyncSettings.TranscodeLosslessFiles = True
 
                             'Find transcoding settings
-                            Dim TranscodeSettings = From Setting In SettingsXML.Elements("MusicFolderSyncer").Elements("Encoder")
-                                                    Select New With
-                                {
-                                    .CodecName = Setting.Element("CodecName"),
-                                    .CodecProfile = Setting.Element("CodecProfile"),
-                                    .Extension = Setting.Element("Extension")
-                                }
+                            Dim elCodecName As XElement = If(MySetting.Encoder.Element("CodecName"), Nothing)
+                            Dim elCodecProfile As XElement = If(MySetting.Encoder.Element("CodecProfile"), Nothing)
+                            Dim elExtension As XElement = If(MySetting.Encoder.Element("Extension"), Nothing)
 
-                            If TranscodeSettings.Count > 0 Then
-                                If TranscodeSettings.Count = 1 Then
-                                    Dim CodecFound As Boolean = False
-
-                                    For Each MyCodec As Codec In Codecs
-                                        If TranscodeSettings(0).CodecName.Value = MyCodec.Name Then
-
-                                            Dim ProfileFound As Boolean = False
-
-                                            For Each MyProfile As Codec.Profile In MyCodec.GetProfiles()
-                                                If TranscodeSettings(0).CodecProfile.Value = MyProfile.Name Then
-                                                    NewSyncSettings.Encoder = New Codec(MyCodec.Name, MyCodec.TypeString, {MyProfile},
-                                                                               {TranscodeSettings(0).Extension.Value})
-                                                    ProfileFound = True
-                                                    Exit For
-                                                End If
-                                            Next
-
-                                            If Not ProfileFound Then Throw New Exception("Codec profile not recognised: " & TranscodeSettings(0).CodecProfile.Value)
-
-                                            CodecFound = True
-                                            Exit For
-                                        End If
-                                    Next
-
-                                    If Not CodecFound Then
-                                        Throw New Exception("Codec not recognised: " & TranscodeSettings(0).CodecName.Value)
-                                    End If
-                                Else
-                                    Throw New Exception("Settings file is malformed: too many <Encoder> elements.")
-                                End If
+                            If elCodecName Is Nothing Or elCodecProfile Is Nothing Or elExtension Is Nothing Then
+                                Throw New Exception("Settings file is malformed: <TranscodeLosslessFiles /> is present but there is no valid <Encoder> elements.")
                             Else
-                                Throw New Exception("Settings file is malformed: <TranscodeLosslessFiles /> is present but there is no <Encoder> element.")
-                            End If
+                                Dim CodecName As String = elCodecName.Value
+                                Dim CodecProfile As String = elCodecProfile.Value
+                                Dim Extension As String = elExtension.Value
 
-                        End If
-
-
-
-                        'Find all <CodecName> elements within <FileTypes>
-                        Dim ImportedCodecs = From ImportedCodec In SettingsXML.Elements("MusicFolderSyncer").Elements("FileTypes").Elements("CodecName")
-                                             Select New With
-                            {
-                            .Name = ImportedCodec.Value
-                            }
-
-                        'Add list of codec names to sync to the global filter list
-                        If ImportedCodecs.Count > 0 Then
-                            For Each ImportedCodec In ImportedCodecs
                                 Dim CodecFound As Boolean = False
-
                                 For Each MyCodec As Codec In Codecs
-                                    If ImportedCodec.Name = MyCodec.Name Then
-                                        WatcherFilterList.Add(MyCodec)
+                                    If CodecName = MyCodec.Name Then
+                                        Dim ProfileFound As Boolean = False
+
+                                        For Each MyProfile As Codec.Profile In MyCodec.GetProfiles()
+                                            If CodecProfile = MyProfile.Name Then
+                                                NewSyncSettings.Encoder = New Codec(MyCodec.Name, MyCodec.TypeString, {MyProfile}, {Extension})
+                                                ProfileFound = True
+                                                Exit For
+                                            End If
+                                        Next
+
+                                        If Not ProfileFound Then Throw New Exception("Codec profile not recognised: " & CodecProfile)
+
                                         CodecFound = True
                                         Exit For
                                     End If
                                 Next
 
-                                If Not CodecFound Then Throw New Exception("Codec not recognised: " & ImportedCodec.Name)
-                            Next
-                        Else
+                                If Not CodecFound Then
+                                    Throw New Exception("Codec not recognised: " & CodecName)
+                                End If
+                            End If
+                        End If
+
+                        'Find all <CodecName> elements within <FileTypes>
+                        If MySetting.FileTypes Is Nothing Then
                             Throw New Exception("Settings file is malformed: missing <FileTypes> element.")
                         End If
 
-                        NewSyncSettings.SetWatcherCodecs(WatcherFilterList)
+                        Dim ImportedCodecs = From ImportedCodec In MySetting.FileTypes.Elements("CodecName") Select ImportedCodec.Value
+                        If ImportedCodecs Is Nothing Then
+                            Throw New Exception("Settings file is malformed: <FileTypes> is present but there is no valid <CodecName> elements.")
+                        Else
+                            'Add List of codec names to sync to the global filter list
+                            Dim WatcherFilterList As New List(Of Codec)
+                            If ImportedCodecs.Count > 0 Then
+                                For Each ImportedCodec In ImportedCodecs
+                                    Dim CodecFound As Boolean = False
 
-                        Dim Tags = From Tag In SettingsXML.Elements("MusicFolderSyncer").Elements("Tags").Elements("Tag")
+                                    For Each MyCodec As Codec In Codecs
+                                        If ImportedCodec = MyCodec.Name Then
+                                            WatcherFilterList.Add(MyCodec)
+                                            CodecFound = True
+                                            Exit For
+                                        End If
+                                    Next
+
+                                    If Not CodecFound Then Throw New Exception("Codec not recognised: " & ImportedCodec)
+                                Next
+                            Else
+                                Throw New Exception("Settings file is malformed: missing <FileTypes> element.")
+                            End If
+                            NewSyncSettings.SetWatcherCodecs(WatcherFilterList)
+                        End If
+
+                        'Find all <Tag> elements within <Tags>
+                        If MySetting.Tags Is Nothing Then
+                            Throw New Exception("Settings file is malformed: missing <Tags> element.")
+                        End If
+
+                        Dim Tags = From Tag In MySetting.Tags.Elements("Tag")
                                    Select New With
                             {
                                 .Name = Tag.Element("Name").Value,
                                 .Value = If(Tag.OptionalElement("Value"), Nothing)
                             }
 
-                        For Each Tag In Tags
-                            TagList.Add(New Codec.Tag(Tag.Name, Tag.Value))
-                        Next
+                        If Tags Is Nothing Then
+                            Throw New Exception("Settings file is malformed: <Tags> is present but there are no valid <Tag> elements.")
+                        Else
+                            Dim TagList As New List(Of Codec.Tag)
 
-                        NewSyncSettings.SetWatcherTags(TagList)
+                            For Each Tag In Tags
+                                TagList.Add(New Codec.Tag(Tag.Name, Tag.Value))
+                            Next
+
+                            NewSyncSettings.SetWatcherTags(TagList)
+                        End If
+
                         NewSyncSettingsList.Add(NewSyncSettings)
                     Next
                 Else
@@ -295,6 +297,7 @@ Module XML
                 End If
                 MyWriter.WriteElementString("SourceDirectory", MyGlobalSyncSettings.SourceDirectory)
                 MyWriter.WriteElementString("ffmpegPath", MyGlobalSyncSettings.ffmpegPath)
+                MyWriter.WriteElementString("LogLevel", MyGlobalSyncSettings.GetLogLevel())
 
                 'Write data for each defined sync
                 Dim SyncSettings As SyncSettings() = MyGlobalSyncSettings.GetSyncSettings()
@@ -305,7 +308,6 @@ Module XML
                         MyWriter.WriteStartElement("SyncSetting")
                         MyWriter.WriteElementString("Threads", SyncSetting.MaxThreads.ToString(EnglishGB))
                         MyWriter.WriteElementString("SyncDirectory", SyncSetting.SyncDirectory)
-
                         MyWriter.WriteElementString("ReplayGainMode", SyncSetting.GetReplayGainSetting())
 
                         'Write data for each codec/file type to be synced
