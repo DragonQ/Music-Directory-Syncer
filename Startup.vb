@@ -1,5 +1,5 @@
 ﻿#Region " Namespaces "
-Imports MusicFolderSyncer.Logger.DebugLogLevel
+Imports MusicFolderSyncer.Logger.LogLevel
 Imports MusicFolderSyncer.Toolkit
 Imports System.IO
 Imports Microsoft.WindowsAPICodePack.Dialogs
@@ -13,7 +13,7 @@ Imports Microsoft.WindowsAPICodePack.Dialogs
 Module Startup
 
     Public EnglishGB As System.Globalization.CultureInfo = System.Globalization.CultureInfo.CreateSpecificCulture("en-GB")
-    Private Const LogLevel As Logger.DebugLogLevel = Information
+    Private Const LogLevel As Logger.LogLevel = Information
     Public MyLogFilePath As String = Path.Combine(System.AppDomain.CurrentDomain.BaseDirectory, ApplicationName & ".log")
 
     Public Const ApplicationName As String = "Music Folder Syncer"
@@ -49,6 +49,8 @@ Module Startup
             Exit Sub
         End If
 
+        MyLog.DebugLevel = DefaultGlobalSyncSettings.LogLevel
+
         ' Read SyncSettings.xml file to import current sync settings (if there is one)
         Dim Settings As ReturnObject = XML.ReadSyncSettings(Codecs, DefaultGlobalSyncSettings)
         If Settings.Success Then
@@ -56,9 +58,11 @@ Module Startup
                 MyLog.Write("Settings file not found; launching new sync window.", Information)
                 MessageBox.Show("No existing sync setup was found. Please create one now.",
                                 "No Sync Settings Found", MessageBoxButton.OK, MessageBoxImage.Information)
-                System.Windows.Forms.Application.Run(New TrayApp(True))
+                Forms.Application.Run(New TrayApp(True))
             Else
                 UserGlobalSyncSettings = DirectCast(Settings.MyObject, GlobalSyncSettings)
+                MyLog.DebugLevel = UserGlobalSyncSettings.LogLevel
+                MyLog.Write("Changing log level to " & Logger.ConvertLogLevelToString(UserGlobalSyncSettings.LogLevel), Logger.LogLevel.Debug)
                 Forms.Application.Run(New TrayApp(False))
             End If
         Else

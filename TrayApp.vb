@@ -1,7 +1,7 @@
 ﻿#Region " Namespaces "
 Imports MusicFolderSyncer.Codec.CodecType
 Imports MusicFolderSyncer.Toolkit
-Imports MusicFolderSyncer.Logger.DebugLogLevel
+Imports MusicFolderSyncer.Logger.LogLevel
 Imports System.Windows.Forms
 Imports System.Environment
 Imports System.IO

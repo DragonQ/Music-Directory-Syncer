@@ -1,10 +1,10 @@
-﻿Imports MusicFolderSyncer.Logger.DebugLogLevel
+﻿Imports MusicFolderSyncer.Logger.LogLevel
 Imports System.Environment
 
 
 Public Class Logger
 
-    Public Enum DebugLogLevel
+    Public Enum LogLevel
         Debug
         Information
         Warning
@@ -13,20 +13,52 @@ Public Class Logger
 
     Private ReadOnly FilePath As String
     Private ReadOnly LoggerSync As New Object
-    Property DebugLevel As DebugLogLevel
+    Property DebugLevel As LogLevel
 
-    Public Sub New(ByVal LogFilePath As String, ByVal LogDebugLevel As DebugLogLevel)
+    Public Sub New(ByVal LogFilePath As String, ByVal LogDebugLevel As LogLevel)
+
         FilePath = LogFilePath
         DebugLevel = LogDebugLevel
+
     End Sub
 
-    Public Overloads Sub Write(ThreadID As Int32, Text As String, LogLevel As DebugLogLevel)
+    Public Shared Function ConvertStringToLogLevel(LogLevelString As String) As LogLevel
+
+        Select Case LogLevelString
+            Case Is = "Debug"
+                Return Debug
+            Case Is = "Information"
+                Return Information
+            Case Is = "Warning"
+                Return Warning
+            Case Else
+                Return Always
+        End Select
+
+    End Function
+
+    Public Shared Function ConvertLogLevelToString(LogLevel As LogLevel) As String
+
+        Select Case LogLevel
+            Case Is = Debug
+                Return "Debug"
+            Case Is = Information
+                Return "Information"
+            Case Is = Warning
+                Return "Warning"
+            Case Else
+                Return "Always"
+        End Select
+
+    End Function
+
+    Public Overloads Sub Write(ThreadID As Int32, Text As String, LogLevel As LogLevel)
 
         WriteCommon(Text, ThreadID, LogLevel)
 
     End Sub
 
-    Public Overloads Sub Write(Text As String, LogLevel As DebugLogLevel)
+    Public Overloads Sub Write(Text As String, LogLevel As LogLevel)
 
         'If no ThreadID is specified, this is the main thread (0)
         WriteCommon(Text, 0, LogLevel)
@@ -40,7 +72,7 @@ Public Class Logger
 
     End Sub
 
-    Private Sub WriteCommon(Text As String, ThreadID As Int32, LogLevel As DebugLogLevel)
+    Private Sub WriteCommon(Text As String, ThreadID As Int32, LogLevel As LogLevel)
 
         If LogLevel >= DebugLevel Then
             Dim LogMarker As String

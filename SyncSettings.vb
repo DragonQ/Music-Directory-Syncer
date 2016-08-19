@@ -4,14 +4,16 @@
     Property SourceDirectory As String
     Property ffmpegPath As String
     Dim SyncSettings As SyncSettings()
+    Property LogLevel As Logger.LogLevel
 
 #Region " New "
-    Public Sub New(MySyncIsEnabled As Boolean, MySourceDirectory As String, My_ffmpegPath As String, MySyncSettingsList As List(Of SyncSettings))
+    Public Sub New(MySyncIsEnabled As Boolean, MySourceDirectory As String, My_ffmpegPath As String, MySyncSettingsList As List(Of SyncSettings), MyLogLevel As String)
 
         SyncIsEnabled = MySyncIsEnabled
         SourceDirectory = MySourceDirectory
         ffmpegPath = My_ffmpegPath
         If Not MySyncSettingsList Is Nothing Then SyncSettings = MySyncSettingsList.ToArray()
+        LogLevel = Logger.ConvertStringToLogLevel(MyLogLevel)
 
     End Sub
 
@@ -32,8 +34,16 @@
     End Function
 
     Public Sub SetSyncSettings(SyncSettingsList As List(Of SyncSettings))
-        If Not SyncSettingsList Is Nothing Then SyncSettings = SyncSettingsList.ToArray
+        If Not SyncSettingsList Is Nothing Then SyncSettings = SyncSettingsList.ToArray()
     End Sub
+
+    Public Sub SetLogLevel(NewLogLevel As String)
+        LogLevel = Logger.ConvertStringToLogLevel(NewLogLevel)
+    End Sub
+
+    Public Function GetLogLevel() As String
+        Return Logger.ConvertLogLevelToString(LogLevel)
+    End Function
 
 End Class
 
