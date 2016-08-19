@@ -1,5 +1,5 @@
 ﻿#Region " Namespaces "
-Imports MusicFolderSyncer.Logger.DebugLogLevel
+Imports MusicFolderSyncer.Logger.LogLevel
 Imports MusicFolderSyncer.Toolkit
 Imports System.IO
 #End Region
@@ -22,9 +22,7 @@ Public Class EditSyncSettingsWindow
 
         ' Set run-time properties of window objects
         txtSourceDirectory.Text = MyGlobalSyncSettings.SourceDirectory
-        txt_ffmpegPath.Text = MySyncSettings.SyncDirectory
-        spinThreads.Maximum = Environment.ProcessorCount
-        spinThreads.Value = MySyncSettings.MaxThreads
+        txt_ffmpegPath.Text = MyGlobalSyncSettings.ffmpegPath
 
     End Sub
 #End Region
@@ -111,7 +109,6 @@ Public Class EditSyncSettingsWindow
         btnCancel.IsEnabled = Enable
         txtSourceDirectory.IsEnabled = Enable
         txt_ffmpegPath.IsEnabled = Enable
-        spinThreads.IsEnabled = Enable
     End Sub
 #End Region
 
