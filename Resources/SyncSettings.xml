@@ -1,12 +1,14 @@
-<?xml version="1.0"?>
+<?xml version="1.0" encoding="utf-8"?>
 <MusicFolderSyncer>
-  <ffmpegPath>C:\Program Files\ffmpeg\ffmpeg.exe</ffmpegPath>
-  <SourceDirectory>P:\Audio\Music</SourceDirectory>
   <EnableSync />
+  <SourceDirectory>\\hda\Audio\Music</SourceDirectory>
+  <ffmpegPath>C:\Program Files\ffmpeg\ffmpeg.exe</ffmpegPath>
+  <LogLevel>Debug</LogLevel>
   <SyncSettings>
     <SyncSetting>
       <Threads>2</Threads>
-      <SyncDirectory>P:\Audio\Android Music</SyncDirectory>
+      <SyncDirectory>\\hda\Audio\Sync\Home Music</SyncDirectory>
+      <ReplayGainMode>None</ReplayGainMode>
       <FileTypes>
         <CodecName>FLAC</CodecName>
         <CodecName>WMA</CodecName>
@@ -31,6 +33,32 @@
         <CodecName>OGG</CodecName>
         <CodecProfile>Vorbis Q7</CodecProfile>
         <Extension>.ogg</Extension>
+      </Encoder>
+    </SyncSetting>
+    <SyncSetting>
+      <Threads>2</Threads>
+      <SyncDirectory>\\hda\Audio\Sync\Best Music</SyncDirectory>
+      <ReplayGainMode>Track</ReplayGainMode>
+      <FileTypes>
+        <CodecName>FLAC</CodecName>
+        <CodecName>WMA</CodecName>
+        <CodecName>MP3</CodecName>
+        <CodecName>AAC</CodecName>
+        <CodecName>OGG</CodecName>
+      </FileTypes>
+      <Tags>
+        <Tag>
+          <Name>BEST_MUSIC</Name>
+        </Tag>
+        <Tag>
+          <Name>BEST_MUSIC_STEREO</Name>
+        </Tag>
+      </Tags>
+      <TranscodeLosslessFiles />
+      <Encoder>
+        <CodecName>AAC</CodecName>
+        <CodecProfile>VBR Q1.5</CodecProfile>
+        <Extension>.mp4</Extension>
       </Encoder>
     </SyncSetting>
   </SyncSettings>

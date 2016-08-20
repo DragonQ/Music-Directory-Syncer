@@ -17,6 +17,7 @@
       <Tags>
         <!--<Tag>
           <Name>BEST_MUSIC</Name>
+          <Value>Yes</Value>
         </Tag>-->
       </Tags>
       <TranscodeLosslessFiles />
@@ -26,6 +27,6 @@
         <CodecProfile>Vorbis Q7</CodecProfile>
         <Extension>.ogg</Extension>
       </Encoder>
-        </SyncSetting>
+    </SyncSetting>
   </SyncSettings>
 </MusicFolderSyncer>
