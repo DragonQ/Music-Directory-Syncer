@@ -3,8 +3,8 @@
     Property SyncIsEnabled As Boolean
     Property SourceDirectory As String
     Property ffmpegPath As String
-    Dim SyncSettings As SyncSettings()
     Property LogLevel As Logger.LogLevel
+    Dim SyncSettings As SyncSettings()
 
 #Region " New "
     Public Sub New(MySyncIsEnabled As Boolean, MySourceDirectory As String, My_ffmpegPath As String, MySyncSettingsList As List(Of SyncSettings), MyLogLevel As String)
