@@ -169,22 +169,10 @@ Public Class TrayApp
 
             MyLog.Write("File system watcher started (monitoring directory """ & UserGlobalSyncSettings.SourceDirectory & """ for audio files)", Information)
             UserGlobalSyncSettings.SyncIsEnabled = True
-            mnuStatus.Text = "Syncer is active"
-
-            Dim MyResult As ReturnObject = SaveSyncSettings(UserGlobalSyncSettings)
-
-            If MyResult.Success Then
-                MyLog.Write("Syncer started.", Warning)
-                If Tray.Visible Then Tray.ShowBalloonTip(BalloonTime, ApplicationName, "Syncer has been enabled.", ToolTipIcon.Info)
-            Else
-                MyLog.Write("Could not update sync settings. Error: " & MyResult.ErrorMessage, Warning)
-                If Tray.Visible Then Tray.ShowBalloonTip(BalloonTime, ApplicationName, "Syncer has been enabled but settings file could not be updated.", ToolTipIcon.Error)
-            End If
+            Return SaveSyncSettings(UserGlobalSyncSettings)
         Catch ex As Exception
             Return New ReturnObject(False, ex.Message, Nothing)
         End Try
-
-        Return New ReturnObject(True, "", Nothing)
 
     End Function
 
