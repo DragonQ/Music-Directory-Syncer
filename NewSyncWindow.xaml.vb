@@ -357,6 +357,7 @@ Public Class NewSyncWindow
         'Miscellaneous controls
         btnNewSync.IsEnabled = Enable
         tckTranscode.IsEnabled = Enable
+        cmbReplayGain.IsEnabled = Enable
 
     End Sub
 #End Region
