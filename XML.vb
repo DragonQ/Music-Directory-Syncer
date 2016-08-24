@@ -79,7 +79,7 @@ Module XML
     End Function
 
     Public Function ReadDefaultSettings(Codecs As List(Of Codec)) As ReturnObject
-        Dim DefaultSync As New SyncSettings("", New List(Of Codec), New List(Of Codec.Tag), False, Nothing, Environment.ProcessorCount, ReplayGainMode.None)
+        Dim DefaultSync As New SyncSettings("", New List(Of Codec), New List(Of Codec.Tag), TranscodeMode.LosslessOnly, Nothing, Environment.ProcessorCount, ReplayGainMode.None)
         Dim DefaultSyncList As New List(Of SyncSettings)
         DefaultSyncList.Add(DefaultSync)
         Return ReadSettings(Codecs, Path.Combine(System.AppDomain.CurrentDomain.BaseDirectory, "DefaultSettings.xml"), New GlobalSyncSettings(False, "", "", DefaultSyncList, "Information"))
@@ -131,7 +131,7 @@ Module XML
                         .SourceDirectory = If(Setting.Element("SourceDirectory"), Nothing),
                         .SyncDirectory = If(Setting.Element("SyncDirectory"), Nothing),
                         .MaxThreads = If(Setting.OptionalElement("Threads"), Nothing),
-                        .TranscodeLosslessFiles = If(Setting.OptionalElement("TranscodeLosslessFiles"), Nothing),
+                        .TranscodeSetting = If(Setting.OptionalElement("TranscodeMode"), Nothing),
                         .ReplayGain = If(Setting.OptionalElement("ReplayGainMode"), Nothing),
                         .Encoder = If(Setting.Element("Encoder"), Nothing),
                         .FileTypes = If(Setting.Element("FileTypes"), Nothing),
@@ -149,18 +149,11 @@ Module XML
                         If Not MySetting.MaxThreads Is Nothing Then NewSyncSettings.MaxThreads = CInt(MySetting.MaxThreads)
 
                         If Not MySetting.ReplayGain Is Nothing Then
-                            Select Case MySetting.ReplayGain
-                                Case Is = "Album"
-                                    NewSyncSettings.ReplayGain = ReplayGainMode.Album
-                                Case Is = "Track"
-                                    NewSyncSettings.ReplayGain = ReplayGainMode.Track
-                                Case Else
-                                    NewSyncSettings.ReplayGain = ReplayGainMode.None
-                            End Select
+                            NewSyncSettings.SetReplayGainSetting(MySetting.ReplayGain)
                         End If
 
-                        If Not MySetting.TranscodeLosslessFiles Is Nothing Then
-                            NewSyncSettings.TranscodeLosslessFiles = True
+                        If Not MySetting.TranscodeSetting Is Nothing Then
+                            NewSyncSettings.SetTranscodeSetting(MySetting.TranscodeSetting)
 
                             'Find transcoding settings
                             Dim elCodecName As XElement = If(MySetting.Encoder.Element("CodecName"), Nothing)
@@ -327,9 +320,8 @@ Module XML
                         Next
                         MyWriter.WriteEndElement()
 
-                        If SyncSetting.TranscodeLosslessFiles Then
-                            MyWriter.WriteStartElement("TranscodeLosslessFiles")
-                            MyWriter.WriteEndElement()
+                        MyWriter.WriteElementString("TranscodeMode", SyncSetting.GetTranscodeSetting())
+                        If SyncSetting.TranscodeSetting <> TranscodeMode.None Then
                             MyWriter.WriteStartElement("Encoder")
                             MyWriter.WriteElementString("CodecName", SyncSetting.Encoder.Name)
                             MyWriter.WriteElementString("CodecProfile", SyncSetting.Encoder.GetProfiles(0).Name)

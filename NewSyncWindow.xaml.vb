@@ -3,6 +3,7 @@ Imports MusicFolderSyncer.Toolkit
 Imports MusicFolderSyncer.Codec.CodecType
 Imports MusicFolderSyncer.Logger.LogLevel
 Imports MusicFolderSyncer.SyncSettings
+Imports MusicFolderSyncer.SyncSettings.TranscodeMode
 Imports System.IO
 Imports System.Environment
 Imports System.Threading
@@ -86,7 +87,20 @@ Public Class NewSyncWindow
             Dim ReplayGainSetting As ReplayGainMode = DirectCast(MyEnum, ReplayGainMode)
             Dim Name As String = SyncSettings.GetReplayGainSetting(ReplayGainSetting)
             cmbReplayGain.Items.Add(New Item(Name, ReplayGainSetting))
-            If ReplayGainSetting = MySyncSettings.ReplayGain Then
+            If ReplayGainSetting = MySyncSettings.ReplayGainSetting Then
+                cmbReplayGain.SelectedIndex = Count
+            End If
+            Count += 1
+        Next
+
+        ' Add all transcoding settings to cmbTranscodeSetting
+        Enums = System.Enum.GetValues(GetType(TranscodeMode))
+        Count = 0
+        For Each MyEnum In Enums
+            Dim TranscodeSetting As TranscodeMode = DirectCast(MyEnum, TranscodeMode)
+            Dim Name As String = SyncSettings.GetTranscodeSetting(TranscodeSetting)
+            cmbTranscodeSetting.Items.Add(New Item(Name, TranscodeSetting))
+            If TranscodeSetting = MySyncSettings.TranscodeSetting Then
                 cmbReplayGain.SelectedIndex = Count
             End If
             Count += 1
@@ -99,7 +113,6 @@ Public Class NewSyncWindow
         txt_ffmpegPath.Text = MyGlobalSyncSettings.ffmpegPath
         txtSourceDirectory.Text = MyGlobalSyncSettings.SourceDirectory
         txtSyncDirectory.Text = MySyncSettings.SyncDirectory
-        tckTranscode.IsChecked = MySyncSettings.TranscodeLosslessFiles
         txtSourceDirectory.Focus()
 
         ' Disable fields if this is an additional sync setup
@@ -173,10 +186,6 @@ Public Class NewSyncWindow
     End Function
 
 #Region " Window Controls "
-    Private Sub tckTranscode_Changed(sender As Object, e As RoutedEventArgs)
-        boxTranscodeOptions.IsEnabled = CBool(tckTranscode.IsChecked)
-    End Sub
-
     Private Sub btnNewTag_Click(sender As Object, e As RoutedEventArgs)
         TagsToSync.Add(New Codec.Tag("Tag Name", "Tag Value"))
         btnRemoveTag.IsEnabled = True
@@ -292,9 +301,17 @@ Public Class NewSyncWindow
                 MyLog.Write("Source directory: """ & txtSourceDirectory.Text & """.", Information)
                 MyLog.Write("Sync directory: """ & txtSyncDirectory.Text & """.", Information)
 
+                ' Set transcode setting
+                If cmbTranscodeSetting.SelectedIndex > -1 Then
+                    MySyncSettings.TranscodeSetting = CType(CType(cmbTranscodeSetting.SelectedItem, Item).Value, TranscodeMode)
+                Else
+                    System.Windows.MessageBox.Show("You have not specified a valid transcode setting for this sync!", "New Sync", MessageBoxButton.OKCancel, MessageBoxImage.Error)
+                    EnableDisableControls(True)
+                    Exit Sub
+                End If
+
                 'If transcoding is enabled, check that a valid encoder and encoder profile have been selected. If not, abort sync creation.
-                MySyncSettings.TranscodeLosslessFiles = tckTranscode.IsChecked
-                If MySyncSettings.TranscodeLosslessFiles Then
+                If MySyncSettings.TranscodeSetting <> None Then
                     If (cmbCodec.SelectedIndex > -1 AndAlso cmbCodecProfile.SelectedIndex > -1) Then
                         MySyncSettings.Encoder = New Codec(CType(CType(cmbCodec.SelectedItem, Item).Value, Codec),
                                                         CType(CType(cmbCodecProfile.SelectedItem, Item).Value, Codec.Profile))
@@ -305,8 +322,9 @@ Public Class NewSyncWindow
                     End If
                 End If
 
+                ' Set ReplayGain setting
                 If cmbReplayGain.SelectedIndex > -1 Then
-                    MySyncSettings.ReplayGain = CType(CType(cmbReplayGain.SelectedItem, Item).Value, ReplayGainMode)
+                    MySyncSettings.ReplayGainSetting = CType(CType(cmbReplayGain.SelectedItem, Item).Value, ReplayGainMode)
                 Else
                     System.Windows.MessageBox.Show("You have not specified a valid ReplayGain setting for this sync!", "New Sync", MessageBoxButton.OKCancel, MessageBoxImage.Error)
                     EnableDisableControls(True)
@@ -356,7 +374,7 @@ Public Class NewSyncWindow
 
         'Miscellaneous controls
         btnNewSync.IsEnabled = Enable
-        tckTranscode.IsEnabled = Enable
+        cmbTranscodeSetting.IsEnabled = Enable
         cmbReplayGain.IsEnabled = Enable
 
     End Sub

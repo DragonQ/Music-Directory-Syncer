@@ -3,7 +3,7 @@
     xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
     xmlns:Controls="clr-namespace:Btl.Controls;assembly=Btl.Controls.MyControls"
     xmlns:d="http://schemas.microsoft.com/expression/blend/2008" xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006" mc:Ignorable="d" x:Class="NewSyncWindow"
-    Title="Create New Sync" Width="440" Height="Auto" SizeToContent="Height" ResizeMode="NoResize" WindowStartupLocation="CenterScreen">
+    Title="Create New Sync" Width="440" Height="549" SizeToContent="Height" ResizeMode="NoResize" WindowStartupLocation="CenterScreen">
     <Grid Margin="0,0,0,0" HorizontalAlignment="Stretch">
         <Label Content="Source Directory:" HorizontalAlignment="Left" Height="26" Margin="0,7,0,0" VerticalAlignment="Top" Width="108" HorizontalContentAlignment="Right"/>
         <TextBox x:Name="txtSourceDirectory" Height="21" Margin="113,11,85,0" VerticalAlignment="Top" TabIndex="0" MaxLines="1"/>
@@ -11,7 +11,7 @@
         <Label Content="Sync Directory:" HorizontalAlignment="Left" Height="26" Margin="10,31,0,0" VerticalAlignment="Top" Width="98" HorizontalContentAlignment="Right" RenderTransformOrigin="0.5,0.5"/>
         <TextBox x:Name="txtSyncDirectory" Height="21" Margin="113,35,85,0" VerticalAlignment="Top" TabIndex="2" MaxLines="1"/>
         <Button x:Name="btnBrowseSyncDirectory" Content="Browse..." Margin="0,35,10,0" VerticalAlignment="Top" Height="21" TabIndex="3" HorizontalAlignment="Right" Width="70" Click="btnBrowseSyncDirectory_Click"/>
-        <GroupBox x:Name="boxFileTypes" Header="File Types To Sync" Margin="10,61,0,315" HorizontalAlignment="Left" Width="189">
+        <GroupBox x:Name="boxFileTypes" Header="File Types To Sync" Margin="10,61,0,325" HorizontalAlignment="Left" Width="189">
             <ListBox x:Name="lstFileTypesToSync" Margin="0,6,0,0" IsSynchronizedWithCurrentItem="True" BorderThickness="0" ItemsSource="{Binding GetFileTypesToSync}" IsTabStop="True" TabIndex="30">
                 <ListBox.ItemTemplate>
                     <DataTemplate>
@@ -20,7 +20,7 @@
                 </ListBox.ItemTemplate>
             </ListBox>
         </GroupBox>
-        <GroupBox x:Name="boxTags" Header="Tags To Sync" Margin="204,61,10,315">
+        <GroupBox x:Name="boxTags" Header="Tags To Sync" Margin="204,61,10,325">
             <Grid Margin="0,0,0,0">
                 <DataGrid AutoGenerateColumns="False" ItemsSource="{Binding GetTagsToSync}" Margin="0,4,0,30" x:Name="dataTagsToSync" IsTabStop="True" TabIndex="32" ScrollViewer.CanContentScroll="True" ScrollViewer.VerticalScrollBarVisibility="Auto" ScrollViewer.HorizontalScrollBarVisibility="Auto" MaxHeight="252">
                     <DataGrid.Columns>
@@ -38,9 +38,10 @@
                 </Grid>
             </Grid>
         </GroupBox>
-        <Label Content="Apply ReplayGain:" Grid.Column="0" HorizontalContentAlignment="Left" Margin="6,0,0,284" HorizontalAlignment="Left" Width="109" Height="26" VerticalAlignment="Bottom"/>
-        <ComboBox x:Name="cmbReplayGain" Grid.Column="0" TabIndex="35" Margin="118,0,205,285" Height="22" VerticalAlignment="Bottom"/>
-        <CheckBox x:Name="tckTranscode" Content="Transcode lossless files" HorizontalAlignment="Left" Width="189" Margin="10,0,0,256" Height="20" VerticalAlignment="Bottom" TabIndex="36" Checked="tckTranscode_Changed" Unchecked="tckTranscode_Changed"/>
+        <Label Content="Apply ReplayGain:" Grid.Column="0" HorizontalContentAlignment="Left" Margin="6,0,0,292" HorizontalAlignment="Left" Width="109" Height="26" VerticalAlignment="Bottom"/>
+        <ComboBox x:Name="cmbReplayGain" Grid.Column="0" TabIndex="35" Margin="118,0,205,293" Height="22" VerticalAlignment="Bottom"/>
+        <Label Content="Transcode Files:" Grid.Column="0" HorizontalContentAlignment="Left" Margin="6,0,0,262" HorizontalAlignment="Left" Width="109" Height="26" VerticalAlignment="Bottom"/>
+        <ComboBox x:Name="cmbTranscodeSetting" Grid.Column="0" TabIndex="35" Margin="118,0,205,263" Height="22" VerticalAlignment="Bottom"/>
         <GroupBox x:Name="boxTranscodeOptions" Header="Transcode Options" Margin="10,0,10,141" IsEnabled="False" Height="116" VerticalAlignment="Bottom">
             <Grid Margin="0,6">
                 <Grid Margin="0,0">

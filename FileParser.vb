@@ -3,6 +3,7 @@ Imports MusicFolderSyncer.Logger.LogLevel
 Imports MusicFolderSyncer.Toolkit
 Imports MusicFolderSyncer.SyncSettings
 Imports MusicFolderSyncer.Codec.CodecType
+Imports MusicFolderSyncer.SyncSettings.TranscodeMode
 Imports System.IO
 Imports System.Environment
 #End Region
@@ -40,7 +41,7 @@ Class FileParser
                     If CheckFileForSync(FileCodec, SyncSetting) Then
                         Dim SyncFilePath As String = SyncSetting.SyncDirectory & FilePath.Substring(MyGlobalSyncSettings.SourceDirectory.Length)
 
-                        If SyncSetting.TranscodeLosslessFiles AndAlso FileCodec.CompressionType = Lossless Then 'Need to transcode file
+                        If SyncSetting.TranscodeSetting = All OrElse (SyncSetting.TranscodeSetting = LosslessOnly AndAlso FileCodec.CompressionType = Lossless) Then 'Need to transcode file
                             MyLog.Write(ProcessID, "...transcoding file to " & SyncSetting.Encoder.Name & "...", Debug)
                             TranscodeFile(SyncFilePath, SyncSetting)
 
@@ -83,7 +84,7 @@ Class FileParser
                     'File was meant to be synced, which means we now need to delete the synced version
                     Dim SyncFilePath As String = SyncSetting.SyncDirectory & FilePath.Substring(MyGlobalSyncSettings.SourceDirectory.Length)
 
-                    If SyncSetting.TranscodeLosslessFiles AndAlso FileCodec.CompressionType = Lossless Then 'Need to replace extension with .ogg
+                    If SyncSetting.TranscodeSetting = All OrElse (SyncSetting.TranscodeSetting = LosslessOnly AndAlso FileCodec.CompressionType = Lossless) Then 'Need to replace extension with .ogg
                         Dim TranscodedFilePath As String = Path.Combine(Path.GetDirectoryName(SyncFilePath), Path.GetFileNameWithoutExtension(SyncFilePath)) &
                                                         SyncSetting.Encoder.GetFileExtensions(0)
                         SyncFilePath = TranscodedFilePath
@@ -124,7 +125,7 @@ Class FileParser
                         Dim SyncFilePath As String = SyncSetting.SyncDirectory & FilePath.Substring(MyGlobalSyncSettings.SourceDirectory.Length)
                         Dim OldSyncFilePath As String = SyncSetting.SyncDirectory & OldFilePath.Substring(MyGlobalSyncSettings.SourceDirectory.Length)
 
-                        If SyncSetting.TranscodeLosslessFiles AndAlso FileCodec.CompressionType = Lossless Then 'Need to replace extension with .ogg
+                        If SyncSetting.TranscodeSetting = All OrElse (SyncSetting.TranscodeSetting = LosslessOnly AndAlso FileCodec.CompressionType = Lossless) Then 'Need to replace extension with .ogg
                             Dim TempString As String = Path.Combine(Path.GetDirectoryName(SyncFilePath), Path.GetFileNameWithoutExtension(SyncFilePath)) &
                                 SyncSetting.Encoder.GetFileExtensions(0)
                             SyncFilePath = TempString
@@ -138,7 +139,7 @@ Class FileParser
                         Else
                             MyLog.Write("...old file doesn't exist in sync folder: """ & OldSyncFilePath & """, creating now...", Warning)
 
-                            If SyncSetting.TranscodeLosslessFiles AndAlso FileCodec.CompressionType = Lossless Then 'Need to transcode file
+                            If SyncSetting.TranscodeSetting = All OrElse (SyncSetting.TranscodeSetting = LosslessOnly AndAlso FileCodec.CompressionType = Lossless) Then 'Need to transcode file
                                 MyLog.Write("...transcoding file to " & SyncSetting.Encoder.Name & "...", Debug)
                                 TranscodeFile(SyncFilePath, SyncSetting)
                             Else
@@ -190,7 +191,7 @@ Class FileParser
             ffmpeg.UseShellExecute = False
 
             Dim FiltersString As String = ""
-            If SyncSetting.ReplayGain <> ReplayGainMode.None Then
+            If SyncSetting.ReplayGainSetting <> ReplayGainMode.None Then
                 FiltersString = " -af volume=replaygain=" & SyncSetting.GetReplayGainSetting().ToLower
             End If
 
