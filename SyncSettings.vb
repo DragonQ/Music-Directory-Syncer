@@ -181,15 +181,4 @@ Public Class SyncSettings
         End Select
     End Function
 
-    'Public Shared Function SetTranscodeSetting(ReplayGainSettingString As String) As ReplayGainMode
-    '    Select Case ReplayGainSettingString
-    '        Case Is = "Album"
-    '            Return ReplayGainMode.Album
-    '        Case Is = "Track"
-    '            Return ReplayGainMode.Track
-    '        Case Else
-    '            Return ReplayGainMode.None
-    '    End Select
-    'End Function
-
 End Class
