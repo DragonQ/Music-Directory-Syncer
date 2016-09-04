@@ -28,7 +28,7 @@
           <Name>BEST_MUSIC_STEREO</Name>
         </Tag>
       </Tags>
-      <TranscodeLosslessFiles />
+      <TranscodeMode>Lossless Only</TranscodeMode>
       <Encoder>
         <CodecName>OGG</CodecName>
         <CodecProfile>Vorbis Q7</CodecProfile>
@@ -54,7 +54,7 @@
           <Name>BEST_MUSIC_STEREO</Name>
         </Tag>
       </Tags>
-      <TranscodeLosslessFiles />
+      <TranscodeMode>Lossless Only</TranscodeMode>
       <Encoder>
         <CodecName>AAC</CodecName>
         <CodecProfile>VBR Q1.5</CodecProfile>

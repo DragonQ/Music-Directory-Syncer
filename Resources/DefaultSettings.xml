@@ -7,6 +7,7 @@
     <SyncSetting>
       <!--<Threads>4</Threads>-->
       <!--<SyncDirectory>P:\Audio\Android Music</SyncDirectory>-->
+      <ReplayGainMode>None</ReplayGainMode>
       <FileTypes>
         <CodecName>FLAC</CodecName>
         <CodecName>WMA</CodecName>
@@ -20,7 +21,7 @@
           <Value>Yes</Value>
         </Tag>-->
       </Tags>
-      <TranscodeLosslessFiles />
+      <TranscodeMode>Lossless Only</TranscodeMode>
       <ReplayGainMode>None</ReplayGainMode>
       <Encoder>
         <CodecName>OGG</CodecName>
