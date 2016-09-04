@@ -101,7 +101,7 @@ Public Class NewSyncWindow
             Dim Name As String = SyncSettings.GetTranscodeSetting(TranscodeSetting)
             cmbTranscodeSetting.Items.Add(New Item(Name, TranscodeSetting))
             If TranscodeSetting = MySyncSettings.TranscodeSetting Then
-                cmbReplayGain.SelectedIndex = Count
+                cmbTranscodeSetting.SelectedIndex = Count
             End If
             Count += 1
         Next
@@ -265,6 +265,21 @@ Public Class NewSyncWindow
 
     End Sub
 
+    Private Sub cmbTranscodeSetting_SelectionChanged(sender As Object, e As SelectionChangedEventArgs) Handles cmbTranscodeSetting.SelectionChanged
+
+        If cmbTranscodeSetting.SelectedIndex > -1 Then
+            MySyncSettings.TranscodeSetting = CType(CType(cmbTranscodeSetting.SelectedItem, Item).Value, TranscodeMode)
+            If MySyncSettings.TranscodeSetting = None Then
+                boxTranscodeOptions.IsEnabled = False
+            Else
+                boxTranscodeOptions.IsEnabled = True
+            End If
+        Else
+            System.Windows.MessageBox.Show("You have not specified a valid transcode setting for this sync!", "New Sync", MessageBoxButton.OKCancel, MessageBoxImage.Error)
+        End If
+
+    End Sub
+
     Private Sub btnNewSync_Click(sender As Object, e As RoutedEventArgs)
 
         If SyncBackgroundWorker.IsBusy Then 'Sync in progress, so we must cancel
@@ -359,7 +374,9 @@ Public Class NewSyncWindow
     Private Sub EnableDisableControls(Enable As Boolean)
 
         'Group box controls
-        boxTranscodeOptions.IsEnabled = Enable
+        If MySyncSettings.TranscodeSetting <> None Then
+            boxTranscodeOptions.IsEnabled = Enable
+        End If
         boxFileTypes.IsEnabled = Enable
         boxTags.IsEnabled = Enable
 
