@@ -128,7 +128,6 @@ Module XML
                 Dim Settings = From Setting In GlobalSettings(0).SyncSettings.Elements("SyncSetting")
                                Select New With
                     {
-                        .SourceDirectory = If(Setting.Element("SourceDirectory"), Nothing),
                         .SyncDirectory = If(Setting.Element("SyncDirectory"), Nothing),
                         .MaxThreads = If(Setting.OptionalElement("Threads"), Nothing),
                         .TranscodeSetting = If(Setting.OptionalElement("TranscodeMode"), Nothing),

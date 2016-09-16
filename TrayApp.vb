@@ -22,10 +22,6 @@ Public Class TrayApp
     Private FileID As Int32 = 0
 #End Region
 
-
-    ' TO DO:
-    ' - Add button in context menu for enable/disable sync!
-
 #Region " New "
     Public Sub New(LaunchNewSyncWindow As Boolean)
 
