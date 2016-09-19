@@ -355,6 +355,9 @@ Public Class NewSyncWindow
                 MySyncSettings.SetWatcherCodecs(NewFileTypesToSync)
 
                 'Update GlobalSyncSettings object
+                If NewSync Then
+                    MySyncSettingsList = New List(Of SyncSettings)
+                End If
                 MySyncSettingsList.Add(MySyncSettings)
                 MyGlobalSyncSettings.SetSyncSettings(MySyncSettingsList)
 
