@@ -5,10 +5,11 @@ Imports System.Environment
 Public Class Logger
 
     Public Enum LogLevel
+        Always
         Debug
         Information
         Warning
-        Always
+        Fatal
     End Enum
 
     Private ReadOnly FilePath As String
@@ -31,6 +32,8 @@ Public Class Logger
                 Return Information
             Case Is = "Warning"
                 Return Warning
+            Case Is = "Fatal"
+                Return Fatal
             Case Else
                 Return Always
         End Select
@@ -46,6 +49,8 @@ Public Class Logger
                 Return "Information"
             Case Is = Warning
                 Return "Warning"
+            Case Is = Fatal
+                Return "Fatal"
             Case Else
                 Return "Always"
         End Select
@@ -84,6 +89,8 @@ Public Class Logger
                     LogMarker = " [Information]   :   "
                 Case Is = Warning
                     LogMarker = " [Warning]       :   "
+                Case Is = Fatal
+                    LogMarker = " [FATAL]         :   "
                 Case Else
                     LogMarker = "                 :   "
             End Select
