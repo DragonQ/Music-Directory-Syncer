@@ -63,9 +63,9 @@ Class FileParser
             Next
 
             MyReturnObject = New ReturnObject(True, "", NewFilesSize)
-            MyLog.Write(ProcessID, "File processed: """ & FilePath.Substring(MyGlobalSyncSettings.SourceDirectory.Length) & """", Information)
+            MyLog.Write(ProcessID, "Sync file processed: """ & FilePath.Substring(MyGlobalSyncSettings.SourceDirectory.Length) & """", Information)
         Catch ex As Exception
-            MyLog.Write(ProcessID, "Processing failed: """ & FilePath.Substring(MyGlobalSyncSettings.SourceDirectory.Length) & """. Exception: " & ex.Message, Warning)
+            MyLog.Write(ProcessID, "Sync file processing failed: """ & FilePath.Substring(MyGlobalSyncSettings.SourceDirectory.Length) & """. Exception: " & ex.Message, Warning)
             MyReturnObject = New ReturnObject(False, ex.Message, 0)
         End Try
 
@@ -103,9 +103,9 @@ Class FileParser
             Next
 
             MyReturnObject = New ReturnObject(True, "", 0)
-            MyLog.Write(ProcessID, "File deleted: """ & FilePath.Substring(MyGlobalSyncSettings.SourceDirectory.Length) & """", Information)
+            MyLog.Write(ProcessID, "Sync file deleted: """ & FilePath.Substring(MyGlobalSyncSettings.SourceDirectory.Length) & """", Information)
         Catch ex As Exception
-            MyLog.Write(ProcessID, "File deletion failed: """ & FilePath.Substring(MyGlobalSyncSettings.SourceDirectory.Length) & """. Exception: " & ex.Message, Warning)
+            MyLog.Write(ProcessID, "Sync file deletion failed: """ & FilePath.Substring(MyGlobalSyncSettings.SourceDirectory.Length) & """. Exception: " & ex.Message, Warning)
             MyReturnObject = New ReturnObject(False, ex.Message, 0)
         End Try
 
@@ -158,9 +158,9 @@ Class FileParser
             Next
 
             MyReturnObject = New ReturnObject(True, "", 0)
-            MyLog.Write(ProcessID, "File renamed: """ & FilePath.Substring(MyGlobalSyncSettings.SourceDirectory.Length) & """", Information)
+            MyLog.Write(ProcessID, "Sync file renamed: """ & FilePath.Substring(MyGlobalSyncSettings.SourceDirectory.Length) & """", Information)
         Catch ex As Exception
-            MyLog.Write(ProcessID, "File rename failed: """ & FilePath.Substring(MyGlobalSyncSettings.SourceDirectory.Length) & """. Exception: " & ex.Message, Warning)
+            MyLog.Write(ProcessID, "Sync file rename failed: """ & FilePath.Substring(MyGlobalSyncSettings.SourceDirectory.Length) & """. Exception: " & ex.Message, Warning)
             MyReturnObject = New ReturnObject(False, ex.Message, 0)
         End Try
 

@@ -224,7 +224,7 @@ Public Class TrayApp
             Dim MyFileParser As New FileParser(UserGlobalSyncSettings, FileID, e.FullPath)
             Select Case e.ChangeType
                 Case Is = IO.WatcherChangeTypes.Changed
-                    MyLog.Write("File changed: " & e.FullPath, Information)
+                    MyLog.Write("Source file changed: " & e.FullPath, Information)
                     Dim Result As ReturnObject = MyFileParser.DeleteInSyncFolder()
 
                     If Result.Success Then
@@ -237,7 +237,7 @@ Public Class TrayApp
                         If Tray.Visible Then Tray.ShowBalloonTip(BalloonTime, "File processing failed:", e.FullPath.Substring(UserGlobalSyncSettings.SourceDirectory.Length), ToolTipIcon.Error)
                     End If
                 Case Is = IO.WatcherChangeTypes.Created
-                    MyLog.Write("File created: " & e.FullPath, Information)
+                    MyLog.Write("Source file created: " & e.FullPath, Information)
                     Dim Result As ReturnObject = MyFileParser.TransferToSyncFolder()
 
                     If Result.Success Then
@@ -246,7 +246,7 @@ Public Class TrayApp
                         If Tray.Visible Then Tray.ShowBalloonTip(BalloonTime, "File processing failed:", e.FullPath.Substring(UserGlobalSyncSettings.SourceDirectory.Length), ToolTipIcon.Error)
                     End If
                 Case Is = IO.WatcherChangeTypes.Deleted
-                    MyLog.Write("File deleted: " & e.FullPath, Information)
+                    MyLog.Write("Source file deleted: " & e.FullPath, Information)
                     Dim Result As ReturnObject = MyFileParser.DeleteInSyncFolder()
 
                     If Result.Success Then
