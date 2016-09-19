@@ -1,5 +1,4 @@
 ﻿#Region " Namespaces "
-Imports MusicFolderSyncer.Codec.CodecType
 Imports MusicFolderSyncer.Toolkit
 Imports MusicFolderSyncer.Logger.LogLevel
 Imports System.Windows.Forms
@@ -49,7 +48,13 @@ Public Class TrayApp
         If LaunchNewSyncWindow Then
             ShowNewSyncWindow()
         Else
-            StartWatcher()
+            Dim Result As ReturnObject = StartWatcher()
+            If Not Result.Success Then
+                Dim ErrorMessage As String = "File system watcher could not be started. " & Result.ErrorMessage
+                MyLog.Write(ErrorMessage, Fatal)
+                System.Windows.MessageBox.Show(ErrorMessage, "File System Watcher Error", MessageBoxButton.OK, MessageBoxImage.Error)
+                ExitApplication()
+            End If
             mnuEditSyncSettings.Enabled = True
             Tray.Visible = True
         End If

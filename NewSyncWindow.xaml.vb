@@ -9,7 +9,6 @@ Imports System.Environment
 Imports System.Threading
 Imports System.Security.AccessControl
 Imports System.Security.Principal
-Imports Microsoft.WindowsAPICodePack.Dialogs
 Imports CodeProject
 Imports System.Collections.ObjectModel
 Imports System.Collections.Specialized
