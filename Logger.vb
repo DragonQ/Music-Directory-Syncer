@@ -5,11 +5,11 @@ Imports System.Environment
 Public Class Logger
 
     Public Enum LogLevel
-        Always
         Debug
         Information
         Warning
         Fatal
+        Always
     End Enum
 
     Private ReadOnly FilePath As String
