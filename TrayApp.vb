@@ -198,7 +198,7 @@ Public Class TrayApp
     Private Sub FileRenamed(ByVal sender As Object, ByVal e As RenamedEventArgs)
 
         If FilterMatch(e.Name) Then
-            MyLog.Write("File renamed: " & e.FullPath, Information)
+            MyLog.Write(FileID, "File renamed: " & e.FullPath, Information)
             Dim MyFileParser As New FileParser(UserGlobalSyncSettings, FileID, e.FullPath)
             Dim Result As ReturnObject = MyFileParser.RenameInSyncFolder(e.OldFullPath) 'RenameInSyncFolder(MyFileParser, e.OldFullPath)
             If Result.Success Then
@@ -224,7 +224,7 @@ Public Class TrayApp
             Dim MyFileParser As New FileParser(UserGlobalSyncSettings, FileID, e.FullPath)
             Select Case e.ChangeType
                 Case Is = IO.WatcherChangeTypes.Changed
-                    MyLog.Write("Source file changed: " & e.FullPath, Information)
+                    MyLog.Write(FileID, "Source file changed: " & e.FullPath, Information)
                     Dim Result As ReturnObject = MyFileParser.DeleteInSyncFolder()
 
                     If Result.Success Then
@@ -237,7 +237,7 @@ Public Class TrayApp
                         If Tray.Visible Then Tray.ShowBalloonTip(BalloonTime, "File processing failed:", e.FullPath.Substring(UserGlobalSyncSettings.SourceDirectory.Length), ToolTipIcon.Error)
                     End If
                 Case Is = IO.WatcherChangeTypes.Created
-                    MyLog.Write("Source file created: " & e.FullPath, Information)
+                    MyLog.Write(FileID, "Source file created: " & e.FullPath, Information)
                     Dim Result As ReturnObject = MyFileParser.TransferToSyncFolder()
 
                     If Result.Success Then
@@ -246,7 +246,7 @@ Public Class TrayApp
                         If Tray.Visible Then Tray.ShowBalloonTip(BalloonTime, "File processing failed:", e.FullPath.Substring(UserGlobalSyncSettings.SourceDirectory.Length), ToolTipIcon.Error)
                     End If
                 Case Is = IO.WatcherChangeTypes.Deleted
-                    MyLog.Write("Source file deleted: " & e.FullPath, Information)
+                    MyLog.Write(FileID, "Source file deleted: " & e.FullPath, Information)
                     Dim Result As ReturnObject = MyFileParser.DeleteInSyncFolder()
 
                     If Result.Success Then

@@ -93,9 +93,9 @@ Class FileParser
                     'Delete file if it exists in sync folder
                     If File.Exists(SyncFilePath) Then
                         File.Delete(SyncFilePath)
-                        MyLog.Write("...file in sync folder deleted: """ & SyncFilePath.Substring(SyncSetting.SyncDirectory.Length) & """.", Information)
+                        MyLog.Write(ProcessID, "...file in sync folder deleted: """ & SyncFilePath.Substring(SyncSetting.SyncDirectory.Length) & """.", Information)
                     Else
-                        MyLog.Write("...file doesn't exist in sync folder: """ & SyncFilePath.Substring(SyncSetting.SyncDirectory.Length) & """.", Information)
+                        MyLog.Write(ProcessID, "...file doesn't exist in sync folder: """ & SyncFilePath.Substring(SyncSetting.SyncDirectory.Length) & """.", Information)
                     End If
                 Else
                     Throw New Exception("File was being watched but could not determine its codec.")
@@ -137,20 +137,20 @@ Class FileParser
                         If File.Exists(OldSyncFilePath) Then
                             File.Move(OldSyncFilePath, SyncFilePath)
                         Else
-                            MyLog.Write("...old file doesn't exist in sync folder: """ & OldSyncFilePath & """, creating now...", Warning)
+                            MyLog.Write(ProcessID, "...old file doesn't exist in sync folder: """ & OldSyncFilePath & """, creating now...", Warning)
 
                             If SyncSetting.TranscodeSetting = All OrElse (SyncSetting.TranscodeSetting = LosslessOnly AndAlso FileCodec.CompressionType = Lossless) Then 'Need to transcode file
-                                MyLog.Write("...transcoding file to " & SyncSetting.Encoder.Name & "...", Debug)
+                                MyLog.Write(ProcessID, "...transcoding file to " & SyncSetting.Encoder.Name & "...", Debug)
                                 TranscodeFile(SyncFilePath, SyncSetting)
                             Else
                                 Directory.CreateDirectory(Path.GetDirectoryName(SyncFilePath))
                                 File.Copy(FilePath, SyncFilePath, True)
                             End If
 
-                            MyLog.Write("...successfully added file to sync folder.", Information)
+                            MyLog.Write(ProcessID, "...successfully added file to sync folder.", Information)
                         End If
 
-                        MyLog.Write("...successfully renamed file in sync folder.", Information)
+                        MyLog.Write(ProcessID, "...successfully renamed file in sync folder.", Information)
                     End If
                 Else
                     Throw New Exception("File was being watched but could not determine its codec.")
