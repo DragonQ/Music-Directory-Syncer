@@ -6,6 +6,7 @@ Imports MusicFolderSyncer.Codec.CodecType
 Imports MusicFolderSyncer.SyncSettings.TranscodeMode
 Imports System.IO
 Imports System.Environment
+Imports System.Threading
 #End Region
 
 Class FileParser
@@ -29,6 +30,60 @@ Class FileParser
 #End Region
 
 #Region " Transfer File To Sync Folder "
+    Private Shared Function SafeCopy(FilePath As String, SyncFilePath As String) As ReturnObject
+
+        Dim MyReturnObject As ReturnObject
+
+        Try
+            Using OriginalFile As FileStream = WaitForFile(FilePath, FileMode.Open, FileAccess.Read, FileShare.Read, 60)
+                If Not OriginalFile Is Nothing Then
+                    Using NewFile As FileStream = WaitForFile(SyncFilePath, FileMode.CreateNew, FileAccess.Write, FileShare.None, 60)
+                        If Not NewFile Is Nothing Then
+                            OriginalFile.CopyTo(NewFile)
+                            MyReturnObject = New ReturnObject(True, "", Nothing)
+                        Else
+                            MyReturnObject = New ReturnObject(False, "Could not get file system lock on destination file.", Nothing)
+                        End If
+                    End Using
+                Else
+                    MyReturnObject = New ReturnObject(False, "Could not get file system lock on source file.", Nothing)
+                End If
+            End Using
+
+
+        Catch ex As Exception
+            MyReturnObject = New ReturnObject(False, ex.Message, 0)
+        End Try
+
+        Return MyReturnObject
+
+    End Function
+
+    Private Shared Function WaitForFile(fullPath As String, mode As FileMode, access As FileAccess, share As FileShare, timeoutSeconds As Int32) As FileStream
+        Dim msBetweenTries As Int32 = 500
+        Dim numTries As Int32 = CInt(Math.Ceiling(timeoutSeconds / (msBetweenTries / 1000)))
+
+        For count As Integer = 0 To numTries
+            Dim fs As FileStream = Nothing
+
+            Try
+                fs = New FileStream(fullPath, mode, access, share)
+
+                fs.ReadByte()
+                fs.Seek(0, SeekOrigin.Begin)
+
+                Return fs
+            Catch generatedExceptionName As IOException
+                If fs IsNot Nothing Then
+                    fs.Dispose()
+                End If
+                Thread.Sleep(msBetweenTries)
+            End Try
+        Next
+
+        Return Nothing
+    End Function
+
     Public Function TransferToSyncFolder() As ReturnObject
 
         Dim MyReturnObject As ReturnObject
@@ -49,7 +104,8 @@ Class FileParser
                                 SyncSetting.Encoder.GetFileExtensions(0)
                         Else
                             Directory.CreateDirectory(Path.GetDirectoryName(SyncFilePath))
-                            File.Copy(FilePath, SyncFilePath, True)
+                            Dim Result As ReturnObject = SafeCopy(FilePath, SyncFilePath)
+                            If Not Result.Success Then Throw New Exception(Result.ErrorMessage)
                         End If
 
                         Dim NewFile As New FileInfo(SyncFilePath)
@@ -144,7 +200,8 @@ Class FileParser
                                 TranscodeFile(SyncFilePath, SyncSetting)
                             Else
                                 Directory.CreateDirectory(Path.GetDirectoryName(SyncFilePath))
-                                File.Copy(FilePath, SyncFilePath, True)
+                                Dim Result As ReturnObject = SafeCopy(FilePath, SyncFilePath)
+                                If Not Result.Success Then Throw New Exception(Result.ErrorMessage)
                             End If
 
                             MyLog.Write(ProcessID, "...successfully added file to sync folder.", Information)
