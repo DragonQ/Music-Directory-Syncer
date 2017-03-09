@@ -580,9 +580,9 @@ Public Class NewSyncWindow
             Dim TransferResult As ReturnObject
 
             Try
-                Dim MyFileParser As New FileParser(MyGlobalSyncSettings, ProcessID, FilePath, SingleSyncSettings)
-                TransferResult = MyFileParser.TransferToSyncFolder()
-
+                Using MyFileParser As New FileParser(MyGlobalSyncSettings, ProcessID, FilePath, SingleSyncSettings)
+                    TransferResult = MyFileParser.TransferToSyncFolder()
+                End Using
                 If TransferResult.Success Then
                     Dim NewSize As Int64 = CType(TransferResult.MyObject, Int64)
 
