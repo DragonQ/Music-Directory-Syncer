@@ -199,14 +199,14 @@ Public Class TrayApp
 
         If FilterMatch(e.Name) Then
             MyLog.Write(FileID, "File renamed: " & e.FullPath, Information)
-            Dim MyFileParser As New FileParser(UserGlobalSyncSettings, FileID, e.FullPath)
-            Dim Result As ReturnObject = MyFileParser.RenameInSyncFolder(e.OldFullPath) 'RenameInSyncFolder(MyFileParser, e.OldFullPath)
-            If Result.Success Then
-                If Tray.Visible Then Tray.ShowBalloonTip(BalloonTime, "File renamed:", e.FullPath.Substring(UserGlobalSyncSettings.SourceDirectory.Length), ToolTipIcon.Info)
-            Else
-                If Tray.Visible Then Tray.ShowBalloonTip(BalloonTime, "File rename failed:", e.FullPath.Substring(UserGlobalSyncSettings.SourceDirectory.Length), ToolTipIcon.Error)
-            End If
-            MyFileParser = Nothing
+            Using MyFileParser As New FileParser(UserGlobalSyncSettings, FileID, e.FullPath)
+                Dim Result As ReturnObject = MyFileParser.RenameInSyncFolder(e.OldFullPath)
+                If Result.Success Then
+                    If Tray.Visible Then Tray.ShowBalloonTip(BalloonTime, "File renamed:", e.FullPath.Substring(UserGlobalSyncSettings.SourceDirectory.Length), ToolTipIcon.Info)
+                Else
+                    If Tray.Visible Then Tray.ShowBalloonTip(BalloonTime, "File rename failed:", e.FullPath.Substring(UserGlobalSyncSettings.SourceDirectory.Length), ToolTipIcon.Error)
+                End If
+            End Using
         End If
 
         If Interlocked.Equals(FileID, MaxFileID) Then
@@ -221,41 +221,41 @@ Public Class TrayApp
         'Handles changed and new files
 
         If FilterMatch(e.Name) Then
-            Dim MyFileParser As New FileParser(UserGlobalSyncSettings, FileID, e.FullPath)
-            Select Case e.ChangeType
-                Case Is = IO.WatcherChangeTypes.Changed
-                    MyLog.Write(FileID, "Source file changed: " & e.FullPath, Information)
-                    Dim Result As ReturnObject = MyFileParser.DeleteInSyncFolder()
+            Using MyFileParser As New FileParser(UserGlobalSyncSettings, FileID, e.FullPath)
+                Select Case e.ChangeType
+                    Case Is = IO.WatcherChangeTypes.Changed
+                        MyLog.Write(FileID, "Source file changed: " & e.FullPath, Information)
+                        Dim Result As ReturnObject = MyFileParser.DeleteInSyncFolder()
 
-                    If Result.Success Then
-                        Result = MyFileParser.TransferToSyncFolder()
-                    End If
+                        If Result.Success Then
+                            Result = MyFileParser.TransferToSyncFolder()
+                        End If
 
-                    If Result.Success Then
-                        If Tray.Visible Then Tray.ShowBalloonTip(BalloonTime, "File processed:", e.FullPath.Substring(UserGlobalSyncSettings.SourceDirectory.Length), ToolTipIcon.Info)
-                    Else
-                        If Tray.Visible Then Tray.ShowBalloonTip(BalloonTime, "File processing failed:", e.FullPath.Substring(UserGlobalSyncSettings.SourceDirectory.Length), ToolTipIcon.Error)
-                    End If
-                Case Is = IO.WatcherChangeTypes.Created
-                    MyLog.Write(FileID, "Source file created: " & e.FullPath, Information)
-                    Dim Result As ReturnObject = MyFileParser.TransferToSyncFolder()
+                        If Result.Success Then
+                            If Tray.Visible Then Tray.ShowBalloonTip(BalloonTime, "File processed:", e.FullPath.Substring(UserGlobalSyncSettings.SourceDirectory.Length), ToolTipIcon.Info)
+                        Else
+                            If Tray.Visible Then Tray.ShowBalloonTip(BalloonTime, "File processing failed:", e.FullPath.Substring(UserGlobalSyncSettings.SourceDirectory.Length), ToolTipIcon.Error)
+                        End If
+                    Case Is = IO.WatcherChangeTypes.Created
+                        MyLog.Write(FileID, "Source file created: " & e.FullPath, Information)
+                        Dim Result As ReturnObject = MyFileParser.TransferToSyncFolder()
 
-                    If Result.Success Then
-                        If Tray.Visible Then Tray.ShowBalloonTip(BalloonTime, "File processed:", e.FullPath.Substring(UserGlobalSyncSettings.SourceDirectory.Length), ToolTipIcon.Info)
-                    Else
-                        If Tray.Visible Then Tray.ShowBalloonTip(BalloonTime, "File processing failed:", e.FullPath.Substring(UserGlobalSyncSettings.SourceDirectory.Length), ToolTipIcon.Error)
-                    End If
-                Case Is = IO.WatcherChangeTypes.Deleted
-                    MyLog.Write(FileID, "Source file deleted: " & e.FullPath, Information)
-                    Dim Result As ReturnObject = MyFileParser.DeleteInSyncFolder()
+                        If Result.Success Then
+                            If Tray.Visible Then Tray.ShowBalloonTip(BalloonTime, "File processed:", e.FullPath.Substring(UserGlobalSyncSettings.SourceDirectory.Length), ToolTipIcon.Info)
+                        Else
+                            If Tray.Visible Then Tray.ShowBalloonTip(BalloonTime, "File processing failed:", e.FullPath.Substring(UserGlobalSyncSettings.SourceDirectory.Length), ToolTipIcon.Error)
+                        End If
+                    Case Is = IO.WatcherChangeTypes.Deleted
+                        MyLog.Write(FileID, "Source file deleted: " & e.FullPath, Information)
+                        Dim Result As ReturnObject = MyFileParser.DeleteInSyncFolder()
 
-                    If Result.Success Then
-                        If Tray.Visible Then Tray.ShowBalloonTip(BalloonTime, "File deleted:", e.FullPath.Substring(UserGlobalSyncSettings.SourceDirectory.Length), ToolTipIcon.Info)
-                    Else
-                        If Tray.Visible Then Tray.ShowBalloonTip(BalloonTime, "File deletion failed:", e.FullPath.Substring(UserGlobalSyncSettings.SourceDirectory.Length), ToolTipIcon.Error)
-                    End If
-            End Select
-            MyFileParser = Nothing
+                        If Result.Success Then
+                            If Tray.Visible Then Tray.ShowBalloonTip(BalloonTime, "File deleted:", e.FullPath.Substring(UserGlobalSyncSettings.SourceDirectory.Length), ToolTipIcon.Info)
+                        Else
+                            If Tray.Visible Then Tray.ShowBalloonTip(BalloonTime, "File deletion failed:", e.FullPath.Substring(UserGlobalSyncSettings.SourceDirectory.Length), ToolTipIcon.Error)
+                        End If
+                End Select
+            End Using
         End If
 
         If Interlocked.Equals(FileID, MaxFileID) Then
