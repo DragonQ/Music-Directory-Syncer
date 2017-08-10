@@ -33,12 +33,17 @@ Class FileParser
             SyncSettings = {NewSyncSettings}
         End If
 
-        SourceFileStream = WaitForFile(FilePath, FileMode.Open, FileAccess.Read, FileShare.Read, FileTimeout)
-        If SourceFileStream Is Nothing Then
-            MyLog.Write(ProcessID, "Could not get file system lock on source file: """ & FilePath.Substring(MyGlobalSyncSettings.SourceDirectory.Length) & """.", Warning)
-            FileLock = False
+        If File.Exists(FilePath) Then
+            SourceFileStream = WaitForFile(FilePath, FileMode.Open, FileAccess.Read, FileShare.Read, FileTimeout)
+            If SourceFileStream Is Nothing Then
+                MyLog.Write(ProcessID, "Could not get file system lock on source file: """ & FilePath.Substring(MyGlobalSyncSettings.SourceDirectory.Length) & """.", Warning)
+                FileLock = False
+            Else
+                FileLock = True
+            End If
         Else
-            FileLock = True
+            MyLog.Write(ProcessID, "Source file doesn't exist: """ & FilePath.Substring(MyGlobalSyncSettings.SourceDirectory.Length) & """.", Warning)
+            FileLock = False
         End If
 
     End Sub
@@ -103,6 +108,7 @@ Class FileParser
         Dim MyReturnObject As ReturnObject
 
         Try
+            If Not FileLock Then Throw New System.Exception("Could not get file system lock on source file.")
             Dim NewFilesSize As Int64 = 0
             For Each SyncSetting In SyncSettings
                 Dim FileCodec As Codec = CheckFileCodec(SyncSetting.GetWatcherCodecs())
@@ -188,6 +194,7 @@ Class FileParser
         Dim MyReturnObject As ReturnObject
 
         Try
+            If Not FileLock Then Throw New System.Exception("Could not get file system lock on source file.")
             For Each SyncSetting In SyncSettings
                 Dim FileCodec As Codec = CheckFileCodec(SyncSetting.GetWatcherCodecs())
                 If Not FileCodec Is Nothing Then
@@ -291,7 +298,7 @@ Class FileParser
 #End Region
 
 #Region " File Checks "
-    Public Function CheckFileForSync(ByVal FileCodec As Codec, SyncSetting As SyncSettings) As Boolean
+    Private Function CheckFileForSync(ByVal FileCodec As Codec, SyncSetting As SyncSettings) As Boolean
 
         Try
             If CheckFileTags(FileCodec, SyncSetting) Then
@@ -308,7 +315,7 @@ Class FileParser
 
     End Function
 
-    Public Function CheckFileCodec(CodecsToCheck As Codec()) As Codec
+    Private Function CheckFileCodec(CodecsToCheck As Codec()) As Codec
 
         Dim FileExtension As String = Path.GetExtension(FilePath)
 
@@ -327,11 +334,6 @@ Class FileParser
     End Function
 
     Private Function CheckFileTags(MyCodec As Codec, SyncSetting As SyncSettings) As Boolean
-
-        If FileLock = False Then
-            MyLog.Write(ProcessID, "...could not obtain file tags. Could not get file system lock on source file.", Warning)
-            Return False
-        End If
 
         Dim TagsObject As ReturnObject = MyCodec.MatchTag(FilePath, SyncSetting.GetWatcherTags)
 
