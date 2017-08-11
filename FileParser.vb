@@ -42,7 +42,7 @@ Class FileParser
                 FileLock = True
             End If
         Else
-            MyLog.Write(ProcessID, "Source file doesn't exist: """ & FilePath.Substring(MyGlobalSyncSettings.SourceDirectory.Length) & """.", Warning)
+            MyLog.Write(ProcessID, "Source file doesn't exist: """ & FilePath.Substring(MyGlobalSyncSettings.SourceDirectory.Length) & """.", Debug)
             FileLock = False
         End If
 
