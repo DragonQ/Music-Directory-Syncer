@@ -63,10 +63,10 @@ Imports System.Windows
 '<Assembly: AssemblyInformationalVersion("0.1")>        ' Human readable version string.
 
 <Assembly: AssemblyVersion(ThisAssembly.Git.BaseVersion.Major + "." + ThisAssembly.Git.BaseVersion.Minor + "." + ThisAssembly.Git.BaseVersion.Patch)>
-<Assembly: AssemblyFileVersion(ThisAssembly.Git.SemVer.Major + "." + ThisAssembly.Git.SemVer.Minor + "." + ThisAssembly.Git.BaseVersion.Patch)>
+<Assembly: AssemblyFileVersion(ThisAssembly.Git.BaseVersion.Major + "." + ThisAssembly.Git.BaseVersion.Minor + "." + ThisAssembly.Git.BaseVersion.Patch + "." + ThisAssembly.Git.Commits)>
 <Assembly: AssemblyInformationalVersion(
-    ThisAssembly.Git.SemVer.Major + "." +
-    ThisAssembly.Git.SemVer.Minor + "." +
+    ThisAssembly.Git.BaseVersion.Major + "." +
+    ThisAssembly.Git.BaseVersion.Minor + "." +
     ThisAssembly.Git.BaseVersion.Patch + "." +
     ThisAssembly.Git.Commits + "-" +
     ThisAssembly.Git.Commit)>
