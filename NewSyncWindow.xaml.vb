@@ -397,7 +397,7 @@ Public Class NewSyncWindow
     Private Sub SyncFolder()
 
         'Create syncer initialiser
-        MySyncer = New SyncerInitialiser(MyGlobalSyncSettings, MySyncSettings)
+        MySyncer = New SyncerInitialiser(MyGlobalSyncSettings, MySyncSettings, 500)
 
         'Set callback functions for the SyncBackgroundWorker
         MySyncer.AddProgressCallback(AddressOf SyncFolderProgressChanged)

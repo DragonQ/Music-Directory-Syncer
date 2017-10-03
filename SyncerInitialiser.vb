@@ -15,13 +15,14 @@ Public Class SyncerInitialiser
     Dim SyncFolderSize As Int64 = 0
     Dim MyGlobalSyncSettings As GlobalSyncSettings
     Dim MySyncSettings As SyncSettings
+    Dim CallbackUpdateMilliseconds As Int64 = 500  'Update UI twice a second by default
 
-
-    Public Sub New(NewGlobalSyncSettings As GlobalSyncSettings, NewSyncSettings As SyncSettings)
+    Public Sub New(NewGlobalSyncSettings As GlobalSyncSettings, NewSyncSettings As SyncSettings, NewCallbackUpdateMilliseconds As Int64)
 
         'Copy in user settings
         MyGlobalSyncSettings = NewGlobalSyncSettings
         MySyncSettings = NewSyncSettings
+        CallbackUpdateMilliseconds = NewCallbackUpdateMilliseconds
 
     End Sub
 
@@ -188,7 +189,7 @@ Public Class SyncerInitialiser
                     Exit Sub
                 End If
 
-                Thread.Sleep(500) 'Update UI twice a second
+                Thread.Sleep(CallbackUpdateMilliseconds)
 
                 Dim ThreadsCompletedSoFar As Int64 = Interlocked.Read(ThreadsCompleted)
 
