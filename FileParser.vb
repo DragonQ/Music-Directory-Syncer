@@ -196,6 +196,35 @@ Class FileParser
 
     End Function
 
+    Public Function DeleteDirectoryInSyncFolder() As ReturnObject
+
+        Dim MyReturnObject As ReturnObject
+
+        Try
+            For Each SyncSetting In SyncSettings
+                'File was meant to be synced, which means we now need to delete the synced version
+                Dim SyncFilePath As String = SyncSetting.SyncDirectory & FilePath.Substring(MyGlobalSyncSettings.SourceDirectory.Length)
+
+                'Delete file if it exists in sync folder
+                If Directory.Exists(SyncFilePath) Then
+                    Directory.Delete(SyncFilePath, True)
+                    MyLog.Write(ProcessID, "...directory in sync folder deleted: """ & SyncFilePath.Substring(SyncSetting.SyncDirectory.Length) & """.", Information)
+                Else
+                    MyLog.Write(ProcessID, "...directory doesn't exist in sync folder: """ & SyncFilePath.Substring(SyncSetting.SyncDirectory.Length) & """.", Information)
+                End If
+            Next
+
+            MyReturnObject = New ReturnObject(True, "", 0)
+            MyLog.Write(ProcessID, "Sync directory deleted: """ & FilePath.Substring(MyGlobalSyncSettings.SourceDirectory.Length) & """", Information)
+        Catch ex As Exception
+            MyLog.Write(ProcessID, "Sync directory deletion failed: """ & FilePath.Substring(MyGlobalSyncSettings.SourceDirectory.Length) & """. Exception: " & ex.Message, Warning)
+            MyReturnObject = New ReturnObject(False, ex.Message, 0)
+        End Try
+
+        Return MyReturnObject
+
+    End Function
+
     Public Function RenameInSyncFolder(OldFilePath As String) As ReturnObject
 
         Dim MyReturnObject As ReturnObject

@@ -293,45 +293,61 @@ Public Class TrayApp
         'Handles changed and new files
 
         'Only process this file if it is truly a file and not a directory
-        If (sender Is FileWatcher) AndAlso (Not Directory.Exists(e.FullPath)) AndAlso (FilterMatch(e.Name)) Then
-            Using MyFileParser As New FileParser(UserGlobalSyncSettings, FileID, e.FullPath)
-                Select Case e.ChangeType
-                    Case Is = IO.WatcherChangeTypes.Changed
-                        'File was changed, so re-transfer to all sync directories
-                        MyLog.Write(FileID, "Source file changed: " & e.FullPath, Information)
-                        Dim Result As ReturnObject = MyFileParser.DeleteInSyncFolder()
+        If sender Is FileWatcher Then
+            If (Not Directory.Exists(e.FullPath)) AndAlso (FilterMatch(e.Name)) Then
+                Using MyFileParser As New FileParser(UserGlobalSyncSettings, FileID, e.FullPath)
+                    Select Case e.ChangeType
+                        Case Is = IO.WatcherChangeTypes.Changed
+                            'File was changed, so re-transfer to all sync directories
+                            MyLog.Write(FileID, "Source file changed: " & e.FullPath, Information)
+                            Dim Result As ReturnObject = MyFileParser.DeleteInSyncFolder()
 
-                        If Result.Success Then
-                            Result = MyFileParser.TransferToSyncFolder()
-                        End If
+                            If Result.Success Then
+                                Result = MyFileParser.TransferToSyncFolder()
+                            End If
 
-                        If Result.Success Then
-                            If Tray.Visible Then Tray.ShowBalloonTip(BalloonTime, "File processed:", e.FullPath.Substring(UserGlobalSyncSettings.SourceDirectory.Length), ToolTipIcon.Info)
-                        Else
-                            If Tray.Visible Then Tray.ShowBalloonTip(BalloonTime, "File processing failed:", e.FullPath.Substring(UserGlobalSyncSettings.SourceDirectory.Length), ToolTipIcon.Error)
-                        End If
-                    Case Is = IO.WatcherChangeTypes.Created
-                        'File was created, so transfer to all sync directories
-                        MyLog.Write(FileID, "Source file created: " & e.FullPath, Information)
-                        Dim Result As ReturnObject = MyFileParser.TransferToSyncFolder()
+                            If Result.Success Then
+                                If Tray.Visible Then Tray.ShowBalloonTip(BalloonTime, "File processed:", e.FullPath.Substring(UserGlobalSyncSettings.SourceDirectory.Length), ToolTipIcon.Info)
+                            Else
+                                If Tray.Visible Then Tray.ShowBalloonTip(BalloonTime, "File processing failed:", e.FullPath.Substring(UserGlobalSyncSettings.SourceDirectory.Length), ToolTipIcon.Error)
+                            End If
+                        Case Is = IO.WatcherChangeTypes.Created
+                            'File was created, so transfer to all sync directories
+                            MyLog.Write(FileID, "Source file created: " & e.FullPath, Information)
+                            Dim Result As ReturnObject = MyFileParser.TransferToSyncFolder()
 
-                        If Result.Success Then
-                            If Tray.Visible Then Tray.ShowBalloonTip(BalloonTime, "File processed:", e.FullPath.Substring(UserGlobalSyncSettings.SourceDirectory.Length), ToolTipIcon.Info)
-                        Else
-                            If Tray.Visible Then Tray.ShowBalloonTip(BalloonTime, "File processing failed:", e.FullPath.Substring(UserGlobalSyncSettings.SourceDirectory.Length), ToolTipIcon.Error)
-                        End If
-                    Case Is = IO.WatcherChangeTypes.Deleted
-                        'File was deleted, so delete all matching synced files
-                        MyLog.Write(FileID, "Source file deleted: " & e.FullPath, Information)
-                        Dim Result As ReturnObject = MyFileParser.DeleteInSyncFolder()
+                            If Result.Success Then
+                                If Tray.Visible Then Tray.ShowBalloonTip(BalloonTime, "File processed:", e.FullPath.Substring(UserGlobalSyncSettings.SourceDirectory.Length), ToolTipIcon.Info)
+                            Else
+                                If Tray.Visible Then Tray.ShowBalloonTip(BalloonTime, "File processing failed:", e.FullPath.Substring(UserGlobalSyncSettings.SourceDirectory.Length), ToolTipIcon.Error)
+                            End If
+                        Case Is = IO.WatcherChangeTypes.Deleted
+                            'File was deleted, so delete all matching synced files
+                            MyLog.Write(FileID, "Source file deleted: " & e.FullPath, Information)
+                            Dim Result As ReturnObject = MyFileParser.DeleteInSyncFolder()
 
-                        If Result.Success Then
-                            If Tray.Visible Then Tray.ShowBalloonTip(BalloonTime, "File deleted:", e.FullPath.Substring(UserGlobalSyncSettings.SourceDirectory.Length), ToolTipIcon.Info)
-                        Else
-                            If Tray.Visible Then Tray.ShowBalloonTip(BalloonTime, "File deletion failed:", e.FullPath.Substring(UserGlobalSyncSettings.SourceDirectory.Length), ToolTipIcon.Error)
-                        End If
-                End Select
-            End Using
+                            If Result.Success Then
+                                If Tray.Visible Then Tray.ShowBalloonTip(BalloonTime, "File deleted:", e.FullPath.Substring(UserGlobalSyncSettings.SourceDirectory.Length), ToolTipIcon.Info)
+                            Else
+                                If Tray.Visible Then Tray.ShowBalloonTip(BalloonTime, "File deletion failed:", e.FullPath.Substring(UserGlobalSyncSettings.SourceDirectory.Length), ToolTipIcon.Error)
+                            End If
+                    End Select
+                End Using
+            End If
+        ElseIf sender Is DirectoryWatcher Then
+            If e.ChangeType = IO.WatcherChangeTypes.Deleted Then
+                'Directory was deleted, so delete all matching synced directories
+                Using MyFileParser As New FileParser(UserGlobalSyncSettings, FileID, e.FullPath)
+                    MyLog.Write(FileID, "Source directory deleted: " & e.FullPath, Information)
+                    Dim Result As ReturnObject = MyFileParser.DeleteDirectoryInSyncFolder()
+
+                    If Result.Success Then
+                        If Tray.Visible Then Tray.ShowBalloonTip(BalloonTime, "Directory deleted:", e.FullPath.Substring(UserGlobalSyncSettings.SourceDirectory.Length), ToolTipIcon.Info)
+                    Else
+                        If Tray.Visible Then Tray.ShowBalloonTip(BalloonTime, "Directory deletion failed:", e.FullPath.Substring(UserGlobalSyncSettings.SourceDirectory.Length), ToolTipIcon.Error)
+                    End If
+                End Using
+            End If
         End If
 
         If Interlocked.Equals(FileID, MaxFileID) Then
