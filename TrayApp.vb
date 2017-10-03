@@ -13,7 +13,7 @@ Public Class TrayApp
 #Region " Declarations "
     Private WithEvents Tray As NotifyIcon
     Private WithEvents MainMenu As ContextMenuStrip
-    Private WithEvents mnuViewLogFile, mnuNewSync, mnuStatus, mnuEditSyncSettings, mnuExit As ToolStripMenuItem
+    Private WithEvents mnuEditSyncSettings, mnuEnableSync, mnuExit, mnuNewSync, mnuStatus, mnuViewLogFile As ToolStripMenuItem
     Private WithEvents mnuSep1, mnuSep2, mnuSep3 As ToolStripSeparator
     Private Const BalloonTime As Int32 = 8
 
@@ -27,6 +27,7 @@ Public Class TrayApp
         'Initialize the menus
         mnuStatus = New ToolStripMenuItem("Syncer is not active")
         mnuSep1 = New ToolStripSeparator()
+        mnuEnableSync = New ToolStripMenuItem("Enable sync")
         mnuEditSyncSettings = New ToolStripMenuItem("Edit sync settings")
         mnuViewLogFile = New ToolStripMenuItem("View log file")
         mnuSep2 = New ToolStripSeparator()
@@ -34,9 +35,10 @@ Public Class TrayApp
         mnuSep3 = New ToolStripSeparator()
         mnuExit = New ToolStripMenuItem("Exit")
         mnuStatus.Enabled = False
+        mnuEnableSync.Enabled = False
         mnuEditSyncSettings.Enabled = False
         MainMenu = New ContextMenuStrip
-        MainMenu.Items.AddRange(New ToolStripItem() {mnuStatus, mnuSep1, mnuEditSyncSettings, mnuViewLogFile, mnuSep2, mnuNewSync, mnuSep3, mnuExit})
+        MainMenu.Items.AddRange(New ToolStripItem() {mnuStatus, mnuSep1, mnuEnableSync, mnuEditSyncSettings, mnuViewLogFile, mnuSep2, mnuNewSync, mnuSep3, mnuExit})
 
         'Initialize the notification area icon
         Tray = New NotifyIcon
@@ -48,14 +50,24 @@ Public Class TrayApp
         If LaunchNewSyncWindow Then
             ShowNewSyncWindow()
         Else
-            Dim Result As ReturnObject = StartWatcher()
-            If Not Result.Success Then
-                Dim ErrorMessage As String = "File system watcher could not be started. " & Result.ErrorMessage
-                MyLog.Write(ErrorMessage, Fatal)
-                System.Windows.MessageBox.Show(ErrorMessage, "File System Watcher Error", MessageBoxButton.OK, MessageBoxImage.Error)
-                ExitApplication()
+            If UserGlobalSyncSettings.SyncIsEnabled Then
+                Dim WatcherStartResult As ReturnObject = StartWatcher()
+                If Not WatcherStartResult.Success Then
+                    Dim ErrorMessage As String = "File system watcher could not be started. " & NewLine & NewLine & WatcherStartResult.ErrorMessage
+                    MyLog.Write(ErrorMessage, Fatal)
+                    System.Windows.MessageBox.Show(ErrorMessage, "File System Watcher Error", MessageBoxButton.OK, MessageBoxImage.Error)
+                    ExitApplication()
+                End If
+            Else
+                Dim WatcherStopResult As ReturnObject = StopWatcher()
+                If Not WatcherStopResult.Success Then
+                    Dim ErrorMessage As String = "File system watcher could not be stopped. " & NewLine & NewLine & WatcherStopResult.ErrorMessage
+                    MyLog.Write(ErrorMessage, Warning)
+                    System.Windows.MessageBox.Show(ErrorMessage, "File System Watcher Error", MessageBoxButton.OK, MessageBoxImage.Error)
+                End If
             End If
             mnuEditSyncSettings.Enabled = True
+            mnuEnableSync.Enabled = True
             Tray.Visible = True
         End If
 
@@ -69,6 +81,26 @@ Public Class TrayApp
 
     Private Sub mnuViewLogFile_Click(ByVal sender As Object, ByVal e As System.EventArgs) Handles mnuViewLogFile.Click
         Process.Start(MyLogFilePath)
+    End Sub
+
+    Private Sub mnuEnableSync_Click(ByVal sender As Object, ByVal e As System.EventArgs) Handles mnuEnableSync.Click
+
+        If UserGlobalSyncSettings.SyncIsEnabled Then 'Disable sync
+            Dim WatcherStopResult As ReturnObject = StopWatcher()
+            If Not WatcherStopResult.Success Then
+                Dim ErrorMessage As String = "File system watcher could not be stopped. " & NewLine & NewLine & WatcherStopResult.ErrorMessage
+                MyLog.Write(ErrorMessage, Warning)
+                If Tray.Visible Then Tray.ShowBalloonTip(BalloonTime, ApplicationName, ErrorMessage, ToolTipIcon.Error)
+            End If
+        Else 'Enable sync
+            Dim WatcherStartResult As ReturnObject = StartWatcher()
+            If Not WatcherStartResult.Success Then
+                Dim ErrorMessage As String = "File system watcher could not be started. " & NewLine & NewLine & WatcherStartResult.ErrorMessage
+                MyLog.Write(ErrorMessage, Warning)
+                If Tray.Visible Then Tray.ShowBalloonTip(BalloonTime, ApplicationName, ErrorMessage, ToolTipIcon.Error)
+            End If
+        End If
+
     End Sub
 
     Private Sub mnuEditSyncSettings_Click(ByVal sender As Object, ByVal e As System.EventArgs) Handles mnuEditSyncSettings.Click
@@ -128,20 +160,22 @@ Public Class TrayApp
 
         If MyNewSyncWindow.DialogResult = True Then
             ' Sync was successfully set up
-            mnuEditSyncSettings.Enabled = True
             If UserGlobalSyncSettings.SyncIsEnabled Then
                 Dim WatcherStartResult As ReturnObject = StartWatcher()
-
                 If WatcherStartResult.Success Then
                     mnuStatus.Text = "Syncer is active"
                     Tray.ShowBalloonTip(BalloonTime, ApplicationName, "Syncer active.", ToolTipIcon.Info)
                 Else
-                    System.Windows.MessageBox.Show("Error starting background syncer!" & NewLine & NewLine & WatcherStartResult.ErrorMessage, "Background Syncer Error!", MessageBoxButton.OK, MessageBoxImage.Error)
+                    Dim ErrorMessage As String = "File system watcher could not be started. " & NewLine & NewLine & WatcherStartResult.ErrorMessage
+                    MyLog.Write(ErrorMessage, Fatal)
+                    System.Windows.MessageBox.Show(ErrorMessage, "File System Watcher Error", MessageBoxButton.OK, MessageBoxImage.Error)
+                    ExitApplication()
                 End If
             Else
                 mnuStatus.Text = "Syncer is not active"
                 Tray.ShowBalloonTip(BalloonTime, ApplicationName, "Syncer disabled.", ToolTipIcon.Info)
             End If
+            mnuEditSyncSettings.Enabled = True
         Else ' User closed the window before sync was completed
             mnuStatus.Text = "Syncer is not active"
             Tray.ShowBalloonTip(BalloonTime, ApplicationName, "Syncer not set up.", ToolTipIcon.Info)
@@ -168,8 +202,12 @@ Public Class TrayApp
             AddHandler FileWatcher.Renamed, AddressOf FileRenamed
             AddHandler FileWatcher.Deleted, AddressOf FileChanged
 
-            MyLog.Write("File system watcher started (monitoring directory """ & UserGlobalSyncSettings.SourceDirectory & """ for audio files)", Information)
             UserGlobalSyncSettings.SyncIsEnabled = True
+            mnuStatus.Text = "Syncer is active"
+            mnuEnableSync.Text = "Disable sync"
+            MyLog.Write("File system watcher started (monitoring directory """ & UserGlobalSyncSettings.SourceDirectory & """ for audio files)", Information)
+            If Tray.Visible Then Tray.ShowBalloonTip(BalloonTime, ApplicationName, "Syncer active.", ToolTipIcon.Info)
+
             Return SaveSyncSettings(UserGlobalSyncSettings)
         Catch ex As Exception
             Return New ReturnObject(False, ex.Message, Nothing)
@@ -177,23 +215,19 @@ Public Class TrayApp
 
     End Function
 
-    Private Sub StopWatcher()
+    Private Function StopWatcher() As ReturnObject
 
-        FileWatcher.Dispose()
+        If FileWatcher IsNot Nothing Then FileWatcher.Dispose()
+
         UserGlobalSyncSettings.SyncIsEnabled = False
         mnuStatus.Text = "Syncer is not active"
+        mnuEnableSync.Text = "Enable sync"
+        MyLog.Write("File system watcher stopped.", Information)
+        If Tray.Visible Then Tray.ShowBalloonTip(BalloonTime, ApplicationName, "Syncer disabled.", ToolTipIcon.Info)
 
-        Dim MyResult As ReturnObject = SaveSyncSettings(UserGlobalSyncSettings)
+        Return SaveSyncSettings(UserGlobalSyncSettings)
 
-        If MyResult.Success Then
-            MyLog.Write("Syncer stopped.", Warning)
-            If Tray.Visible Then Tray.ShowBalloonTip(BalloonTime, ApplicationName, "Syncer has been disabled.", ToolTipIcon.Info)
-        Else
-            MyLog.Write("Could not update sync settings. Error: " & MyResult.ErrorMessage, Warning)
-            If Tray.Visible Then Tray.ShowBalloonTip(BalloonTime, ApplicationName, "Syncer has been disabled but settings file could not be updated.", ToolTipIcon.Error)
-        End If
-
-    End Sub
+    End Function
 
     Private Sub FileRenamed(ByVal sender As Object, ByVal e As RenamedEventArgs)
 
