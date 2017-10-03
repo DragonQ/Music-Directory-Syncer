@@ -400,8 +400,8 @@ Public Class NewSyncWindow
         MySyncer = New SyncerInitialiser(MyGlobalSyncSettings, MySyncSettings)
 
         'Set callback functions for the SyncBackgroundWorker
-        AddHandler MySyncer.SyncBackgroundWorker.ProgressChanged, AddressOf SyncFolderProgressChanged
-        AddHandler MySyncer.SyncBackgroundWorker.RunWorkerCompleted, AddressOf SyncFolderCompleted
+        MySyncer.AddProgressCallback(AddressOf SyncFolderProgressChanged)
+        MySyncer.AddCompletionCallback(AddressOf SyncFolderCompleted)
 
         'Start sync
         SyncInProgress = True
@@ -454,6 +454,14 @@ Public Class NewSyncWindow
                 Me.Close()
             End If
 
+            Exit Sub
+        End If
+
+        If e.Result Is Nothing Then
+            System.Windows.MessageBox.Show("No result from background worker.", "Sync Failed!",
+                    MessageBoxButton.OK, MessageBoxImage.Error)
+            FilesCompletedProgressBar.IsIndeterminate = False
+            EnableDisableControls(True)
             Exit Sub
         End If
 

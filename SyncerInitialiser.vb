@@ -18,22 +18,35 @@ Public Class SyncerInitialiser
 
 
     Public Sub New(NewGlobalSyncSettings As GlobalSyncSettings, NewSyncSettings As SyncSettings)
+
         'Copy in user settings
         MyGlobalSyncSettings = NewGlobalSyncSettings
         MySyncSettings = NewSyncSettings
 
-        'Set properties and events for the SyncBackgroundWorker
+    End Sub
+
+    Public Sub AddProgressCallback(CallbackFunction As ProgressChangedEventHandler)
+        AddHandler SyncBackgroundWorker.ProgressChanged, CallbackFunction
+    End Sub
+
+    Public Sub AddCompletionCallback(CallbackFunction As RunWorkerCompletedEventHandler)
+        AddHandler SyncBackgroundWorker.RunWorkerCompleted, CallbackFunction
+    End Sub
+
+    Public Sub InitialiseSync()
+
+        'Set properties And events for the SyncBackgroundWorker
         SyncBackgroundWorker.WorkerReportsProgress = True
         SyncBackgroundWorker.WorkerSupportsCancellation = True
 
-        'Set function for starting sync process
-        AddHandler SyncBackgroundWorker.DoWork, AddressOf SyncFolder    End Sub
-
-    Public Sub InitialiseSync()
+        'Begin sync on background thread
+        AddHandler SyncBackgroundWorker.DoWork, AddressOf SyncFolder
         SyncBackgroundWorker.RunWorkerAsync()
+
     End Sub
 
-    Public Sub SyncFolder(sender As Object, e As DoWorkEventArgs)
+    Private Sub SyncFolder(sender As Object, e As DoWorkEventArgs)
+
         Dim FolderPath As String = MyGlobalSyncSettings.SourceDirectory
         Dim MyFiles As FileData() = Nothing
         Dim MyFilesToProcess As New List(Of String)
