@@ -173,6 +173,13 @@ Class FileParser
                     Else
                         MyLog.Write(ProcessID, "...file doesn't exist in sync folder: """ & SyncFilePath.Substring(SyncSetting.SyncDirectory.Length) & """.", Information)
                     End If
+
+                    'Delete folder if there are no more files in it
+                    Dim DirName = Path.GetDirectoryName(SyncFilePath)
+                    If Directory.Exists(DirName) AndAlso Directory.GetFiles(DirName, "*", SearchOption.AllDirectories).Length = 0 Then
+                        Directory.Delete(DirName)
+                        MyLog.Write(ProcessID, "...parent directory is now empty so was deleted: """ & DirName.Substring(SyncSetting.SyncDirectory.Length) & """.", Information)
+                    End If
                 Else
                     Throw New Exception("File was being watched but could not determine its codec.")
                 End If
@@ -212,7 +219,17 @@ Class FileParser
                         End If
 
                         If File.Exists(OldSyncFilePath) Then
+                            Dim DirName = Path.GetDirectoryName(SyncFilePath)
+                            If Not Directory.Exists(DirName) Then Directory.CreateDirectory(DirName)
                             File.Move(OldSyncFilePath, SyncFilePath)
+                            MyLog.Write(ProcessID, "...successfully renamed file in sync folder.", Information)
+
+                            'Delete folder if there are no more files in it
+                            Dim OldDirName = Path.GetDirectoryName(OldSyncFilePath)
+                            If Directory.Exists(OldDirName) AndAlso Directory.GetFiles(OldDirName, "*", SearchOption.AllDirectories).Length = 0 Then
+                                Directory.Delete(OldDirName)
+                                MyLog.Write(ProcessID, "...old parent directory is now empty so was deleted: """ & OldDirName.Substring(SyncSetting.SyncDirectory.Length) & """.", Information)
+                            End If
                         Else
                             MyLog.Write(ProcessID, "...old file doesn't exist in sync folder: """ & OldSyncFilePath & """, creating now...", Warning)
 
@@ -227,8 +244,6 @@ Class FileParser
 
                             MyLog.Write(ProcessID, "...successfully added file to sync folder.", Information)
                         End If
-
-                        MyLog.Write(ProcessID, "...successfully renamed file in sync folder.", Information)
                     End If
                 Else
                     Throw New Exception("File was being watched but could not determine its codec.")

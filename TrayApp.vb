@@ -17,6 +17,7 @@ Public Class TrayApp
     Private WithEvents mnuSep1, mnuSep2, mnuSep3 As ToolStripSeparator
     Private Const BalloonTime As Int32 = 8
 
+    Private WithEvents DirectoryWatcher As FileSystemWatcher
     Private WithEvents FileWatcher As FileSystemWatcher
     Private FileID As Int32 = 0
 #End Region
@@ -160,22 +161,26 @@ Public Class TrayApp
 
         If MyNewSyncWindow.DialogResult = True Then
             ' Sync was successfully set up
+
+
             If UserGlobalSyncSettings.SyncIsEnabled Then
                 Dim WatcherStartResult As ReturnObject = StartWatcher()
-                If WatcherStartResult.Success Then
-                    mnuStatus.Text = "Syncer is active"
-                    Tray.ShowBalloonTip(BalloonTime, ApplicationName, "Syncer active.", ToolTipIcon.Info)
-                Else
+                If Not WatcherStartResult.Success Then
                     Dim ErrorMessage As String = "File system watcher could not be started. " & NewLine & NewLine & WatcherStartResult.ErrorMessage
                     MyLog.Write(ErrorMessage, Fatal)
                     System.Windows.MessageBox.Show(ErrorMessage, "File System Watcher Error", MessageBoxButton.OK, MessageBoxImage.Error)
                     ExitApplication()
                 End If
             Else
-                mnuStatus.Text = "Syncer is not active"
-                Tray.ShowBalloonTip(BalloonTime, ApplicationName, "Syncer disabled.", ToolTipIcon.Info)
+                Dim WatcherStopResult As ReturnObject = StopWatcher()
+                If Not WatcherStopResult.Success Then
+                    Dim ErrorMessage As String = "File system watcher could not be stopped. " & NewLine & NewLine & WatcherStopResult.ErrorMessage
+                    MyLog.Write(ErrorMessage, Warning)
+                    System.Windows.MessageBox.Show(ErrorMessage, "File System Watcher Error", MessageBoxButton.OK, MessageBoxImage.Error)
+                End If
             End If
             mnuEditSyncSettings.Enabled = True
+            mnuEnableSync.Enabled = True
         Else ' User closed the window before sync was completed
             mnuStatus.Text = "Syncer is not active"
             Tray.ShowBalloonTip(BalloonTime, ApplicationName, "Syncer not set up.", ToolTipIcon.Info)
@@ -192,15 +197,29 @@ Public Class TrayApp
         End If
 
         Try
+            'Create file watcher
             FileWatcher = New FileSystemWatcher(UserGlobalSyncSettings.SourceDirectory)
             FileWatcher.IncludeSubdirectories = True
-            FileWatcher.NotifyFilter = NotifyFilters.FileName Or NotifyFilters.LastWrite Or NotifyFilters.DirectoryName
+            FileWatcher.NotifyFilter = NotifyFilters.FileName Or NotifyFilters.LastWrite
             FileWatcher.EnableRaisingEvents = True
 
+            'Add handlers for file watcher
             AddHandler FileWatcher.Changed, AddressOf FileChanged
             AddHandler FileWatcher.Created, AddressOf FileChanged
             AddHandler FileWatcher.Renamed, AddressOf FileRenamed
             AddHandler FileWatcher.Deleted, AddressOf FileChanged
+
+            'Create directory watcher
+            DirectoryWatcher = New FileSystemWatcher(UserGlobalSyncSettings.SourceDirectory)
+            DirectoryWatcher.IncludeSubdirectories = True
+            DirectoryWatcher.NotifyFilter = NotifyFilters.DirectoryName
+            DirectoryWatcher.EnableRaisingEvents = True
+
+            'Add handlers for directory watcher
+            AddHandler DirectoryWatcher.Changed, AddressOf FileChanged
+            AddHandler DirectoryWatcher.Created, AddressOf FileChanged
+            AddHandler DirectoryWatcher.Renamed, AddressOf DirectoryRenamed
+            AddHandler DirectoryWatcher.Deleted, AddressOf FileChanged
 
             UserGlobalSyncSettings.SyncIsEnabled = True
             mnuStatus.Text = "Syncer is active"
@@ -229,9 +248,28 @@ Public Class TrayApp
 
     End Function
 
+    Private Sub DirectoryRenamed(ByVal sender As Object, ByVal e As RenamedEventArgs)
+
+        MyLog.Write(FileID, "Directory renamed: " & e.FullPath, Information)
+
+        Dim NewDirectory As New DirectoryInfo(e.FullPath)
+        For Each SubDirectory As DirectoryInfo In NewDirectory.GetDirectories("*", SearchOption.TopDirectoryOnly)
+            Dim NewDirName = Path.Combine(e.FullPath.Replace(UserGlobalSyncSettings.SourceDirectory & "\", ""), SubDirectory.Name)
+            Dim OldDirName = Path.Combine(e.OldFullPath.Replace(UserGlobalSyncSettings.SourceDirectory & "\", ""), SubDirectory.Name)
+            DirectoryRenamed(sender, New RenamedEventArgs(WatcherChangeTypes.Renamed, UserGlobalSyncSettings.SourceDirectory, NewDirName, OldDirName))
+        Next
+        For Each NewFile As FileInfo In NewDirectory.GetFiles("*", SearchOption.TopDirectoryOnly)
+            Dim NewFileName = Path.Combine(e.FullPath.Replace(UserGlobalSyncSettings.SourceDirectory & "\", ""), NewFile.Name)
+            Dim OldFileName = Path.Combine(e.OldFullPath.Replace(UserGlobalSyncSettings.SourceDirectory & "\", ""), NewFile.Name)
+            FileRenamed(sender, New RenamedEventArgs(WatcherChangeTypes.Renamed, UserGlobalSyncSettings.SourceDirectory, NewFileName, OldFileName))
+        Next
+
+    End Sub
+
     Private Sub FileRenamed(ByVal sender As Object, ByVal e As RenamedEventArgs)
 
         If FilterMatch(e.Name) Then
+            'This is a file that we are watching
             MyLog.Write(FileID, "File renamed: " & e.FullPath, Information)
             Using MyFileParser As New FileParser(UserGlobalSyncSettings, FileID, e.FullPath)
                 Dim Result As ReturnObject = MyFileParser.RenameInSyncFolder(e.OldFullPath)
@@ -254,10 +292,12 @@ Public Class TrayApp
     Private Sub FileChanged(ByVal sender As Object, ByVal e As System.IO.FileSystemEventArgs)
         'Handles changed and new files
 
-        If FilterMatch(e.Name) Then
+        'Only process this file if it is truly a file and not a directory
+        If (sender Is FileWatcher) AndAlso (Not Directory.Exists(e.FullPath)) AndAlso (FilterMatch(e.Name)) Then
             Using MyFileParser As New FileParser(UserGlobalSyncSettings, FileID, e.FullPath)
                 Select Case e.ChangeType
                     Case Is = IO.WatcherChangeTypes.Changed
+                        'File was changed, so re-transfer to all sync directories
                         MyLog.Write(FileID, "Source file changed: " & e.FullPath, Information)
                         Dim Result As ReturnObject = MyFileParser.DeleteInSyncFolder()
 
@@ -271,6 +311,7 @@ Public Class TrayApp
                             If Tray.Visible Then Tray.ShowBalloonTip(BalloonTime, "File processing failed:", e.FullPath.Substring(UserGlobalSyncSettings.SourceDirectory.Length), ToolTipIcon.Error)
                         End If
                     Case Is = IO.WatcherChangeTypes.Created
+                        'File was created, so transfer to all sync directories
                         MyLog.Write(FileID, "Source file created: " & e.FullPath, Information)
                         Dim Result As ReturnObject = MyFileParser.TransferToSyncFolder()
 
@@ -280,6 +321,7 @@ Public Class TrayApp
                             If Tray.Visible Then Tray.ShowBalloonTip(BalloonTime, "File processing failed:", e.FullPath.Substring(UserGlobalSyncSettings.SourceDirectory.Length), ToolTipIcon.Error)
                         End If
                     Case Is = IO.WatcherChangeTypes.Deleted
+                        'File was deleted, so delete all matching synced files
                         MyLog.Write(FileID, "Source file deleted: " & e.FullPath, Information)
                         Dim Result As ReturnObject = MyFileParser.DeleteInSyncFolder()
 
