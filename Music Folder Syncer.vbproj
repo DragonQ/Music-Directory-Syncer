@@ -133,6 +133,9 @@
       <Generator>MSBuild:Compile</Generator>
       <SubType>Designer</SubType>
     </None>
+    <Compile Include="FileWatcher.vb">
+      <SubType>Component</SubType>
+    </Compile>
     <Compile Include="FileParser.vb" />
     <Compile Include="Logger.vb" />
     <Compile Include="EditSyncSettingsWindow.xaml.vb">

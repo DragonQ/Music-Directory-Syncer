@@ -19,8 +19,8 @@ Public Class TrayApp
     Private WithEvents mnuSep1, mnuSep2, mnuSep3 As ToolStripSeparator
     Private Const BalloonTime As Int32 = 8 * 1000
 
-    Private WithEvents DirectoryWatcher As FileSystemWatcher = Nothing
-    Private WithEvents FileWatcher As FileSystemWatcher = Nothing
+    Private WithEvents DirectoryWatcher As MyFileSystemWatcher = Nothing
+    Private WithEvents FileWatcher As MyFileSystemWatcher = Nothing
     Private FileID As Int32 = 0
 
     Private MySyncer As SyncerInitialiser = Nothing
@@ -283,10 +283,11 @@ Public Class TrayApp
 
         Try
             'Create file watcher
-            FileWatcher = New FileSystemWatcher(UserGlobalSyncSettings.SourceDirectory)
+            FileWatcher = New MyFileSystemWatcher(UserGlobalSyncSettings.SourceDirectory)
             FileWatcher.IncludeSubdirectories = True
             FileWatcher.NotifyFilter = NotifyFilters.FileName Or NotifyFilters.LastWrite
             FileWatcher.EnableRaisingEvents = True
+            FileWatcher.Interval = 500
 
             'Add handlers for file watcher
             AddHandler FileWatcher.Changed, AddressOf FileChanged
@@ -295,10 +296,11 @@ Public Class TrayApp
             AddHandler FileWatcher.Deleted, AddressOf FileChanged
 
             'Create directory watcher
-            DirectoryWatcher = New FileSystemWatcher(UserGlobalSyncSettings.SourceDirectory)
+            DirectoryWatcher = New MyFileSystemWatcher(UserGlobalSyncSettings.SourceDirectory)
             DirectoryWatcher.IncludeSubdirectories = True
             DirectoryWatcher.NotifyFilter = NotifyFilters.DirectoryName
             DirectoryWatcher.EnableRaisingEvents = True
+            DirectoryWatcher.Interval = 500
 
             'Add handlers for directory watcher
             AddHandler DirectoryWatcher.Changed, AddressOf FileChanged
@@ -463,8 +465,7 @@ Public Class TrayApp
     End Function
 #End Region
 
-#Region " Re-Sync Callbacks "
-
+#Region " Re-Apply Sync Callbacks "
     Private Sub CancelSync()
         If Not MySyncer Is Nothing Then
             MySyncer.SyncBackgroundWorker.CancelAsync()
