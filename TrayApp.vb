@@ -19,8 +19,8 @@ Public Class TrayApp
     Private WithEvents mnuSep1, mnuSep2, mnuSep3 As ToolStripSeparator
     Private Const BalloonTime As Int32 = 8 * 1000
 
-    Private WithEvents DirectoryWatcher As FileSystemWatcher
-    Private WithEvents FileWatcher As FileSystemWatcher
+    Private WithEvents DirectoryWatcher As FileSystemWatcher = Nothing
+    Private WithEvents FileWatcher As FileSystemWatcher = Nothing
     Private FileID As Int32 = 0
 
     Private MySyncer As SyncerInitialiser = Nothing
@@ -151,8 +151,9 @@ Public Class TrayApp
     Private Sub mnuReapplySyncs_Click(ByVal sender As Object, ByVal e As System.EventArgs) Handles mnuReapplySyncs.Click
 
         'Double check that the user wants to do this
-        If System.Windows.MessageBox.Show("Are you sure you want to manually re-create all of your sync directories? This can solve file mis-match issues but will take a long time.", "Re-Apply All Syncs",
-                                   MessageBoxButton.OKCancel, MessageBoxImage.Error) = MessageBoxResult.Cancel Then
+        If System.Windows.MessageBox.Show("Are you sure you want to manually re-create all of your sync directories? Your existing sync directories will be deleted!" &
+                                          vbNewLine & vbNewLine & "This can solve file mis-match issues but will take a long time.", "Re-Apply All Syncs",
+                                          MessageBoxButton.OKCancel, MessageBoxImage.Warning) = MessageBoxResult.Cancel Then
             Exit Sub
         End If
 
@@ -320,6 +321,7 @@ Public Class TrayApp
     Private Function StopWatcher(Optional ShowTooltip As Boolean = True) As ReturnObject
 
         If FileWatcher IsNot Nothing Then FileWatcher.Dispose()
+        If DirectoryWatcher IsNot Nothing Then DirectoryWatcher.Dispose()
 
         mnuStatus.Text = "Syncer is not active"
         mnuEnableSync.Text = "Enable sync"
@@ -430,6 +432,8 @@ Public Class TrayApp
                     End If
                 End Using
             End If
+        Else 'Don't increment file ID unnecessarily
+            Exit Sub
         End If
 
         If Interlocked.Equals(FileID, MaxFileID) Then
