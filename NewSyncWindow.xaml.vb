@@ -458,6 +458,7 @@ Public Class NewSyncWindow
         End If
 
         If e.Result Is Nothing Then
+            MyLog.Write("Sync failed: no result from background worker.", Fatal)
             System.Windows.MessageBox.Show("No result from background worker.", "Sync Failed!",
                     MessageBoxButton.OK, MessageBoxImage.Error)
             FilesCompletedProgressBar.IsIndeterminate = False
@@ -511,6 +512,7 @@ Public Class NewSyncWindow
                 System.Windows.MessageBox.Show("Could not save sync settings!", MyResult.ErrorMessage, MessageBoxButton.OK, MessageBoxImage.Error)
             End If
         Else
+            MyLog.Write("Sync failed: " & Result.ErrorMessage, Warning)
             System.Windows.MessageBox.Show("Sync failed! " & NewLine & NewLine & Result.ErrorMessage, "Sync Failed!",
                     MessageBoxButton.OK, MessageBoxImage.Error)
             FilesCompletedProgressBar.IsIndeterminate = False
