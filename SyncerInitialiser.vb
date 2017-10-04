@@ -15,9 +15,9 @@ Public Class SyncerInitialiser
     Dim SyncFolderSize As Int64 = 0
     Dim MyGlobalSyncSettings As GlobalSyncSettings
     Dim MySyncSettings As SyncSettings
-    Dim CallbackUpdateMilliseconds As Int64 = 500  'Update UI twice a second by default
+    Dim CallbackUpdateMilliseconds As Int32 = 500  'Update UI twice a second by default
 
-    Public Sub New(NewGlobalSyncSettings As GlobalSyncSettings, NewSyncSettings As SyncSettings, NewCallbackUpdateMilliseconds As Int64)
+    Public Sub New(NewGlobalSyncSettings As GlobalSyncSettings, NewSyncSettings As SyncSettings, NewCallbackUpdateMilliseconds As Int32)
 
         'Copy in user settings
         MyGlobalSyncSettings = NewGlobalSyncSettings
