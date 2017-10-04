@@ -491,8 +491,7 @@ Public Class NewSyncWindow
 
             'Ask user if they want to start the background sync updater (presumably yes)
             If System.Windows.MessageBox.Show("Sync directory size: " & SyncSizeString & NewLine & NewLine & "Time taken: " & TimeTaken & NewLine & NewLine &
-                               "Do you want to enable background sync " &
-                                    "for this folder? This will ensure your sync folder is always up-to-date.", "Sync Complete!",
+                               "Do you want to enable background sync? This will ensure your sync folders are always up-to-date.", "Sync Complete!",
                                     MessageBoxButton.OKCancel, MessageBoxImage.Information) = MessageBoxResult.OK Then
                 MyGlobalSyncSettings.SyncIsEnabled = True
             Else

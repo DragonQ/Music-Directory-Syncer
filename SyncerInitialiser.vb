@@ -14,14 +14,25 @@ Public Class SyncerInitialiser
     Dim ThreadsCompleted As Int64 = 0
     Dim SyncFolderSize As Int64 = 0
     Dim MyGlobalSyncSettings As GlobalSyncSettings
-    Dim MySyncSettings As SyncSettings
+    Dim MySyncSettings As SyncSettings()
     Dim CallbackUpdateMilliseconds As Int32 = 500  'Update UI twice a second by default
 
-    Public Sub New(NewGlobalSyncSettings As GlobalSyncSettings, NewSyncSettings As SyncSettings, NewCallbackUpdateMilliseconds As Int32)
+    Public Sub New(NewGlobalSyncSettings As GlobalSyncSettings, NewCallbackUpdateMilliseconds As Int32)
+        'This is used where we want to re-apply every single sync in one sweep
 
         'Copy in user settings
         MyGlobalSyncSettings = NewGlobalSyncSettings
-        MySyncSettings = NewSyncSettings
+        MySyncSettings = MyGlobalSyncSettings.GetSyncSettings()
+        CallbackUpdateMilliseconds = NewCallbackUpdateMilliseconds
+
+    End Sub
+
+    Public Sub New(NewGlobalSyncSettings As GlobalSyncSettings, NewSyncSettings As SyncSettings, NewCallbackUpdateMilliseconds As Int32)
+        'This is used when we want to add a new sync
+
+        'Copy in user settings
+        MyGlobalSyncSettings = NewGlobalSyncSettings
+        MySyncSettings = {NewSyncSettings}
         CallbackUpdateMilliseconds = NewCallbackUpdateMilliseconds
 
     End Sub
@@ -72,43 +83,49 @@ Public Class SyncerInitialiser
             Exit Sub
         End If
 
-        MyLog.Write("Creating sync folder.", Information)
         Dim ThreadsToRun As Int32 = MyFiles.Count
         Dim ThreadsStarted As UInt32 = 0
         Dim FileID As Int32 = 0
         Dim One As UInt32 = 1
 
         'Delete existing sync folder if necessary
-        Try
-            Directory.Delete(MySyncSettings.SyncDirectory, True)
-        Catch ex As DirectoryNotFoundException
-            'Do nothing
-        Catch ex As Exception
-            Dim MyError As String = ex.Message
-            If ex.InnerException IsNot Nothing Then
-                MyError &= NewLine & NewLine & ex.InnerException.ToString
-            End If
-            MyLog.Write("Failed to delete existing files in sync folder [1]. Exception: " & MyError, Warning)
-            e.Result = New ReturnObject(False, ex.Message, "")
-            Exit Sub
-        End Try
+        For Each Sync As SyncSettings In MySyncSettings
+            Try
+                MyLog.Write("Deleting sync folder: " & Sync.SyncDirectory, Information)
+                Directory.Delete(Sync.SyncDirectory, True)
+            Catch ex As DirectoryNotFoundException
+                'Do nothing
+            Catch ex As Exception
+                Dim MyError As String = ex.Message
+                If ex.InnerException IsNot Nothing Then
+                    MyError &= NewLine & NewLine & ex.InnerException.ToString
+                End If
+                MyLog.Write("Failed to delete existing files in sync folder [1]. Exception: " & MyError, Warning)
+                e.Result = New ReturnObject(False, ex.Message, "")
+                Exit Sub
+            End Try
+        Next
+
+        'Create directory access rule
+        Dim sid = New SecurityIdentifier(WellKnownSidType.AuthenticatedUserSid, Nothing)
+        Dim FullAccess As New DirectorySecurity()
+        FullAccess.AddAccessRule(New FileSystemAccessRule(sid, FileSystemRights.FullControl, AccessControlType.Allow))
 
         'Create sync folder
-        Try
-            Dim sid = New SecurityIdentifier(WellKnownSidType.AuthenticatedUserSid, Nothing)
-            Dim FullAccess As New DirectorySecurity()
-            FullAccess.AddAccessRule(New FileSystemAccessRule(sid, FileSystemRights.FullControl, AccessControlType.Allow))
-
-            Directory.CreateDirectory(MySyncSettings.SyncDirectory, FullAccess)
-        Catch ex As Exception
-            Dim MyError As String = ex.Message
-            If ex.InnerException IsNot Nothing Then
-                MyError &= NewLine & NewLine & ex.InnerException.ToString
-            End If
-            MyLog.Write("Failed to delete existing files in sync folder [2]. Exception: " & MyError, Warning)
-            e.Result = New ReturnObject(False, ex.Message, "")
-            Exit Sub
-        End Try
+        For Each Sync As SyncSettings In MySyncSettings
+            Try
+                MyLog.Write("Creating sync folder: " & Sync.SyncDirectory, Information)
+                Directory.CreateDirectory(Sync.SyncDirectory, FullAccess)
+            Catch ex As Exception
+                Dim MyError As String = ex.Message
+                If ex.InnerException IsNot Nothing Then
+                    MyError &= NewLine & NewLine & ex.InnerException.ToString
+                End If
+                MyLog.Write("Failed to delete existing files in sync folder [2]. Exception: " & MyError, Warning)
+                e.Result = New ReturnObject(False, ex.Message, "")
+                Exit Sub
+            End Try
+        Next
 
         MyLog.Write("Starting file processing threads.", Information)
         SyncFolderSize = 0
@@ -161,8 +178,15 @@ Public Class SyncerInitialiser
             '==============================================================================================
             '==============================================================================================
 
-            ThreadPool.SetMinThreads(MySyncSettings.MaxThreads, MySyncSettings.MaxThreads)
-            ThreadPool.SetMaxThreads(MySyncSettings.MaxThreads, MySyncSettings.MaxThreads)
+            Dim MaxThreads As Int32 = 1
+            For Each Sync As SyncSettings In MySyncSettings
+                If Sync.MaxThreads > MaxThreads Then
+                    MaxThreads = Sync.MaxThreads
+                End If
+            Next
+
+            ThreadPool.SetMinThreads(MaxThreads, MaxThreads)
+            ThreadPool.SetMaxThreads(MaxThreads, MaxThreads)
 
             For Each MyFile As FileData In MyFiles
                 If FileID = MaxFileID Then
@@ -222,11 +246,11 @@ Public Class SyncerInitialiser
             Dim InputObjects As Object() = CType(Input, Object())
             Dim ProcessID As Int32 = CType(InputObjects(0), Int32)
             Dim FilePath As String = CType(InputObjects(1), String)
-            Dim SingleSyncSettings As SyncSettings = CType(InputObjects(2), SyncSettings)
+            Dim NewSyncSettings As SyncSettings() = CType(InputObjects(2), SyncSettings())
             Dim TransferResult As ReturnObject
 
             Try
-                Using MyFileParser As New FileParser(MyGlobalSyncSettings, ProcessID, FilePath, SingleSyncSettings)
+                Using MyFileParser As New FileParser(MyGlobalSyncSettings, ProcessID, FilePath, NewSyncSettings)
                     TransferResult = MyFileParser.TransferToSyncFolder()
                 End Using
                 If TransferResult.Success Then

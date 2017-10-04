@@ -22,7 +22,7 @@ Class FileParser
     Private SourceFileStream As FileStream = Nothing
 
 #Region " New "
-    Public Sub New(ByRef NewGlobalSyncSettings As GlobalSyncSettings, ByVal NewProcessID As Int32, ByVal NewFilePath As String, Optional NewSyncSettings As SyncSettings = Nothing)
+    Public Sub New(ByRef NewGlobalSyncSettings As GlobalSyncSettings, ByVal NewProcessID As Int32, ByVal NewFilePath As String, Optional NewSyncSettings As SyncSettings() = Nothing)
 
         ProcessID = NewProcessID
         FilePath = NewFilePath
@@ -30,7 +30,7 @@ Class FileParser
         If NewSyncSettings Is Nothing Then
             SyncSettings = MyGlobalSyncSettings.GetSyncSettings()
         Else
-            SyncSettings = {NewSyncSettings}
+            SyncSettings = NewSyncSettings
         End If
 
         If File.Exists(FilePath) Then
