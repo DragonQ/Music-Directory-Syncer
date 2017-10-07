@@ -309,7 +309,7 @@ Public Class NewSyncWindow
                 MyLog.Write("Source directory: """ & txtSourceDirectory.Text & """.", Information)
                 MyLog.Write("Sync directory: """ & txtSyncDirectory.Text & """.", Information)
 
-                ' Set transcode setting
+                'Set transcode setting
                 If cmbTranscodeSetting.SelectedIndex > -1 Then
                     MySyncSettings.TranscodeSetting = CType(CType(cmbTranscodeSetting.SelectedItem, Item).Value, TranscodeMode)
                 Else
@@ -330,7 +330,7 @@ Public Class NewSyncWindow
                     End If
                 End If
 
-                ' Set ReplayGain setting
+                'Set ReplayGain setting
                 If cmbReplayGain.SelectedIndex > -1 Then
                     MySyncSettings.ReplayGainSetting = CType(CType(cmbReplayGain.SelectedItem, Item).Value, ReplayGainMode)
                 Else
