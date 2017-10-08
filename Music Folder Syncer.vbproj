@@ -138,6 +138,7 @@
     <Compile Include="EditSyncSettingsWindow.xaml.vb">
       <DependentUpon>EditSyncSettingsWindow.xaml</DependentUpon>
     </Compile>
+    <Compile Include="SyncerInitialiser.vb" />
     <Compile Include="My Project\Resources.Designer.vb">
       <AutoGen>True</AutoGen>
       <DesignTime>True</DesignTime>

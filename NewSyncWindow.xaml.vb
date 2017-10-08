@@ -6,20 +6,14 @@ Imports MusicFolderSyncer.SyncSettings
 Imports MusicFolderSyncer.SyncSettings.TranscodeMode
 Imports System.IO
 Imports System.Environment
-Imports System.Threading
-Imports System.Security.AccessControl
-Imports System.Security.Principal
-Imports CodeProject
 Imports System.Collections.ObjectModel
 Imports System.Collections.Specialized
 #End Region
 
 Public Class NewSyncWindow
 
-    Dim WithEvents SyncBackgroundWorker As New BackgroundWorker
+    Dim MySyncer As SyncerInitialiser = Nothing
     Dim ExitApplication As Boolean = False
-    Dim ThreadsCompleted As Int64 = 0
-    Dim SyncFolderSize As Int64 = 0
     Dim SyncTimer As New Stopwatch()
     Dim TagsToSync As ObservableCollection(Of Codec.Tag)
     Dim FileTypesToSync As ObservableCollection(Of Codec)
@@ -27,6 +21,7 @@ Public Class NewSyncWindow
     Dim MySyncSettings As SyncSettings
     Dim MySyncSettingsList As List(Of SyncSettings)
     Dim NewSync As Boolean
+    Dim SyncInProgress As Boolean = False
 
 #Region " New "
     Public Sub New(NewGlobalSyncSettings As GlobalSyncSettings, MyNewSync As Boolean)
@@ -34,13 +29,6 @@ Public Class NewSyncWindow
         ' This call is required by the designer.
         InitializeComponent()
         Me.DataContext = Me
-
-        ' Set properties and events for the SyncBackgroundWorker
-        SyncBackgroundWorker.WorkerReportsProgress = True
-        SyncBackgroundWorker.WorkerSupportsCancellation = True
-        AddHandler SyncBackgroundWorker.DoWork, AddressOf SyncFolder
-        AddHandler SyncBackgroundWorker.ProgressChanged, AddressOf SyncFolderProgressChanged
-        AddHandler SyncBackgroundWorker.RunWorkerCompleted, AddressOf SyncFolderCompleted
 
         ' Define default sync settings to start with
         MyGlobalSyncSettings = NewGlobalSyncSettings
@@ -279,12 +267,18 @@ Public Class NewSyncWindow
 
     End Sub
 
+    Private Sub CancelSync()
+        If Not MySyncer Is Nothing Then
+            MySyncer.SyncBackgroundWorker.CancelAsync()
+        End If
+    End Sub
+
     Private Sub btnNewSync_Click(sender As Object, e As RoutedEventArgs)
 
-        If SyncBackgroundWorker.IsBusy Then 'Sync in progress, so we must cancel
+        If SyncInProgress Then 'Sync in progress, so we must cancel
             If System.Windows.MessageBox.Show("Are you sure you want to cancel this sync operation? Your sync directory will be incomplete!", "Sync in progress!",
                                    MessageBoxButton.OKCancel, MessageBoxImage.Error) = MessageBoxResult.OK Then
-                SyncBackgroundWorker.CancelAsync()
+                CancelSync()
             End If
         Else 'Begin sync process
             If System.Windows.MessageBox.Show("Are you sure you want to start a new sync? This will delete all files and folders in the specified " &
@@ -367,7 +361,7 @@ Public Class NewSyncWindow
                 txtFilesProcessed.Text = "???"
                 btnNewSync.Content = "Scanning files..."
                 SyncTimer.Start()
-                SyncBackgroundWorker.RunWorkerAsync()
+                SyncFolder()
             End If
         End If
 
@@ -400,207 +394,32 @@ Public Class NewSyncWindow
 #End Region
 
 #Region " Start New Sync [Background Worker] "
-    Private Sub SyncFolder(sender As Object, e As DoWorkEventArgs)
+    Private Sub SyncFolder()
 
-        Dim FolderPath As String = MyGlobalSyncSettings.SourceDirectory
-        Dim MyFiles As FileData() = Nothing
-        Dim MyFilesToProcess As New List(Of String)
+        'Create syncer initialiser
+        MySyncer = New SyncerInitialiser(MyGlobalSyncSettings, MySyncSettings, 500)
 
-        MyLog.Write("Scanning files in source directory.", Information)
+        'Set callback functions for the SyncBackgroundWorker
+        MySyncer.AddProgressCallback(AddressOf SyncFolderProgressChanged)
+        MySyncer.AddCompletionCallback(AddressOf SyncFolderCompleted)
 
-        Try
-            MyFiles = FastDirectoryEnumerator.EnumerateFiles(FolderPath, "*.*", SearchOption.AllDirectories).ToArray
-        Catch ex As Exception
-            MyLog.Write("Failed to grab file list from source directory. Exception: " & ex.Message, Warning)
-            e.Result = New ReturnObject(False, ex.Message, "")
-            Exit Sub
-        End Try
-
-        If MyFiles Is Nothing Then
-            MyLog.Write("Failed to grab file list from source directory. Exception: EnumerateFiles returned nothing.", Warning)
-            e.Result = New ReturnObject(False, "EnumerateFiles returned nothing.", "")
-            Exit Sub
-        ElseIf MyFiles.Length < 1 Then
-            MyLog.Write("Failed to grab file list from source directory. Exception: EnumerateFiles returned no files.", Warning)
-            e.Result = New ReturnObject(False, "EnumerateFiles returned no files.", "")
-            Exit Sub
-        End If
-
-        MyLog.Write("Creating sync folder.", Information)
-        Dim ThreadsToRun As Int32 = MyFiles.Count
-        Dim ThreadsStarted As UInt32 = 0
-        Dim FileID As Int32 = 0
-        Dim One As UInt32 = 1
-
-        'Delete existing sync folder if necessary
-        Try
-            Directory.Delete(MySyncSettings.SyncDirectory, True)
-        Catch ex As DirectoryNotFoundException
-            'Do nothing
-        Catch ex As Exception
-            Dim MyError As String = ex.Message
-            If ex.InnerException IsNot Nothing Then
-                MyError &= NewLine & NewLine & ex.InnerException.ToString
-            End If
-            MyLog.Write("Failed to delete existing files in sync folder [1]. Exception: " & MyError, Warning)
-            e.Result = New ReturnObject(False, ex.Message, "")
-            Exit Sub
-        End Try
-
-        'Create sync folder
-        Try
-            Dim sid = New SecurityIdentifier(WellKnownSidType.AuthenticatedUserSid, Nothing)
-            Dim FullAccess As New DirectorySecurity()
-            FullAccess.AddAccessRule(New FileSystemAccessRule(sid, FileSystemRights.FullControl, AccessControlType.Allow))
-
-            Directory.CreateDirectory(MySyncSettings.SyncDirectory, FullAccess)
-        Catch ex As Exception
-            Dim MyError As String = ex.Message
-            If ex.InnerException IsNot Nothing Then
-                MyError &= NewLine & NewLine & ex.InnerException.ToString
-            End If
-            MyLog.Write("Failed to delete existing files in sync folder [2]. Exception: " & MyError, Warning)
-            e.Result = New ReturnObject(False, ex.Message, "")
-            Exit Sub
-        End Try
-
-        MyLog.Write("Starting file processing threads.", Information)
-        SyncFolderSize = 0
-
-        Try
-            '==============================================================================================
-            '============== My own custom way of handling threads, replaced with ThreadPool ===============
-            '==============================================================================================
-            'For Each MyFile As FileData In MyFiles
-            '    Do
-            '        Dim MyThreadsRunning As Int64 = Interlocked.Read(ThreadsRunning)
-            '        SyncBackgroundWorker.ReportProgress(CInt(Interlocked.Read(ThreadsCompleted) / ThreadsToRun * 100), MyThreadsRunning)
-
-            '        If MyThreadsRunning < MySyncSettings.MaxThreads Then
-            '            Interlocked.Increment(ThreadsRunning)
-
-            '            Dim NewThread As New Thread(New ParameterizedThreadStart(AddressOf TransferToSyncFolderDelegate))
-            '            NewThread.IsBackground = True
-            '            Dim InputObjects As Object() = {MyFile.Path, CodecsToCheck}
-
-            '            NewThread.Start(InputObjects)
-
-            '            ThreadsStarted += One
-            '            MyLog.Write("[" & NewThread.ManagedThreadId & "] Processing file: """ & MyFile.Path & """...", Debug)
-            '            Exit Do
-            '        Else
-            '            Thread.Sleep(50)
-            '        End If
-            '    Loop
-            'Next
-
-            ''All threads have been started, now wait for them all to finish
-            'Dim CheckPointThreadsCompleted As Int64 = Interlocked.Read(ThreadsCompleted)
-
-            'Do
-            '    Dim ThreadsCompletedSoFar As Int64 = Interlocked.Read(ThreadsCompleted)
-
-            '    If ThreadsCompletedSoFar >= ThreadsStarted Then
-            '        SyncBackgroundWorker.ReportProgress(100, 0)
-            '        MyLog.Write("All files processed. " & ThreadsStarted & " files synced.", Information)
-            '        Exit Do
-            '    Else
-            '        If ThreadsCompletedSoFar > CheckPointThreadsCompleted Then
-            '           SyncBackgroundWorker.ReportProgress(CInt(ThreadsCompletedSoFar / ThreadsStarted * 100), Interlocked.Read(ThreadsRunning))
-            '        End If
-            '        Thread.Sleep(50)
-            '    End If
-            'Loop
-
-            '==============================================================================================
-            '==============================================================================================
-
-            ThreadPool.SetMinThreads(MySyncSettings.MaxThreads, MySyncSettings.MaxThreads)
-            ThreadPool.SetMaxThreads(MySyncSettings.MaxThreads, MySyncSettings.MaxThreads)
-
-            For Each MyFile As FileData In MyFiles
-                If FileID = MaxFileID Then
-                    FileID = 1
-                Else
-                    FileID += 1
-                End If
-
-                ThreadsStarted += One
-                Dim InputObjects As Object() = {FileID, MyFile.Path, MySyncSettings}
-                ThreadPool.QueueUserWorkItem(New WaitCallback(AddressOf TransferToSyncFolderDelegate), InputObjects)
-            Next
-
-            'All threads have been started, now wait for them all to finish
-            Dim CheckPointThreadsCompleted As Int64 = Interlocked.Read(ThreadsCompleted)
-            Dim ThreadsRemaining As Int64 = ThreadsStarted - CheckPointThreadsCompleted
-            SyncBackgroundWorker.ReportProgress(CInt(CheckPointThreadsCompleted / ThreadsStarted * 100),
-                                                            {ThreadsRemaining, CheckPointThreadsCompleted})
-
-            Do
-                If SyncBackgroundWorker.CancellationPending Then
-                    e.Cancel = True
-                    e.Result = New ReturnObject(False, "Sync was cancelled.", "")
-                    Exit Sub
-                End If
-
-                Thread.Sleep(500) 'Update UI twice a second
-
-                Dim ThreadsCompletedSoFar As Int64 = Interlocked.Read(ThreadsCompleted)
-
-                If ThreadsCompletedSoFar > CheckPointThreadsCompleted Then 'At least one thread has finished since the last check
-                    If ThreadsCompletedSoFar >= ThreadsStarted Then 'All files have been processed, so end background worker
-                        MyLog.Write("All files processed. " & ThreadsStarted & " files synced.", Information)
-                        Exit Do
-                    Else
-                        ThreadsRemaining = ThreadsStarted - ThreadsCompletedSoFar
-                        SyncBackgroundWorker.ReportProgress(CInt(ThreadsCompletedSoFar / ThreadsStarted * 100),
-                                                            {ThreadsRemaining, ThreadsCompletedSoFar})
-                    End If
-                End If
-            Loop
-
-            '==============================================================================================
-
-        Catch ex As Exception
-            MyLog.Write("Failed to complete sync. Exception: " & ex.Message, Warning)
-            e.Result = New ReturnObject(False, ex.Message, "")
-        End Try
-
-        e.Result = New ReturnObject(True, Nothing, SyncFolderSize)
+        'Start sync
+        SyncInProgress = True
+        MySyncer.InitialiseSync()
 
     End Sub
 
-    Private Sub TransferToSyncFolderDelegate(ByVal Input As Object)
+    Private Sub SyncFolderProgressChanged(sender As Object, e As ProgressChangedEventArgs)
 
-        Try
-            Dim InputObjects As Object() = CType(Input, Object())
-            Dim ProcessID As Int32 = CType(InputObjects(0), Int32)
-            Dim FilePath As String = CType(InputObjects(1), String)
-            Dim SingleSyncSettings As SyncSettings = CType(InputObjects(2), SyncSettings)
-            Dim TransferResult As ReturnObject
-
-            Try
-                Using MyFileParser As New FileParser(MyGlobalSyncSettings, ProcessID, FilePath, SingleSyncSettings)
-                    TransferResult = MyFileParser.TransferToSyncFolder()
-                End Using
-                If TransferResult.Success Then
-                    Dim NewSize As Int64 = CType(TransferResult.MyObject, Int64)
-
-                    If NewSize > 0 Then
-                        Interlocked.Add(SyncFolderSize, NewSize)
-                    End If
-                Else
-                    MyLog.Write(ProcessID, "File could not be processed. Error: " & TransferResult.ErrorMessage, Warning)
-                End If
-            Catch ex As Exception
-                MyLog.Write(ProcessID, "File could not be processed. Malformed input to TransferToSyncFolderDelegate subroutine.", Warning)
-            End Try
-        Catch ex As Exception
-            MyLog.Write(Int32.MaxValue, "File could not be processed. Malformed input to TransferToSyncFolderDelegate.", Warning)
-        End Try
-
-        Interlocked.Increment(ThreadsCompleted)
-        'Interlocked.Decrement(ThreadsRunning)
+        'If Not e.UserState Is Nothing Then txtThreadsRunning.Text = "Threads running: " & CType(e.UserState, Int64).ToString
+        If Not e.UserState Is Nothing Then
+            Dim Times As Int64() = CType(e.UserState, Int64())
+            txtFilesRemaining.Text = Times(0).ToString(EnglishGB)
+            txtFilesProcessed.Text = Times(1).ToString(EnglishGB)
+        End If
+        FilesCompletedProgressBar.IsIndeterminate = False
+        btnNewSync.Content = "Processing files..."
+        FilesCompletedProgressBar.Value = e.ProgressPercentage
 
     End Sub
 
@@ -610,6 +429,8 @@ Public Class NewSyncWindow
         txtFilesRemaining.Text = ""
         txtFilesProcessed.Text = ""
         FilesCompletedProgressBar.Value = 100
+
+        SyncInProgress = False
 
         'If the sync task was cancelled, then we need to force-close all instances of ffmpeg and exit application
         If e.Cancelled Then
@@ -633,6 +454,15 @@ Public Class NewSyncWindow
                 Me.Close()
             End If
 
+            Exit Sub
+        End If
+
+        If e.Result Is Nothing Then
+            MyLog.Write("Sync failed: no result from background worker.", Fatal)
+            System.Windows.MessageBox.Show("No result from background worker.", "Sync Failed!",
+                    MessageBoxButton.OK, MessageBoxImage.Error)
+            FilesCompletedProgressBar.IsIndeterminate = False
+            EnableDisableControls(True)
             Exit Sub
         End If
 
@@ -661,8 +491,7 @@ Public Class NewSyncWindow
 
             'Ask user if they want to start the background sync updater (presumably yes)
             If System.Windows.MessageBox.Show("Sync directory size: " & SyncSizeString & NewLine & NewLine & "Time taken: " & TimeTaken & NewLine & NewLine &
-                               "Do you want to enable background sync " &
-                                    "for this folder? This will ensure your sync folder is always up-to-date.", "Sync Complete!",
+                               "Do you want to enable background sync? This will ensure your sync folders are always up-to-date.", "Sync Complete!",
                                     MessageBoxButton.OKCancel, MessageBoxImage.Information) = MessageBoxResult.OK Then
                 MyGlobalSyncSettings.SyncIsEnabled = True
             Else
@@ -682,25 +511,12 @@ Public Class NewSyncWindow
                 System.Windows.MessageBox.Show("Could not save sync settings!", MyResult.ErrorMessage, MessageBoxButton.OK, MessageBoxImage.Error)
             End If
         Else
+            MyLog.Write("Sync failed: " & Result.ErrorMessage, Warning)
             System.Windows.MessageBox.Show("Sync failed! " & NewLine & NewLine & Result.ErrorMessage, "Sync Failed!",
                     MessageBoxButton.OK, MessageBoxImage.Error)
             FilesCompletedProgressBar.IsIndeterminate = False
             EnableDisableControls(True)
         End If
-
-    End Sub
-
-    Private Sub SyncFolderProgressChanged(sender As Object, e As ProgressChangedEventArgs)
-
-        'If Not e.UserState Is Nothing Then txtThreadsRunning.Text = "Threads running: " & CType(e.UserState, Int64).ToString
-        If Not e.UserState Is Nothing Then
-            Dim Times As Int64() = CType(e.UserState, Int64())
-            txtFilesRemaining.Text = Times(0).ToString(EnglishGB)
-            txtFilesProcessed.Text = Times(1).ToString(EnglishGB)
-        End If
-        FilesCompletedProgressBar.IsIndeterminate = False
-        btnNewSync.Content = "Processing files..."
-        FilesCompletedProgressBar.Value = e.ProgressPercentage
 
     End Sub
 #End Region
@@ -709,10 +525,10 @@ Public Class NewSyncWindow
     Private Sub MainWindow_Closing(sender As Object, e As CancelEventArgs) Handles Me.Closing
 
         'User has closed the program, so we need to check if a sync is occuring
-        If SyncBackgroundWorker.IsBusy Then
+        If SyncInProgress Then
             If System.Windows.MessageBox.Show("Are you sure you want to exit? Your sync directory will be incomplete!", "Sync in progress!",
                                MessageBoxButton.OKCancel, MessageBoxImage.Error) = MessageBoxResult.OK Then
-                SyncBackgroundWorker.CancelAsync()
+                CancelSync()
                 ExitApplication = True
             End If
             e.Cancel = True
