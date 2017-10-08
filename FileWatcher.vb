@@ -46,10 +46,12 @@ Public Class MyFileSystemWatcher
 #Region " Protected Methods "
     ' Protected Methods to raise the Events for this class
     Protected Overridable Shadows Sub OnChanged(e As FileSystemEventArgs)
+        'MyLog.Write(1000, "@@@@@@@@@@ CHANGED RAISED", Logger.LogLevel.Warning)
         RaiseEvent Changed(Me, e)
     End Sub
 
     Protected Overridable Shadows Sub OnCreated(e As FileSystemEventArgs)
+        'MyLog.Write(1000, "@@@@@@@@@@ CREATED RAISED", Logger.LogLevel.Warning)
         RaiseEvent Created(Me, e)
     End Sub
 
@@ -101,7 +103,7 @@ Public Class MyFileSystemWatcher
                 Dim lastEventTime As DateTime = _lastFileEvent(FileName)
                 Dim currentTime As DateTime = DateTime.Now
                 Dim timeSinceLastEvent As TimeSpan = currentTime - lastEventTime
-                MyLog.Write(">>>>>> timeSinceLastEvent: " & timeSinceLastEvent.TotalMilliseconds & " ms")
+                'MyLog.Write(1000, ">>>>>> " & FileName & " timeSinceLastEvent: " & timeSinceLastEvent.TotalMilliseconds & " ms", Logger.LogLevel.Warning)
                 retVal = timeSinceLastEvent < _recentTimeSpan
                 _lastFileEvent(FileName) = currentTime
             Else
@@ -109,6 +111,7 @@ Public Class MyFileSystemWatcher
                 ' no event has occured in past for this file, so set return value to false
                 ' and annd filename alongwith current datetime to the dictionary
                 _lastFileEvent.Add(FileName, DateTime.Now)
+                'MyLog.Write(1000, ">>>>>>" & FileName & " no previous event", Logger.LogLevel.Warning)
                 retVal = False
             End If
         End If
@@ -120,12 +123,14 @@ Public Class MyFileSystemWatcher
     ' Base class Event Handlers. Check if an event has occured recently and call method
     ' to raise appropriate event only if no recent event is detected
     Private Shadows Sub OnChanged(sender As Object, e As FileSystemEventArgs)
+        'MyLog.Write(1000, "@@@@@@@@ CHANGED NOTICED", Logger.LogLevel.Warning)
         If Not HasAnotherFileEventOccuredRecently(e.FullPath) Then
             Me.OnChanged(e)
         End If
     End Sub
 
     Private Shadows Sub OnCreated(sender As Object, e As FileSystemEventArgs)
+        'MyLog.Write(1000, "@@@@@@@@ CREATED NOTICED", Logger.LogLevel.Warning)
         If Not HasAnotherFileEventOccuredRecently(e.FullPath) Then
             Me.OnCreated(e)
         End If
@@ -170,8 +175,8 @@ Public Class MyFileSystemWatcher
 
 #Region " IDisposable Members "
 
-    Public Shadows Sub Dispose()
-        MyBase.Dispose()
+    Protected Overrides Sub Dispose(disposing As Boolean)
+        MyBase.Dispose(disposing)
     End Sub
 
 #End Region
