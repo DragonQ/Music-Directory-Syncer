@@ -3,9 +3,9 @@
   <ffmpegPath>C:\Program Files\ffmpeg\ffmpeg.exe</ffmpegPath>
   <!--<SourceDirectory>P:\Audio\Music</SourceDirectory>-->
   <LogLevel>Information</LogLevel>
+  <!--<Threads>4</Threads>-->
   <SyncSettings>
     <SyncSetting>
-      <!--<Threads>4</Threads>-->
       <!--<SyncDirectory>P:\Audio\Android Music</SyncDirectory>-->
       <ReplayGainMode>None</ReplayGainMode>
       <FileTypes>

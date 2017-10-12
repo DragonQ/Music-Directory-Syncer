@@ -6,7 +6,6 @@
   <LogLevel>Debug</LogLevel>
   <SyncSettings>
     <SyncSetting>
-      <Threads>2</Threads>
       <SyncDirectory>\\hda\Audio\Sync\Home Music</SyncDirectory>
       <ReplayGainMode>None</ReplayGainMode>
       <FileTypes>
@@ -36,7 +35,6 @@
       </Encoder>
     </SyncSetting>
     <SyncSetting>
-      <Threads>2</Threads>
       <SyncDirectory>\\hda\Audio\Sync\Best Music</SyncDirectory>
       <ReplayGainMode>Track</ReplayGainMode>
       <FileTypes>

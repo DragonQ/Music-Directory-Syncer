@@ -178,15 +178,8 @@ Public Class SyncerInitialiser
             '==============================================================================================
             '==============================================================================================
 
-            Dim MaxThreads As Int32 = 1
-            For Each Sync As SyncSettings In MySyncSettings
-                If Sync.MaxThreads > MaxThreads Then
-                    MaxThreads = Sync.MaxThreads
-                End If
-            Next
-
-            ThreadPool.SetMinThreads(MaxThreads, MaxThreads)
-            ThreadPool.SetMaxThreads(MaxThreads, MaxThreads)
+            ThreadPool.SetMinThreads(MyGlobalSyncSettings.MaxThreads, MyGlobalSyncSettings.MaxThreads)
+            ThreadPool.SetMaxThreads(MyGlobalSyncSettings.MaxThreads, MyGlobalSyncSettings.MaxThreads)
 
             For Each MyFile As FileData In MyFiles
                 If FileID = MaxFileID Then

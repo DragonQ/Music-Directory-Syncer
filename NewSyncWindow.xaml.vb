@@ -95,7 +95,7 @@ Public Class NewSyncWindow
 
         ' Set run-time properties of window objects
         If TagsToSync.Count > 0 Then btnRemoveTag.IsEnabled = True
-        spinThreads.Maximum = MySyncSettings.MaxThreads
+        spinThreads.Maximum = MyGlobalSyncSettings.MaxThreads
         spinThreads.Value = spinThreads.Maximum
         txt_ffmpegPath.Text = MyGlobalSyncSettings.ffmpegPath
         txtSourceDirectory.Text = MyGlobalSyncSettings.SourceDirectory
@@ -342,7 +342,7 @@ Public Class NewSyncWindow
                 'Change remaining sync settings as specified by the user
                 MyGlobalSyncSettings.SourceDirectory = txtSourceDirectory.Text
                 MySyncSettings.SyncDirectory = txtSyncDirectory.Text
-                MySyncSettings.MaxThreads = CInt(spinThreads.Value)
+                MyGlobalSyncSettings.MaxThreads = CInt(spinThreads.Value)
                 MyGlobalSyncSettings.ffmpegPath = txt_ffmpegPath.Text
                 MySyncSettings.SetWatcherTags(NewTagsToSync)
                 MySyncSettings.SetWatcherCodecs(NewFileTypesToSync)
