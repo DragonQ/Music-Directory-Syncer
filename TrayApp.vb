@@ -1,6 +1,7 @@
 ﻿#Region " Namespaces "
 Imports MusicFolderSyncer.Toolkit
 Imports MusicFolderSyncer.Logger.LogLevel
+Imports MusicFolderSyncer.FileProcessingQueue
 Imports System.Windows.Forms
 Imports System.Environment
 Imports System.IO
@@ -23,13 +24,12 @@ Public Class TrayApp
     Private WithEvents FileWatcher As MyFileSystemWatcher = Nothing
     Private FileID As Int32 = 0
 
-    Private TaskQueueMutex As New Mutex()
-    Private FileTaskList As New List(Of TaskDescriptor)
     Private FileWatcherInterval_ms As Int32 = 200           'Repeated events within this time period don't even get reported to our watchers
     Private WaitBeforeProcessingFiles_ms As Int32 = 5000    'Repeated events within this time period cause file processing to restart
     Private MySyncer As SyncerInitialiser = Nothing
     Private SyncTimer As New Stopwatch()
     Private SyncInProgress As Boolean = False
+    Private GlobalFileProcessingQueue As FileProcessingQueue
 #End Region
 
 #Region " New "
@@ -286,6 +286,9 @@ Public Class TrayApp
         End If
 
         Try
+            'Initialise the file processing queue
+            GlobalFileProcessingQueue = New FileProcessingQueue(WaitBeforeProcessingFiles_ms, UserGlobalSyncSettings.MaxThreads)
+
             'Create file watcher
             FileWatcher = New MyFileSystemWatcher(UserGlobalSyncSettings.SourceDirectory)
             FileWatcher.IncludeSubdirectories = True
@@ -328,6 +331,7 @@ Public Class TrayApp
 
         If FileWatcher IsNot Nothing Then FileWatcher.Dispose()
         If DirectoryWatcher IsNot Nothing Then DirectoryWatcher.Dispose()
+        If GlobalFileProcessingQueue IsNot Nothing Then GlobalFileProcessingQueue.Dispose()
 
         mnuStatus.Text = "Syncer is not active"
         mnuEnableSync.Text = "Enable sync"
@@ -381,47 +385,6 @@ Public Class TrayApp
 
 
 
-
-
-    Private Function FileChangedAction(MyFileProcessingInfo As FileProcessingInfo) As ReturnObject
-
-        Dim Result As ReturnObject = Nothing
-
-        '=================================== DEBUG CODE BELOW:
-        'Dim threadid As Int32 = Thread.CurrentThread.ManagedThreadId
-        'MyLog.Write(MyFileProcessingInfo.ProcessID, threadid & " ------ Source file changed: " & MyFileProcessingInfo.FilePath, Information)
-        '===================================
-
-        'Wait a pre-set amount of time and then cancel this task if we've been told to
-        MyLog.Write(MyFileProcessingInfo.ProcessID, "Waiting " & WaitBeforeProcessingFiles_ms & " ms before attempting to process file: " & MyFileProcessingInfo.FilePath, Debug)
-        Thread.Sleep(WaitBeforeProcessingFiles_ms)
-
-        'If MyFileProcessingInfo.CancelState.Token.IsCancellationRequested() Then
-        '    MyLog.Write(MyFileProcessingInfo.ProcessID, "File processing cancelled before attempting to process file: " & MyFileProcessingInfo.FilePath, Warning)
-        '    Return New ReturnObject(False, "Task cancelled", MyFileProcessingInfo)
-        'End If
-
-        MyFileProcessingInfo.CancelState.Token.ThrowIfCancellationRequested()
-
-        'No other tasks are running using this file, so we are free to continue
-        MyLog.Write(MyFileProcessingInfo.ProcessID, "Processing file: " & MyFileProcessingInfo.FilePath, Information)
-        If Not MyFileProcessingInfo.IsNewFile Then
-            Result = MyFileProcessingInfo.FileParser.DeleteInSyncFolder()
-        End If
-
-        If MyFileProcessingInfo.IsNewFile OrElse Result.Success Then
-            Result = MyFileProcessingInfo.FileParser.TransferToSyncFolder()
-            If Result.Success Then
-                MyFileProcessingInfo.ResultMessages = {"File processed:", MyFileProcessingInfo.FilePath.Substring(UserGlobalSyncSettings.SourceDirectory.Length)}
-                Return New ReturnObject(True, "", MyFileProcessingInfo)
-            End If
-        End If
-
-        'Failure case
-        Return Result
-
-    End Function
-
     Private Sub FileChangedCompleted(Result As ReturnObject)
 
         '=================================== DEBUG CODE BELOW:
@@ -436,101 +399,29 @@ Public Class TrayApp
             Dim ResultStrings As String() = MyFileProcessingInfo.ResultMessages()
 
             If Result.Success AndAlso ResultStrings.Length >= 2 Then
-                'If Tray.Visible Then Tray.ShowBalloonTip(BalloonTime, ResultStrings(0), ResultStrings(1), ToolTipIcon.Info)
+                If Tray.Visible Then Tray.ShowBalloonTip(BalloonTime, ResultStrings(0), ResultStrings(1), ToolTipIcon.Info)
             Else
-                'If Tray.Visible Then Tray.ShowBalloonTip(BalloonTime, ResultStrings(0), ResultStrings(1), ToolTipIcon.Error)
+                If Tray.Visible Then Tray.ShowBalloonTip(BalloonTime, ResultStrings(0), ResultStrings(1), ToolTipIcon.Error)
             End If
         End If
 
         'Remove the task from the queue so it doesn't get confused with a running task later on
-        If RemoveTaskFromQueue(MyFileProcessingInfo.ProcessID) Then
+        If GlobalFileProcessingQueue.RemoveTaskFromQueue(MyFileProcessingInfo.ProcessID) Then
             MyLog.Write(MyFileProcessingInfo.ProcessID, "File processing task removed from queue: " & MyFileProcessingInfo.FilePath, Debug)
         Else
             MyLog.Write(MyFileProcessingInfo.ProcessID, "Could not remove file processing task from queue! " & MyFileProcessingInfo.FilePath, Warning)
         End If
 
         '=================================== DEBUG CODE BELOW:
-        'If FileTaskList.Count > 0 Then
-        '    MyLog.Write(9999, "[[[ REMAINING TASKS: ]]]", Fatal)
-        '    Dim i As Int32 = 0
-        '    TaskQueueMutex.WaitOne()
-        '    For Each MyTaskDescriptor As TaskDescriptor In FileTaskList
-        '        i += 1
-        '        MyLog.Write(9999, i & ": " & MyTaskDescriptor.FilePath, Fatal)
-        '    Next
-        '    TaskQueueMutex.ReleaseMutex()
-        'Else
-        '    MyLog.Write(9999, "[[[ NO REMAINING TASKS ]]] ", Fatal)
-        'End If
+        GlobalFileProcessingQueue.PrintRunningTasks()
         '===================================
 
     End Sub
 
-
-    Private Class FileProcessingInfo
-
-        ReadOnly Property ProcessID As Int32
-        ReadOnly Property FilePath As String
-        ReadOnly Property FileParser As FileParser
-        ReadOnly Property IsNewFile As Boolean
-        Property CancelState As CancellationTokenSource
-        Public Property ResultMessages As String()
-
-        Public Sub New(NewProcessID As Int32, NewFilePath As String, NewFileParser As FileParser, NewFile As Boolean, ByRef NewCancelState As CancellationTokenSource)
-            ProcessID = NewProcessID
-            FilePath = NewFilePath
-            FileParser = NewFileParser
-            IsNewFile = NewFile
-            CancelState = NewCancelState
-        End Sub
-
-    End Class
-
-    Private Class TaskDescriptor
-        Public ReadOnly Property FileID As Int32
-        'Public ReadOnly Property Task As Task
-        Public ReadOnly Property FilePath As String
-        Public Property CancelToken As CancellationTokenSource
-
-        Public Sub New(NewFileID As Int32, NewFilePath As String, NewTask As Task, NewCancellationTokenSource As CancellationTokenSource)
-            FileID = NewFileID
-            'Task = NewTask
-            FilePath = NewFilePath
-            CancelToken = NewCancellationTokenSource
-        End Sub
-    End Class
-
-    Private Function CancelFileTaskIfAlreadyRunning(FilePath As String) As Boolean
-        Dim TaskCancelled As Boolean = False
-
-        TaskQueueMutex.WaitOne()
-
-        For Each MyTaskDescriptor As TaskDescriptor In FileTaskList
-            If MyTaskDescriptor.FilePath = FilePath Then 'Cancel task
-                MyTaskDescriptor.CancelToken.Cancel()
-                TaskCancelled = True
-            End If
-        Next
-
-        TaskQueueMutex.ReleaseMutex()
-
-        Return TaskCancelled
-    End Function
-
-    Private Function CountTasksAlreadyRunning() As Int32
-        Dim Result As Int32 = 0
-
-        TaskQueueMutex.WaitOne()
-        Result = FileTaskList.Count
-        TaskQueueMutex.ReleaseMutex()
-
-        Return Result
-    End Function
-
     Private Sub FileChangedFailure(MyFileProcessingInfo As FileProcessingInfo)
 
         'Remove the task from the queue so it doesn't get confused with a running task later on
-        If RemoveTaskFromQueue(MyFileProcessingInfo.ProcessID) Then
+        If GlobalFileProcessingQueue.RemoveTaskFromQueue(MyFileProcessingInfo.ProcessID) Then
             MyLog.Write(MyFileProcessingInfo.ProcessID, "File processing task removed from queue: " & MyFileProcessingInfo.FilePath, Debug)
         Else
             MyLog.Write(MyFileProcessingInfo.ProcessID, "Could not remove file processing task from queue! " & MyFileProcessingInfo.FilePath, Warning)
@@ -538,26 +429,7 @@ Public Class TrayApp
 
     End Sub
 
-    Private Function RemoveTaskFromQueue(FileID As Int32) As Boolean
-        Dim TaskRemoved As Boolean = False
-        Dim TaskIndexes As New List(Of Int32)
 
-        TaskQueueMutex.WaitOne()
-
-        For i As Int32 = 0 To FileTaskList.Count - 1
-            If FileTaskList(i).FileID = FileID Then 'Cancel task
-                FileTaskList.RemoveAt(i)
-                TaskRemoved = True
-                Exit For
-            End If
-        Next
-
-        MyLog.Write(FileID, "Tasks still running: " & CountTasksAlreadyRunning(), Information)
-
-        TaskQueueMutex.ReleaseMutex()
-
-        Return TaskRemoved
-    End Function
 
 
 
@@ -578,7 +450,7 @@ Public Class TrayApp
                         Case Is = IO.WatcherChangeTypes.Changed, IO.WatcherChangeTypes.Created
                             'File was created or changed, so re-transfer to all sync directories
                             'This is done in a separate thread so we don't clog up the FileSystemWatcher events thread
-                            If CancelFileTaskIfAlreadyRunning(e.FullPath) Then
+                            If GlobalFileProcessingQueue.CancelFileTaskIfAlreadyRunning(e.FullPath) Then
                                 MyLog.Write(FileID, "File is already being processed, so cancelling original task", Debug)
                             End If
 
@@ -586,9 +458,7 @@ Public Class TrayApp
                             Dim TokenSource As New CancellationTokenSource()
                             'Dim CancelToken As CancellationToken = TokenSource.Token
                             Dim NewFileProcessingInfo As New FileProcessingInfo(FileID, e.FullPath, MyFileParser, False, TokenSource)
-                            Dim t As Task(Of ReturnObject) = Task.Run(Function() FileChangedAction(NewFileProcessingInfo), NewFileProcessingInfo.CancelState.Token)
-                            Dim NewTaskDescriptor As New TaskDescriptor(FileID, e.FullPath, t, NewFileProcessingInfo.CancelState)
-                            FileTaskList.Add(NewTaskDescriptor)
+                            Dim t As Task(Of ReturnObject) = Task.Run(Function() GlobalFileProcessingQueue.AddTask(NewFileProcessingInfo), NewFileProcessingInfo.CancelState.Token)
 
                             'Set return function on the main thread for task completion
                             t.ContinueWith(Sub(t1)
