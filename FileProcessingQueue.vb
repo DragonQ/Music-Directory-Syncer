@@ -7,7 +7,7 @@ Imports System.Threading
 Class FileProcessingQueue
     Implements IDisposable
 
-    Private TaskQueueMutex As New Mutex()
+    Private TaskQueueMutex As New Object
     Private FileTaskList As New List(Of TaskDescriptor)
     Private WaitBeforeProcessingFiles_ms As Int32 = 5000    'Repeated events within this time period cause file processing to restart
     Private TasksRunning As Int64 = 0
@@ -28,9 +28,9 @@ Class FileProcessingQueue
 
         Dim NewTaskDescriptor As New FileProcessingQueue.TaskDescriptor(MyFileProcessingInfo.ProcessID, MyFileProcessingInfo.FilePath, MyFileProcessingInfo.CancelState)
 
-        TaskQueueMutex.WaitOne()
-        FileTaskList.Add(NewTaskDescriptor)
-        TaskQueueMutex.ReleaseMutex()
+        SyncLock TaskQueueMutex
+            FileTaskList.Add(NewTaskDescriptor)
+        End SyncLock
 
         'Wait until there's a spare thread to use
         Do Until Interlocked.Read(TasksRunning) < MaxThreads
@@ -60,19 +60,19 @@ Class FileProcessingQueue
         Dim TaskRemoved As Boolean = False
         Dim TaskIndexes As New List(Of Int32)
 
-        TaskQueueMutex.WaitOne()
+        SyncLock TaskQueueMutex
 
-        For i As Int32 = 0 To FileTaskList.Count - 1
-            If FileTaskList(i).FileID = FileID Then 'Cancel task
-                FileTaskList.RemoveAt(i)
-                TaskRemoved = True
-                Exit For
-            End If
-        Next
+            For i As Int32 = 0 To FileTaskList.Count - 1
+                If FileTaskList(i).FileID = FileID Then 'Cancel task
+                    FileTaskList.RemoveAt(i)
+                    TaskRemoved = True
+                    Exit For
+                End If
+            Next
+
+        End SyncLock
 
         MyLog.Write(FileID, "Tasks still running: " & CountTasksAlreadyRunning(), Information)
-
-        TaskQueueMutex.ReleaseMutex()
 
         Return TaskRemoved
     End Function
@@ -80,40 +80,40 @@ Class FileProcessingQueue
     Public Function CancelFileTaskIfAlreadyRunning(FilePath As String) As Boolean
         Dim TaskCancelled As Boolean = False
 
-        TaskQueueMutex.WaitOne()
+        SyncLock TaskQueueMutex
 
-        For Each MyTaskDescriptor As TaskDescriptor In FileTaskList
-            If MyTaskDescriptor.FilePath = FilePath Then 'Cancel task
-                MyTaskDescriptor.CancelToken.Cancel()
-                TaskCancelled = True
-            End If
-        Next
+            For Each MyTaskDescriptor As TaskDescriptor In FileTaskList
+                If MyTaskDescriptor.FilePath = FilePath Then 'Cancel task
+                    MyTaskDescriptor.CancelToken.Cancel()
+                    TaskCancelled = True
+                End If
+            Next
 
-        TaskQueueMutex.ReleaseMutex()
+        End SyncLock
 
         Return TaskCancelled
     End Function
 
     Public Sub PrintRunningTasks()
         If MyLog.DebugLevel = Logger.LogLevel.Debug AndAlso CountTasksAlreadyRunning() > 0 Then
-            MyLog.Write(0, "[[[ REMAINING TASKS: ]]]", Debug)
+            MyLog.Write(0, "[[ REMAINING TASKS: ]]", Debug)
             Dim i As Int32 = 0
             Dim FileTaskList As List(Of TaskDescriptor) = GetFileTaskList()
             For Each MyTaskDescriptor As TaskDescriptor In FileTaskList
                 i += 1
-                MyLog.Write(0, i & ": " & MyTaskDescriptor.FilePath, Debug)
+                MyLog.Write(0, "[[" & i & ": " & MyTaskDescriptor.FilePath & "]]", Debug)
             Next
         Else
-            MyLog.Write(0, "[[[ NO REMAINING TASKS ]]] ", Debug)
+            MyLog.Write(0, "[[ NO REMAINING TASKS ]] ", Debug)
         End If
     End Sub
 
     Public Function CountTasksAlreadyRunning() As Int32
         Dim Result As Int32 = 0
 
-        TaskQueueMutex.WaitOne()
-        Result = FileTaskList.Count
-        TaskQueueMutex.ReleaseMutex()
+        SyncLock TaskQueueMutex
+            Result = FileTaskList.Count
+        End SyncLock
 
         Return Result
     End Function
@@ -131,7 +131,7 @@ Class FileProcessingQueue
 
         'Dispose of task queue mutex
         If TaskQueueMutex IsNot Nothing Then
-            TaskQueueMutex.Close()
+            TaskQueueMutex = Nothing
         End If
 
         GC.SuppressFinalize(Me)
@@ -169,9 +169,13 @@ Class FileProcessingQueue
     End Class
 
     Private Function GetFileTaskList() As List(Of TaskDescriptor)
-        TaskQueueMutex.WaitOne()
-        Return FileTaskList
-        TaskQueueMutex.ReleaseMutex()
+        Dim Result As List(Of TaskDescriptor) = Nothing
+
+        SyncLock TaskQueueMutex
+            Result = FileTaskList
+        End SyncLock
+
+        Return Result
     End Function
 
     Private Function FileChangedAction(MyFileProcessingInfo As FileProcessingInfo, TimeAlreadySlept_ms As Int32) As ReturnObject
