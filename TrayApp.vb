@@ -331,12 +331,20 @@ Public Class TrayApp
 
         If FileWatcher IsNot Nothing Then FileWatcher.Dispose()
         If DirectoryWatcher IsNot Nothing Then DirectoryWatcher.Dispose()
-        If GlobalFileProcessingQueue IsNot Nothing Then GlobalFileProcessingQueue.Dispose()
 
         mnuStatus.Text = "Syncer is not active"
         mnuEnableSync.Text = "Enable sync"
         MyLog.Write("File system watcher stopped.", Information)
-        If ShowTooltip AndAlso Tray.Visible Then Tray.ShowBalloonTip(BalloonTime, ApplicationName, "Syncer disabled.", ToolTipIcon.Info)
+
+        If ShowTooltip AndAlso Tray.Visible Then
+            If GlobalFileProcessingQueue.CountTasksAlreadyRunning() > 0 Then
+                Tray.ShowBalloonTip(BalloonTime, ApplicationName, "Syncer disabled. Currently processing files will be allowed to complete.", ToolTipIcon.Info)
+            Else
+                Tray.ShowBalloonTip(BalloonTime, ApplicationName, "Syncer disabled.", ToolTipIcon.Info)
+            End If
+        End If
+
+        If GlobalFileProcessingQueue IsNot Nothing Then GlobalFileProcessingQueue.Dispose()
 
         Return New ReturnObject(True, Nothing)
 

@@ -1,9 +1,6 @@
 ﻿#Region " Namespaces "
 Imports MusicFolderSyncer.Toolkit
 Imports MusicFolderSyncer.Logger.LogLevel
-Imports System.Windows.Forms
-Imports System.Environment
-Imports System.IO
 Imports System.Threading
 #End Region
 
@@ -111,6 +108,16 @@ Class FileProcessingQueue
         End If
     End Sub
 
+    Public Function CountTasksAlreadyRunning() As Int32
+        Dim Result As Int32 = 0
+
+        TaskQueueMutex.WaitOne()
+        Result = FileTaskList.Count
+        TaskQueueMutex.ReleaseMutex()
+
+        Return Result
+    End Function
+
     Public Sub Dispose() Implements IDisposable.Dispose
 
         'Ensure this isn't called twice
@@ -127,7 +134,7 @@ Class FileProcessingQueue
             TaskQueueMutex.Close()
         End If
 
-        'GC.SuppressFinalize(Me)
+        GC.SuppressFinalize(Me)
 
     End Sub
 
@@ -160,16 +167,6 @@ Class FileProcessingQueue
             CancelToken = NewCancellationTokenSource
         End Sub
     End Class
-
-    Private Function CountTasksAlreadyRunning() As Int32
-        Dim Result As Int32 = 0
-
-        TaskQueueMutex.WaitOne()
-        Result = FileTaskList.Count
-        TaskQueueMutex.ReleaseMutex()
-
-        Return Result
-    End Function
 
     Private Function GetFileTaskList() As List(Of TaskDescriptor)
         TaskQueueMutex.WaitOne()
