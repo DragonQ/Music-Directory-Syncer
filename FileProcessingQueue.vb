@@ -1,6 +1,7 @@
 ﻿#Region " Namespaces "
 Imports MusicFolderSyncer.Toolkit
 Imports MusicFolderSyncer.Logger.LogLevel
+Imports MusicFolderSyncer.FileProcessingQueue.FileProcessingInfo.ActionType
 Imports System.Threading
 #End Region
 
@@ -8,7 +9,7 @@ Class FileProcessingQueue
     Implements IDisposable
 
     Private TaskQueueMutex As New Object
-    Private FileTaskList As New List(Of TaskDescriptor)
+    Private FileTaskList As New List(Of FileProcessingInfo)
     Private WaitBeforeProcessingFiles_ms As Int32 = 5000    'Repeated events within this time period cause file processing to restart
     Private TasksRunning As Int64 = 0
     Private MaxThreads As Int64 = 2
@@ -26,10 +27,8 @@ Class FileProcessingQueue
         Dim TimeSlept_ms As Int32 = 0
         Dim SleepTime_ms As Int32 = 50
 
-        Dim NewTaskDescriptor As New FileProcessingQueue.TaskDescriptor(MyFileProcessingInfo.ProcessID, MyFileProcessingInfo.FilePath, MyFileProcessingInfo.CancelState)
-
         SyncLock TaskQueueMutex
-            FileTaskList.Add(NewTaskDescriptor)
+            FileTaskList.Add(MyFileProcessingInfo)
         End SyncLock
 
         'Wait until there's a spare thread to use
@@ -50,7 +49,19 @@ Class FileProcessingQueue
             Thread.Sleep(WaitBeforeProcessingFiles_ms - TimeSlept_ms)
         End If
 
-        Dim Result As ReturnObject = FileChangedAction(MyFileProcessingInfo, TimeSlept_ms)
+        Dim Result As ReturnObject = Nothing
+
+        Select Case MyFileProcessingInfo.ActionToTake
+            Case Is = Changed
+                Result = FileChangedAction(MyFileProcessingInfo, TimeSlept_ms, False)
+            Case Is = Created
+                Result = FileChangedAction(MyFileProcessingInfo, TimeSlept_ms, True)
+            Case Is = Renamed
+                Result = FileRenamedAction(MyFileProcessingInfo, TimeSlept_ms)
+            Case Else
+                ' Renamed/deleted files
+        End Select
+
         Interlocked.Decrement(TasksRunning)
         Return Result
 
@@ -63,7 +74,7 @@ Class FileProcessingQueue
         SyncLock TaskQueueMutex
 
             For i As Int32 = 0 To FileTaskList.Count - 1
-                If FileTaskList(i).FileID = FileID Then 'Cancel task
+                If FileTaskList(i).ProcessID = FileID Then 'Cancel task
                     FileTaskList.RemoveAt(i)
                     TaskRemoved = True
                     Exit For
@@ -82,9 +93,9 @@ Class FileProcessingQueue
 
         SyncLock TaskQueueMutex
 
-            For Each MyTaskDescriptor As TaskDescriptor In FileTaskList
+            For Each MyTaskDescriptor As FileProcessingInfo In FileTaskList
                 If MyTaskDescriptor.FilePath = FilePath Then 'Cancel task
-                    MyTaskDescriptor.CancelToken.Cancel()
+                    MyTaskDescriptor.CancelState.Cancel()
                     TaskCancelled = True
                 End If
             Next
@@ -98,8 +109,8 @@ Class FileProcessingQueue
         If MyLog.DebugLevel = Logger.LogLevel.Debug AndAlso CountTasksAlreadyRunning() > 0 Then
             MyLog.Write(0, "[[ REMAINING TASKS: ]]", Debug)
             Dim i As Int32 = 0
-            Dim FileTaskList As List(Of TaskDescriptor) = GetFileTaskList()
-            For Each MyTaskDescriptor As TaskDescriptor In FileTaskList
+            Dim FileTaskList As List(Of FileProcessingInfo) = GetFileTaskList()
+            For Each MyTaskDescriptor As FileProcessingInfo In FileTaskList
                 i += 1
                 MyLog.Write(0, "[[" & i & ": " & MyTaskDescriptor.FilePath & "]]", Debug)
             Next
@@ -141,35 +152,41 @@ Class FileProcessingQueue
     Public Class FileProcessingInfo
         ReadOnly Property ProcessID As Int32
         ReadOnly Property FilePath As String
+        ReadOnly Property OldFilePath As String
         ReadOnly Property FileParser As FileParser
-        ReadOnly Property IsNewFile As Boolean
+        ReadOnly Property ActionToTake As ActionType
         Property CancelState As CancellationTokenSource
         Public Property ResultMessages As String()
 
-        Public Sub New(NewProcessID As Int32, NewFilePath As String, NewFileParser As FileParser, NewFile As Boolean, ByRef NewCancelState As CancellationTokenSource)
+        Enum ActionType
+            Changed
+            Created
+            Renamed
+            Deleted
+        End Enum
+
+        Public Sub New(NewProcessID As Int32, NewFilePath As String, NewFileParser As FileParser, ChangeType As IO.WatcherChangeTypes, ByRef NewCancelState As CancellationTokenSource, Optional OriginalFilePath As String = "")
             ProcessID = NewProcessID
             FilePath = NewFilePath
             FileParser = NewFileParser
-            IsNewFile = NewFile
             CancelState = NewCancelState
+            OldFilePath = OriginalFilePath
+            Select Case ChangeType
+                Case Is = IO.WatcherChangeTypes.Changed
+                    ActionToTake = Changed
+                Case Is = IO.WatcherChangeTypes.Created
+                    ActionToTake = Created
+                Case Is = IO.WatcherChangeTypes.Renamed
+                    ActionToTake = Renamed
+                Case Is = IO.WatcherChangeTypes.Deleted
+                    ActionToTake = Deleted
+            End Select
         End Sub
 
     End Class
 
-    Private Class TaskDescriptor
-        Public ReadOnly Property FileID As Int32
-        Public ReadOnly Property FilePath As String
-        Public Property CancelToken As CancellationTokenSource
-
-        Public Sub New(NewFileID As Int32, NewFilePath As String, NewCancellationTokenSource As CancellationTokenSource)
-            FileID = NewFileID
-            FilePath = NewFilePath
-            CancelToken = NewCancellationTokenSource
-        End Sub
-    End Class
-
-    Private Function GetFileTaskList() As List(Of TaskDescriptor)
-        Dim Result As List(Of TaskDescriptor) = Nothing
+    Private Function GetFileTaskList() As List(Of FileProcessingInfo)
+        Dim Result As List(Of FileProcessingInfo) = Nothing
 
         SyncLock TaskQueueMutex
             Result = FileTaskList
@@ -178,7 +195,7 @@ Class FileProcessingQueue
         Return Result
     End Function
 
-    Private Function FileChangedAction(MyFileProcessingInfo As FileProcessingInfo, TimeAlreadySlept_ms As Int32) As ReturnObject
+    Private Function FileChangedAction(MyFileProcessingInfo As FileProcessingInfo, TimeAlreadySlept_ms As Int32, NewFile As Boolean) As ReturnObject
 
         Dim Result As ReturnObject = Nothing
 
@@ -196,16 +213,36 @@ Class FileProcessingQueue
 
         'No other tasks are running using this file, so we are free to continue
         MyLog.Write(MyFileProcessingInfo.ProcessID, "Processing file: " & MyFileProcessingInfo.FilePath, Information)
-        If Not MyFileProcessingInfo.IsNewFile Then
+        If Not NewFile Then
             Result = MyFileProcessingInfo.FileParser.DeleteInSyncFolder()
         End If
 
-        If MyFileProcessingInfo.IsNewFile OrElse Result.Success Then
+        If NewFile OrElse Result.Success Then
             Result = MyFileProcessingInfo.FileParser.TransferToSyncFolder()
             If Result.Success Then
                 MyFileProcessingInfo.ResultMessages = {"File processed:", MyFileProcessingInfo.FilePath.Substring(UserGlobalSyncSettings.SourceDirectory.Length)}
                 Return New ReturnObject(True, "", MyFileProcessingInfo)
             End If
+        End If
+
+        'Failure case
+        Return Result
+
+    End Function
+
+    Private Function FileRenamedAction(MyFileProcessingInfo As FileProcessingInfo, TimeAlreadySlept_ms As Int32) As ReturnObject
+
+        Dim Result As ReturnObject = Nothing
+
+        MyFileProcessingInfo.CancelState.Token.ThrowIfCancellationRequested()
+
+        'No other tasks are running using this file, so we are free to continue
+        MyLog.Write(MyFileProcessingInfo.ProcessID, "Processing file: " & MyFileProcessingInfo.FilePath, Information)
+        Result = MyFileProcessingInfo.FileParser.RenameInSyncFolder(MyFileProcessingInfo.OldFilePath)
+
+        If Result.Success Then
+            MyFileProcessingInfo.ResultMessages = {"File processed:", MyFileProcessingInfo.FilePath.Substring(UserGlobalSyncSettings.SourceDirectory.Length)}
+            Return New ReturnObject(True, "", MyFileProcessingInfo)
         End If
 
         'Failure case

@@ -372,15 +372,38 @@ Public Class TrayApp
 
         If FilterMatch(e.Name) Then
             'This is a file that we are watching
-            MyLog.Write(FileID, "File renamed: " & e.FullPath, Information)
+            MyLog.Write(FileID, "Source file renamed: " & e.FullPath, Information)
             Using MyFileParser As New FileParser(UserGlobalSyncSettings, FileID, e.FullPath)
-                Dim Result As ReturnObject = MyFileParser.RenameInSyncFolder(e.OldFullPath)
-                If Result.Success Then
-                    If Tray.Visible Then Tray.ShowBalloonTip(BalloonTime, "File renamed:", e.FullPath.Substring(UserGlobalSyncSettings.SourceDirectory.Length), ToolTipIcon.Info)
-                Else
-                    If Tray.Visible Then Tray.ShowBalloonTip(BalloonTime, "File rename failed:", e.FullPath.Substring(UserGlobalSyncSettings.SourceDirectory.Length), ToolTipIcon.Error)
-                End If
+                'File was renamed, so rename in all sync directories too where possible
+                'This is done in a separate thread so we don't clog up the FileSystemWatcher events thread
+                'If GlobalFileProcessingQueue.CancelFileTaskIfAlreadyRunning(e.FullPath) Then
+                '    MyLog.Write(FileID, "File is already being processed, so cancelling original task", Debug)
+                'End If
+
+                'Create new file processing task
+                Dim TokenSource As New CancellationTokenSource()
+                Dim NewFileProcessingInfo As New FileProcessingInfo(FileID, e.FullPath, MyFileParser, e.ChangeType, TokenSource, e.OldFullPath)
+                Dim t As Task(Of ReturnObject) = Task.Run(Function() GlobalFileProcessingQueue.AddTask(NewFileProcessingInfo), NewFileProcessingInfo.CancelState.Token)
+
+                'Set return function on the main thread for task completion
+                t.ContinueWith(Sub(t1)
+                                   Select Case t1.Status
+                                       Case TaskStatus.RanToCompletion
+                                           MyLog.Write(NewFileProcessingInfo.ProcessID, "Task completed. Cancelled flag: " & t1.IsCanceled, Debug)
+                                           FileProcessingCompleted(t1.Result)
+                                       Case TaskStatus.Canceled
+                                           MyLog.Write(NewFileProcessingInfo.ProcessID, "File processing cancelled before attempting to process file: " & NewFileProcessingInfo.FilePath, Debug)
+                                           FileProcessingCompleted(New ReturnObject(False, "", NewFileProcessingInfo))
+                                       Case TaskStatus.Faulted
+                                           MyLog.Write("Task failed because: " & t1.Exception.InnerException.Message, Warning)
+                                           FileProcessingFailure(NewFileProcessingInfo)
+                                   End Select
+                               End Sub,
+                               TaskContinuationOptions.ExecuteSynchronously)
+
             End Using
+        Else 'Don't increment file ID unnecessarily
+            Exit Sub
         End If
 
         If Interlocked.Equals(FileID, MaxFileID) Then
@@ -391,64 +414,8 @@ Public Class TrayApp
 
     End Sub
 
-
-
-    Private Sub FileChangedCompleted(Result As ReturnObject)
-
-        '=================================== DEBUG CODE BELOW:
-        'Dim threadid As Int32 = Thread.CurrentThread.ManagedThreadId
-        'MyLog.Write(600, threadid & " ------ file change completed", Information)
-        '===================================
-
-        Dim MyFileProcessingInfo As FileProcessingInfo = CType(Result.MyObject, FileProcessingInfo)
-
-        'If the operation was cancelled, don't display anything
-        If Not MyFileProcessingInfo.CancelState.IsCancellationRequested Then
-            Dim ResultStrings As String() = MyFileProcessingInfo.ResultMessages()
-
-            If Result.Success AndAlso ResultStrings.Length >= 2 Then
-                If Tray.Visible Then Tray.ShowBalloonTip(BalloonTime, ResultStrings(0), ResultStrings(1), ToolTipIcon.Info)
-            Else
-                If Tray.Visible Then Tray.ShowBalloonTip(BalloonTime, ResultStrings(0), ResultStrings(1), ToolTipIcon.Error)
-            End If
-        End If
-
-        'Remove the task from the queue so it doesn't get confused with a running task later on
-        If GlobalFileProcessingQueue.RemoveTaskFromQueue(MyFileProcessingInfo.ProcessID) Then
-            MyLog.Write(MyFileProcessingInfo.ProcessID, "File processing task removed from queue: " & MyFileProcessingInfo.FilePath, Debug)
-        Else
-            MyLog.Write(MyFileProcessingInfo.ProcessID, "Could not remove file processing task from queue! " & MyFileProcessingInfo.FilePath, Warning)
-        End If
-
-        '=================================== DEBUG CODE BELOW:
-        GlobalFileProcessingQueue.PrintRunningTasks()
-        '===================================
-
-    End Sub
-
-    Private Sub FileChangedFailure(MyFileProcessingInfo As FileProcessingInfo)
-
-        'Remove the task from the queue so it doesn't get confused with a running task later on
-        If GlobalFileProcessingQueue.RemoveTaskFromQueue(MyFileProcessingInfo.ProcessID) Then
-            MyLog.Write(MyFileProcessingInfo.ProcessID, "File processing task removed from queue: " & MyFileProcessingInfo.FilePath, Debug)
-        Else
-            MyLog.Write(MyFileProcessingInfo.ProcessID, "Could not remove file processing task from queue! " & MyFileProcessingInfo.FilePath, Warning)
-        End If
-
-    End Sub
-
-
-
-
-
-
     Private Sub FileChanged(ByVal sender As Object, ByVal e As System.IO.FileSystemEventArgs)
         'Handles changed and new files
-
-        Dim IfCompleted As TaskContinuationOptions = TaskContinuationOptions.ExecuteSynchronously Or TaskContinuationOptions.OnlyOnRanToCompletion
-        Dim IfCancelled As TaskContinuationOptions = TaskContinuationOptions.ExecuteSynchronously Or TaskContinuationOptions.OnlyOnCanceled
-        Dim IfFailed As TaskContinuationOptions = TaskContinuationOptions.ExecuteSynchronously Or TaskContinuationOptions.OnlyOnFaulted
-
 
         'Only process this file if it is truly a file and not a directory
         If sender Is FileWatcher Then
@@ -458,6 +425,8 @@ Public Class TrayApp
                         Case Is = IO.WatcherChangeTypes.Changed, IO.WatcherChangeTypes.Created
                             'File was created or changed, so re-transfer to all sync directories
                             'This is done in a separate thread so we don't clog up the FileSystemWatcher events thread
+                            MyLog.Write(FileID, "Source file created or changed: " & e.FullPath, Information)
+
                             If GlobalFileProcessingQueue.CancelFileTaskIfAlreadyRunning(e.FullPath) Then
                                 MyLog.Write(FileID, "File is already being processed, so cancelling original task", Debug)
                             End If
@@ -465,7 +434,7 @@ Public Class TrayApp
                             'Create new file processing task
                             Dim TokenSource As New CancellationTokenSource()
                             'Dim CancelToken As CancellationToken = TokenSource.Token
-                            Dim NewFileProcessingInfo As New FileProcessingInfo(FileID, e.FullPath, MyFileParser, False, TokenSource)
+                            Dim NewFileProcessingInfo As New FileProcessingInfo(FileID, e.FullPath, MyFileParser, e.ChangeType, TokenSource)
                             Dim t As Task(Of ReturnObject) = Task.Run(Function() GlobalFileProcessingQueue.AddTask(NewFileProcessingInfo), NewFileProcessingInfo.CancelState.Token)
 
                             'Set return function on the main thread for task completion
@@ -473,13 +442,13 @@ Public Class TrayApp
                                                Select Case t1.Status
                                                    Case TaskStatus.RanToCompletion
                                                        MyLog.Write(NewFileProcessingInfo.ProcessID, "Task completed. Cancelled flag: " & t1.IsCanceled, Debug)
-                                                       FileChangedCompleted(t1.Result)
+                                                       FileProcessingCompleted(t1.Result)
                                                    Case TaskStatus.Canceled
                                                        MyLog.Write(NewFileProcessingInfo.ProcessID, "File processing cancelled before attempting to process file: " & NewFileProcessingInfo.FilePath, Debug)
-                                                       FileChangedFailure(NewFileProcessingInfo)
+                                                       FileProcessingCompleted(New ReturnObject(False, "", NewFileProcessingInfo))
                                                    Case TaskStatus.Faulted
                                                        MyLog.Write("Task failed because: " & t1.Exception.InnerException.Message, Warning)
-                                                       FileChangedFailure(NewFileProcessingInfo)
+                                                       FileProcessingFailure(NewFileProcessingInfo)
                                                End Select
                                            End Sub,
                                            TaskContinuationOptions.ExecuteSynchronously)
@@ -522,6 +491,50 @@ Public Class TrayApp
             Interlocked.Add(FileID, -MaxFileID)
         Else
             Interlocked.Increment(FileID)
+        End If
+
+    End Sub
+
+    Private Sub FileProcessingCompleted(Result As ReturnObject)
+
+        '=================================== DEBUG CODE BELOW:
+        'Dim threadid As Int32 = Thread.CurrentThread.ManagedThreadId
+        'MyLog.Write(600, threadid & " ------ file change completed", Information)
+        '===================================
+
+        Dim MyFileProcessingInfo As FileProcessingInfo = CType(Result.MyObject, FileProcessingInfo)
+
+        'If the operation was cancelled, don't display anything
+        If Not MyFileProcessingInfo.CancelState.IsCancellationRequested Then
+            Dim ResultStrings As String() = MyFileProcessingInfo.ResultMessages()
+
+            If Result.Success AndAlso ResultStrings.Length >= 2 Then
+                If Tray.Visible Then Tray.ShowBalloonTip(BalloonTime, ResultStrings(0), ResultStrings(1), ToolTipIcon.Info)
+            Else
+                If Tray.Visible Then Tray.ShowBalloonTip(BalloonTime, ResultStrings(0), ResultStrings(1), ToolTipIcon.Error)
+            End If
+        End If
+
+        'Remove the task from the queue so it doesn't get confused with a running task later on
+        If GlobalFileProcessingQueue.RemoveTaskFromQueue(MyFileProcessingInfo.ProcessID) Then
+            MyLog.Write(MyFileProcessingInfo.ProcessID, "File processing task removed from queue: " & MyFileProcessingInfo.FilePath, Debug)
+        Else
+            MyLog.Write(MyFileProcessingInfo.ProcessID, "Could not remove file processing task from queue! " & MyFileProcessingInfo.FilePath, Warning)
+        End If
+
+        '=================================== DEBUG CODE BELOW:
+        GlobalFileProcessingQueue.PrintRunningTasks()
+        '===================================
+
+    End Sub
+
+    Private Sub FileProcessingFailure(MyFileProcessingInfo As FileProcessingInfo)
+
+        'Remove the task from the queue so it doesn't get confused with a running task later on
+        If GlobalFileProcessingQueue.RemoveTaskFromQueue(MyFileProcessingInfo.ProcessID) Then
+            MyLog.Write(MyFileProcessingInfo.ProcessID, "File processing task removed from queue: " & MyFileProcessingInfo.FilePath, Debug)
+        Else
+            MyLog.Write(MyFileProcessingInfo.ProcessID, "Could not remove file processing task from queue! " & MyFileProcessingInfo.FilePath, Warning)
         End If
 
     End Sub
