@@ -26,6 +26,21 @@ Class FileProcessingQueue
 
         Dim TimeSlept_ms As Int32 = 0
         Dim SleepTime_ms As Int32 = 50
+        Dim WaitTime_ms = 0
+
+        'Only wait when a file was changed/created. A deleted or renamed file shouldn't require any transcoding so no point waiting
+        Select Case MyFileProcessingInfo.ActionToTake
+            Case Is = Changed
+                WaitTime_ms = WaitBeforeProcessingFiles_ms
+            Case Is = Created
+                WaitTime_ms = WaitBeforeProcessingFiles_ms
+            Case Is = Renamed
+                WaitTime_ms = 0
+            Case Is = Deleted
+                WaitTime_ms = 0
+            Case Is = DirectoryDeleted
+                WaitTime_ms = 0
+        End Select
 
         SyncLock TaskQueueMutex
             FileTaskList.Add(MyFileProcessingInfo)
@@ -42,24 +57,27 @@ Class FileProcessingQueue
         Interlocked.Increment(TasksRunning)
 
         'Wait a pre-set amount of time and then cancel this task if we've been told to
-        If TimeSlept_ms > WaitBeforeProcessingFiles_ms Then
+        If TimeSlept_ms > WaitTime_ms Then
             MyLog.Write(MyFileProcessingInfo.ProcessID, "Already waited " & TimeSlept_ms & " ms before attempting to process file: " & MyFileProcessingInfo.FilePath, Debug)
         Else
-            MyLog.Write(MyFileProcessingInfo.ProcessID, "Waiting " & WaitBeforeProcessingFiles_ms & " ms before attempting to process file: " & MyFileProcessingInfo.FilePath, Debug)
-            Thread.Sleep(WaitBeforeProcessingFiles_ms - TimeSlept_ms)
+            MyLog.Write(MyFileProcessingInfo.ProcessID, "Waiting " & WaitTime_ms & " ms before attempting to process file: " & MyFileProcessingInfo.FilePath, Debug)
+            Thread.Sleep(WaitTime_ms - TimeSlept_ms)
         End If
 
         Dim Result As ReturnObject = Nothing
 
+        'Perform action based on the file event that triggered this task
         Select Case MyFileProcessingInfo.ActionToTake
             Case Is = Changed
-                Result = FileChangedAction(MyFileProcessingInfo, TimeSlept_ms, False)
+                Result = FileChangedAction(MyFileProcessingInfo)
             Case Is = Created
-                Result = FileChangedAction(MyFileProcessingInfo, TimeSlept_ms, True)
+                Result = FileCreatedAction(MyFileProcessingInfo)
             Case Is = Renamed
-                Result = FileRenamedAction(MyFileProcessingInfo, TimeSlept_ms)
-            Case Else
-                ' Renamed/deleted files
+                Result = FileRenamedAction(MyFileProcessingInfo)
+            Case Is = Deleted
+                Result = FileDeletedAction(MyFileProcessingInfo)
+            Case Is = DirectoryDeleted
+                Result = DirectoryDeletedAction(MyFileProcessingInfo)
         End Select
 
         Interlocked.Decrement(TasksRunning)
@@ -163,24 +181,16 @@ Class FileProcessingQueue
             Created
             Renamed
             Deleted
+            DirectoryDeleted
         End Enum
 
-        Public Sub New(NewProcessID As Int32, NewFilePath As String, NewFileParser As FileParser, ChangeType As IO.WatcherChangeTypes, ByRef NewCancelState As CancellationTokenSource, Optional OriginalFilePath As String = "")
+        Public Sub New(NewProcessID As Int32, NewFilePath As String, NewFileParser As FileParser, ChangeType As ActionType, ByRef NewCancelState As CancellationTokenSource, Optional OriginalFilePath As String = "")
             ProcessID = NewProcessID
             FilePath = NewFilePath
             FileParser = NewFileParser
             CancelState = NewCancelState
             OldFilePath = OriginalFilePath
-            Select Case ChangeType
-                Case Is = IO.WatcherChangeTypes.Changed
-                    ActionToTake = Changed
-                Case Is = IO.WatcherChangeTypes.Created
-                    ActionToTake = Created
-                Case Is = IO.WatcherChangeTypes.Renamed
-                    ActionToTake = Renamed
-                Case Is = IO.WatcherChangeTypes.Deleted
-                    ActionToTake = Deleted
-            End Select
+            ActionToTake = ChangeType
         End Sub
 
     End Class
@@ -195,19 +205,22 @@ Class FileProcessingQueue
         Return Result
     End Function
 
-    Private Function FileChangedAction(MyFileProcessingInfo As FileProcessingInfo, TimeAlreadySlept_ms As Int32, NewFile As Boolean) As ReturnObject
+    Private Function FileCreatedAction(MyFileProcessingInfo As FileProcessingInfo) As ReturnObject
+        Return FileChangedOrCreatedAction(MyFileProcessingInfo, True)
+    End Function
 
-        Dim Result As ReturnObject = Nothing
+    Private Function FileChangedAction(MyFileProcessingInfo As FileProcessingInfo) As ReturnObject
+        Return FileChangedOrCreatedAction(MyFileProcessingInfo, False)
+    End Function
+
+    Private Function FileChangedOrCreatedAction(MyFileProcessingInfo As FileProcessingInfo, NewFile As Boolean) As ReturnObject
 
         '=================================== DEBUG CODE BELOW:
         'Dim threadid As Int32 = Thread.CurrentThread.ManagedThreadId
         'MyLog.Write(MyFileProcessingInfo.ProcessID, threadid & " ------ Source file changed: " & MyFileProcessingInfo.FilePath, Information)
         '===================================
 
-        'If MyFileProcessingInfo.CancelState.Token.IsCancellationRequested() Then
-        '    MyLog.Write(MyFileProcessingInfo.ProcessID, "File processing cancelled before attempting to process file: " & MyFileProcessingInfo.FilePath, Warning)
-        '    Return New ReturnObject(False, "Task cancelled", MyFileProcessingInfo)
-        'End If
+        Dim Result As ReturnObject = Nothing
 
         MyFileProcessingInfo.CancelState.Token.ThrowIfCancellationRequested()
 
@@ -230,7 +243,7 @@ Class FileProcessingQueue
 
     End Function
 
-    Private Function FileRenamedAction(MyFileProcessingInfo As FileProcessingInfo, TimeAlreadySlept_ms As Int32) As ReturnObject
+    Private Function FileRenamedAction(MyFileProcessingInfo As FileProcessingInfo) As ReturnObject
 
         Dim Result As ReturnObject = Nothing
 
@@ -242,6 +255,46 @@ Class FileProcessingQueue
 
         If Result.Success Then
             MyFileProcessingInfo.ResultMessages = {"File processed:", MyFileProcessingInfo.FilePath.Substring(UserGlobalSyncSettings.SourceDirectory.Length)}
+            Return New ReturnObject(True, "", MyFileProcessingInfo)
+        End If
+
+        'Failure case
+        Return Result
+
+    End Function
+
+    Private Function FileDeletedAction(MyFileProcessingInfo As FileProcessingInfo) As ReturnObject
+
+        Dim Result As ReturnObject = Nothing
+
+        MyFileProcessingInfo.CancelState.Token.ThrowIfCancellationRequested()
+
+        'No other tasks are running using this file, so we are free to continue
+        MyLog.Write(MyFileProcessingInfo.ProcessID, "Processing file: " & MyFileProcessingInfo.FilePath, Information)
+        Result = MyFileProcessingInfo.FileParser.DeleteInSyncFolder()
+
+        If Result.Success Then
+            MyFileProcessingInfo.ResultMessages = {"File deleted:", MyFileProcessingInfo.FilePath.Substring(UserGlobalSyncSettings.SourceDirectory.Length)}
+            Return New ReturnObject(True, "", MyFileProcessingInfo)
+        End If
+
+        'Failure case
+        Return Result
+
+    End Function
+
+    Private Function DirectoryDeletedAction(MyFileProcessingInfo As FileProcessingInfo) As ReturnObject
+
+        Dim Result As ReturnObject = Nothing
+
+        MyFileProcessingInfo.CancelState.Token.ThrowIfCancellationRequested()
+
+        'No other tasks are running using this file, so we are free to continue
+        MyLog.Write(MyFileProcessingInfo.ProcessID, "Processing file: " & MyFileProcessingInfo.FilePath, Information)
+        Result = MyFileProcessingInfo.FileParser.DeleteDirectoryInSyncFolder()
+
+        If Result.Success Then
+            MyFileProcessingInfo.ResultMessages = {"Directory deleted:", MyFileProcessingInfo.FilePath.Substring(UserGlobalSyncSettings.SourceDirectory.Length)}
             Return New ReturnObject(True, "", MyFileProcessingInfo)
         End If
 
