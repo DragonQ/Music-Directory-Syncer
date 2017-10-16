@@ -64,22 +64,8 @@ Class FileProcessingQueue
             Thread.Sleep(WaitTime_ms - TimeSlept_ms)
         End If
 
-        Dim Result As ReturnObject = Nothing
-
-        'Perform action based on the file event that triggered this task
-        Select Case MyFileProcessingInfo.ActionToTake
-            Case Is = Changed
-                Result = FileChangedAction(MyFileProcessingInfo)
-            Case Is = Created
-                Result = FileCreatedAction(MyFileProcessingInfo)
-            Case Is = Renamed
-                Result = FileRenamedAction(MyFileProcessingInfo)
-            Case Is = Deleted
-                Result = FileDeletedAction(MyFileProcessingInfo)
-            Case Is = DirectoryDeleted
-                Result = DirectoryDeletedAction(MyFileProcessingInfo)
-        End Select
-
+        'Start processing the file based on the file event that triggered this task
+        Dim Result As ReturnObject = ProcessFile(MyFileProcessingInfo)
         Interlocked.Decrement(TasksRunning)
         Return Result
 
@@ -205,96 +191,40 @@ Class FileProcessingQueue
         Return Result
     End Function
 
-    Private Function FileCreatedAction(MyFileProcessingInfo As FileProcessingInfo) As ReturnObject
-        Return FileChangedOrCreatedAction(MyFileProcessingInfo, True)
-    End Function
-
-    Private Function FileChangedAction(MyFileProcessingInfo As FileProcessingInfo) As ReturnObject
-        Return FileChangedOrCreatedAction(MyFileProcessingInfo, False)
-    End Function
-
-    Private Function FileChangedOrCreatedAction(MyFileProcessingInfo As FileProcessingInfo, NewFile As Boolean) As ReturnObject
-
-        '=================================== DEBUG CODE BELOW:
-        'Dim threadid As Int32 = Thread.CurrentThread.ManagedThreadId
-        'MyLog.Write(MyFileProcessingInfo.ProcessID, threadid & " ------ Source file changed: " & MyFileProcessingInfo.FilePath, Information)
-        '===================================
+    Private Function ProcessFile(MyFileProcessingInfo As FileProcessingInfo) As ReturnObject
 
         Dim Result As ReturnObject = Nothing
+        Dim SuccessMessage = ""
 
         MyFileProcessingInfo.CancelState.Token.ThrowIfCancellationRequested()
 
         'No other tasks are running using this file, so we are free to continue
-        MyLog.Write(MyFileProcessingInfo.ProcessID, "Processing file: " & MyFileProcessingInfo.FilePath, Information)
-        If Not NewFile Then
-            Result = MyFileProcessingInfo.FileParser.DeleteInSyncFolder()
-        End If
-
-        If NewFile OrElse Result.Success Then
-            Result = MyFileProcessingInfo.FileParser.TransferToSyncFolder()
-            If Result.Success Then
-                MyFileProcessingInfo.ResultMessages = {"File processed:", MyFileProcessingInfo.FilePath.Substring(UserGlobalSyncSettings.SourceDirectory.Length)}
-                Return New ReturnObject(True, "", MyFileProcessingInfo)
-            End If
-        End If
-
-        'Failure case
-        Return Result
-
-    End Function
-
-    Private Function FileRenamedAction(MyFileProcessingInfo As FileProcessingInfo) As ReturnObject
-
-        Dim Result As ReturnObject = Nothing
-
-        MyFileProcessingInfo.CancelState.Token.ThrowIfCancellationRequested()
-
-        'No other tasks are running using this file, so we are free to continue
-        MyLog.Write(MyFileProcessingInfo.ProcessID, "Processing file: " & MyFileProcessingInfo.FilePath, Information)
-        Result = MyFileProcessingInfo.FileParser.RenameInSyncFolder(MyFileProcessingInfo.OldFilePath)
+        Select Case MyFileProcessingInfo.ActionToTake
+            Case Is = FileProcessingInfo.ActionType.DirectoryDeleted
+                MyLog.Write(MyFileProcessingInfo.ProcessID, "Processing directory: " & MyFileProcessingInfo.FilePath, Information)
+                Result = MyFileProcessingInfo.FileParser.DeleteDirectoryInSyncFolder()
+                SuccessMessage = "Directory deleted:"
+            Case Is = FileProcessingInfo.ActionType.Deleted
+                MyLog.Write(MyFileProcessingInfo.ProcessID, "Processing file: " & MyFileProcessingInfo.FilePath, Information)
+                Result = MyFileProcessingInfo.FileParser.DeleteInSyncFolder()
+                SuccessMessage = "File deleted:"
+            Case Is = FileProcessingInfo.ActionType.Renamed
+                MyLog.Write(MyFileProcessingInfo.ProcessID, "Processing file: " & MyFileProcessingInfo.FilePath, Information)
+                Result = MyFileProcessingInfo.FileParser.RenameInSyncFolder(MyFileProcessingInfo.OldFilePath)
+                SuccessMessage = "File processed:"
+            Case Is = FileProcessingInfo.ActionType.Created
+                MyLog.Write(MyFileProcessingInfo.ProcessID, "Processing file: " & MyFileProcessingInfo.FilePath, Information)
+                Result = MyFileProcessingInfo.FileParser.TransferToSyncFolder()
+                SuccessMessage = "File processed:"
+            Case Is = FileProcessingInfo.ActionType.Changed
+                MyLog.Write(MyFileProcessingInfo.ProcessID, "Processing file: " & MyFileProcessingInfo.FilePath, Information)
+                Result = MyFileProcessingInfo.FileParser.DeleteInSyncFolder()
+                If Result.Success Then Result = MyFileProcessingInfo.FileParser.TransferToSyncFolder()
+                SuccessMessage = "File processed:"
+        End Select
 
         If Result.Success Then
-            MyFileProcessingInfo.ResultMessages = {"File processed:", MyFileProcessingInfo.FilePath.Substring(UserGlobalSyncSettings.SourceDirectory.Length)}
-            Return New ReturnObject(True, "", MyFileProcessingInfo)
-        End If
-
-        'Failure case
-        Return Result
-
-    End Function
-
-    Private Function FileDeletedAction(MyFileProcessingInfo As FileProcessingInfo) As ReturnObject
-
-        Dim Result As ReturnObject = Nothing
-
-        MyFileProcessingInfo.CancelState.Token.ThrowIfCancellationRequested()
-
-        'No other tasks are running using this file, so we are free to continue
-        MyLog.Write(MyFileProcessingInfo.ProcessID, "Processing file: " & MyFileProcessingInfo.FilePath, Information)
-        Result = MyFileProcessingInfo.FileParser.DeleteInSyncFolder()
-
-        If Result.Success Then
-            MyFileProcessingInfo.ResultMessages = {"File deleted:", MyFileProcessingInfo.FilePath.Substring(UserGlobalSyncSettings.SourceDirectory.Length)}
-            Return New ReturnObject(True, "", MyFileProcessingInfo)
-        End If
-
-        'Failure case
-        Return Result
-
-    End Function
-
-    Private Function DirectoryDeletedAction(MyFileProcessingInfo As FileProcessingInfo) As ReturnObject
-
-        Dim Result As ReturnObject = Nothing
-
-        MyFileProcessingInfo.CancelState.Token.ThrowIfCancellationRequested()
-
-        'No other tasks are running using this file, so we are free to continue
-        MyLog.Write(MyFileProcessingInfo.ProcessID, "Processing file: " & MyFileProcessingInfo.FilePath, Information)
-        Result = MyFileProcessingInfo.FileParser.DeleteDirectoryInSyncFolder()
-
-        If Result.Success Then
-            MyFileProcessingInfo.ResultMessages = {"Directory deleted:", MyFileProcessingInfo.FilePath.Substring(UserGlobalSyncSettings.SourceDirectory.Length)}
+            MyFileProcessingInfo.ResultMessages = {SuccessMessage, MyFileProcessingInfo.FilePath.Substring(UserGlobalSyncSettings.SourceDirectory.Length)}
             Return New ReturnObject(True, "", MyFileProcessingInfo)
         End If
 
