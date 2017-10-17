@@ -118,7 +118,8 @@ Class FileParser
 
                         If SyncSetting.TranscodeSetting = All OrElse (SyncSetting.TranscodeSetting = LosslessOnly AndAlso FileCodec.CompressionType = Lossless) Then 'Need to transcode file
                             MyLog.Write(ProcessID, "...transcoding file to " & SyncSetting.Encoder.Name & "...", Debug)
-                            TranscodeFile(SyncFilePath, SyncSetting)
+                            Dim Result As ReturnObject = TranscodeFile(SyncFilePath, SyncSetting)
+                            If Not Result.Success Then Throw New Exception(Result.ErrorMessage)
 
                             SyncFilePath = Path.Combine(Path.GetDirectoryName(SyncFilePath), Path.GetFileNameWithoutExtension(SyncFilePath)) &
                                 SyncSetting.Encoder.GetFileExtensions(0)
@@ -263,7 +264,8 @@ Class FileParser
 
                             If SyncSetting.TranscodeSetting = All OrElse (SyncSetting.TranscodeSetting = LosslessOnly AndAlso FileCodec.CompressionType = Lossless) Then 'Need to transcode file
                                 MyLog.Write(ProcessID, "...transcoding file to " & SyncSetting.Encoder.Name & "...", Debug)
-                                TranscodeFile(SyncFilePath, SyncSetting)
+                                Dim Result As ReturnObject = TranscodeFile(SyncFilePath, SyncSetting)
+                                If Not Result.Success Then Throw New Exception(Result.ErrorMessage)
                             Else
                                 Directory.CreateDirectory(Path.GetDirectoryName(SyncFilePath))
                                 Dim Result As ReturnObject = SafeCopy(SourceFileStream, SyncFilePath)
@@ -289,7 +291,7 @@ Class FileParser
 
     End Function
 
-    Private Sub TranscodeFile(FileTo As String, SyncSetting As SyncSettings)
+    Private Function TranscodeFile(FileTo As String, SyncSetting As SyncSettings) As ReturnObject
 
         Dim FileFrom As String = FilePath
         Dim OutputFilePath As String = ""
@@ -304,6 +306,7 @@ Class FileParser
                 MyError &= NewLine & NewLine & ex.InnerException.ToString
             End If
             MyLog.Write(ProcessID, "...transcode failed [1]. Exception: " & MyError, Warning)
+            Return New ReturnObject(False, "Transcode failed [1]. Exception: " & MyError)
         End Try
 
         Try
@@ -335,9 +338,12 @@ Class FileParser
                 MyError &= NewLine & NewLine & ex.InnerException.ToString
             End If
             MyLog.Write(ProcessID, "...transcode failed [2]. Exception: " & MyError, Warning)
+            Return New ReturnObject(False, "Transcode failed [2]. Exception: " & MyError)
         End Try
 
-    End Sub
+        Return New ReturnObject(True, "")
+
+    End Function
 #End Region
 
 #Region " File Checks "
