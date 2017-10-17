@@ -190,6 +190,7 @@ Class FileProcessingQueue
 
         Dim Result As ReturnObject = Nothing
         Dim SuccessMessage = ""
+        Dim FailureMessage = ""
 
         MyFileProcessingInfo.CancelState.Token.ThrowIfCancellationRequested()
 
@@ -199,29 +200,35 @@ Class FileProcessingQueue
                 MyLog.Write(MyFileProcessingInfo.ProcessID, "Processing directory: " & MyFileProcessingInfo.FilePath, Information)
                 Result = MyFileProcessingInfo.FileParser.DeleteDirectoryInSyncFolder()
                 SuccessMessage = "Directory deleted:"
+                FailureMessage = "Directory deletion failed:"
             Case Is = FileProcessingInfo.ActionType.Deleted
                 MyLog.Write(MyFileProcessingInfo.ProcessID, "Processing file: " & MyFileProcessingInfo.FilePath, Information)
                 Result = MyFileProcessingInfo.FileParser.DeleteInSyncFolder()
                 SuccessMessage = "File deleted:"
+                FailureMessage = "File deletion failed:"
             Case Is = FileProcessingInfo.ActionType.Renamed
                 MyLog.Write(MyFileProcessingInfo.ProcessID, "Processing file: " & MyFileProcessingInfo.FilePath, Information)
                 Result = MyFileProcessingInfo.FileParser.RenameInSyncFolder(MyFileProcessingInfo.OldFilePath)
                 SuccessMessage = "File processed:"
+                FailureMessage = "File processing failed:"
             Case Is = FileProcessingInfo.ActionType.Created
                 MyLog.Write(MyFileProcessingInfo.ProcessID, "Processing file: " & MyFileProcessingInfo.FilePath, Information)
                 Result = MyFileProcessingInfo.FileParser.TransferToSyncFolder()
                 SuccessMessage = "File processed:"
+                FailureMessage = "File processing failed:"
             Case Is = FileProcessingInfo.ActionType.Changed
                 MyLog.Write(MyFileProcessingInfo.ProcessID, "Processing file: " & MyFileProcessingInfo.FilePath, Information)
                 Result = MyFileProcessingInfo.FileParser.DeleteInSyncFolder()
                 If Result.Success Then Result = MyFileProcessingInfo.FileParser.TransferToSyncFolder()
                 SuccessMessage = "File processed:"
+                FailureMessage = "File processing failed:"
         End Select
 
         If Result.Success Then
             MyFileProcessingInfo.ResultMessages = {SuccessMessage, MyFileProcessingInfo.FilePath.Substring(UserGlobalSyncSettings.SourceDirectory.Length)}
             Return New ReturnObject(True, "", MyFileProcessingInfo)
         Else
+            MyFileProcessingInfo.ResultMessages = {FailureMessage, MyFileProcessingInfo.FilePath.Substring(UserGlobalSyncSettings.SourceDirectory.Length)}
             Return New ReturnObject(False, Result.ErrorMessage, MyFileProcessingInfo)
         End If
 

@@ -464,10 +464,14 @@ Public Class TrayApp
         If Not MyFileProcessingInfo.CancelState.IsCancellationRequested Then
             Dim ResultStrings As String() = MyFileProcessingInfo.ResultMessages()
 
-            If Result.Success AndAlso ResultStrings.Length >= 2 Then
-                If Tray.Visible Then Tray.ShowBalloonTip(BalloonTime, ResultStrings(0), ResultStrings(1), ToolTipIcon.Info)
+            If ResultStrings.Length >= 2 Then
+                If Result.Success Then
+                    If Tray.Visible Then Tray.ShowBalloonTip(BalloonTime, ResultStrings(0), ResultStrings(1), ToolTipIcon.Info)
+                Else
+                    If Tray.Visible Then Tray.ShowBalloonTip(BalloonTime, ResultStrings(0), ResultStrings(1), ToolTipIcon.Error)
+                End If
             Else
-                If Tray.Visible Then Tray.ShowBalloonTip(BalloonTime, ResultStrings(0), ResultStrings(1), ToolTipIcon.Error)
+                If Tray.Visible Then Tray.ShowBalloonTip(BalloonTime, "File processing failed!", Result.ErrorMessage, ToolTipIcon.Error)
             End If
         End If
 
