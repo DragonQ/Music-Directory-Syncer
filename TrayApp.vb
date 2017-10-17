@@ -458,11 +458,6 @@ Public Class TrayApp
 
     Private Sub FileProcessingCompleted(Result As ReturnObject)
 
-        '=================================== DEBUG CODE BELOW:
-        'Dim threadid As Int32 = Thread.CurrentThread.ManagedThreadId
-        'MyLog.Write(600, threadid & " ------ file change completed", Information)
-        '===================================
-
         Dim MyFileProcessingInfo As FileProcessingInfo = CType(Result.MyObject, FileProcessingInfo)
 
         'If the operation was cancelled, don't display anything
@@ -482,10 +477,7 @@ Public Class TrayApp
         Else
             MyLog.Write(MyFileProcessingInfo.ProcessID, "Could not remove file processing task from queue! " & MyFileProcessingInfo.FilePath, Warning)
         End If
-
-        '=================================== DEBUG CODE BELOW:
-        'GlobalFileProcessingQueue.PrintRunningTasks()
-        '===================================
+        MyLog.Write(FileID, "Tasks still running: " & GlobalFileProcessingQueue.CountTasksAlreadyRunning(), Information)
 
     End Sub
 
@@ -497,6 +489,7 @@ Public Class TrayApp
         Else
             MyLog.Write(MyFileProcessingInfo.ProcessID, "Could not remove file processing task from queue! " & MyFileProcessingInfo.FilePath, Warning)
         End If
+        MyLog.Write(FileID, "Tasks still running: " & GlobalFileProcessingQueue.CountTasksAlreadyRunning(), Information)
 
     End Sub
 

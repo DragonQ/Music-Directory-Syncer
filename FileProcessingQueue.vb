@@ -84,8 +84,6 @@ Class FileProcessingQueue
 
         End SyncLock
 
-        MyLog.Write(FileID, "Tasks still running: " & CountTasksAlreadyRunning(), Information)
-
         Return TaskRemoved
     End Function
 
