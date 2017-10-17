@@ -94,9 +94,9 @@ Class FileProcessingQueue
 
         SyncLock TaskQueueMutex
 
-            For Each MyTaskDescriptor As FileProcessingInfo In FileTaskList
-                If MyTaskDescriptor.FilePath = FilePath Then 'Cancel task
-                    MyTaskDescriptor.CancelState.Cancel()
+            For Each MyFileProcessingInfo As FileProcessingInfo In FileTaskList
+                If MyFileProcessingInfo.FilePath = FilePath Then 'Cancel task
+                    MyFileProcessingInfo.CancelState.Cancel()
                     TaskCancelled = True
                 End If
             Next
@@ -111,9 +111,9 @@ Class FileProcessingQueue
             MyLog.Write(0, "[[ REMAINING TASKS: ]]", Debug)
             Dim i As Int32 = 0
             Dim FileTaskList As List(Of FileProcessingInfo) = GetFileTaskList()
-            For Each MyTaskDescriptor As FileProcessingInfo In FileTaskList
+            For Each MyFileProcessingInfo As FileProcessingInfo In FileTaskList
                 i += 1
-                MyLog.Write(0, "[[" & i & ": " & MyTaskDescriptor.FilePath & "]]", Debug)
+                MyLog.Write(0, "[[" & i & ": " & MyFileProcessingInfo.FilePath & "]]", Debug)
             Next
         Else
             MyLog.Write(0, "[[ NO REMAINING TASKS ]] ", Debug)
@@ -223,10 +223,9 @@ Class FileProcessingQueue
         If Result.Success Then
             MyFileProcessingInfo.ResultMessages = {SuccessMessage, MyFileProcessingInfo.FilePath.Substring(UserGlobalSyncSettings.SourceDirectory.Length)}
             Return New ReturnObject(True, "", MyFileProcessingInfo)
+        Else
+            Return New ReturnObject(False, Result.ErrorMessage, MyFileProcessingInfo)
         End If
-
-        'Failure case
-        Return Result
 
     End Function
 End Class
