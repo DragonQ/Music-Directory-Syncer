@@ -130,7 +130,6 @@ Class FileParser
 
                         Dim NewFile As New FileInfo(SyncFilePath)
                         NewFilesSize += NewFile.Length
-                        'Interlocked.Add(SyncFolderSize, NewFile.Length)
                         MyLog.Write(ProcessID, "...successfully added file to sync folder...", Debug)
                     End If
                 Else
@@ -318,7 +317,7 @@ Class FileParser
             End If
 
             ffmpeg.Arguments = "-i """ & FileFrom & """ -vn -c:a " & SyncSetting.Encoder.GetProfiles(0).Argument & FiltersString & " -hide_banner """ & OutputFilePath & """"
-            'libvorbis -aq: 4 = 128 kbps, 5 = 160 kbps, 6 = 192 kbps, 7 = 224 kbps, 8 = 256 kbps
+            'EXAMPLE: libvorbis -aq: 4 = 128 kbps, 5 = 160 kbps, 6 = 192 kbps, 7 = 224 kbps, 8 = 256 kbps
 
             MyLog.Write(ProcessID, "...ffmpeg arguments: """ & ffmpeg.Arguments & """...", Debug)
 
