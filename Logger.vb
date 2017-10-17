@@ -1,6 +1,7 @@
-﻿Imports MusicFolderSyncer.Logger.LogLevel
+﻿#Region " Namespaces "
+Imports MusicFolderSyncer.Logger.LogLevel
 Imports System.Environment
-
+#End Region
 
 Public Class Logger
 
@@ -103,9 +104,9 @@ Public Class Logger
 
             SyncLock LoggerSync
                 Dim MyNow As Date = DateTime.Now
-                Dim LogText As String = MyNow.ToString(EnglishGB) & LogMarker & Text & NewLine
+                Dim LogText As String = MyNow.ToString(EnglishGB) & LogMarker & Text
 
-                IO.File.AppendAllText(FilePath, LogText)
+                IO.File.AppendAllText(FilePath, LogText & NewLine)
 #If DEBUG Then
                 Console.WriteLine(LogText)
 #End If
