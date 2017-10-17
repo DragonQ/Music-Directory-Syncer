@@ -95,7 +95,7 @@ Public Class NewSyncWindow
 
         ' Set run-time properties of window objects
         If TagsToSync.Count > 0 Then btnRemoveTag.IsEnabled = True
-        spinThreads.Maximum = MySyncSettings.MaxThreads
+        spinThreads.Maximum = MyGlobalSyncSettings.MaxThreads
         spinThreads.Value = spinThreads.Maximum
         txt_ffmpegPath.Text = MyGlobalSyncSettings.ffmpegPath
         txtSourceDirectory.Text = MyGlobalSyncSettings.SourceDirectory
@@ -309,7 +309,7 @@ Public Class NewSyncWindow
                 MyLog.Write("Source directory: """ & txtSourceDirectory.Text & """.", Information)
                 MyLog.Write("Sync directory: """ & txtSyncDirectory.Text & """.", Information)
 
-                ' Set transcode setting
+                'Set transcode setting
                 If cmbTranscodeSetting.SelectedIndex > -1 Then
                     MySyncSettings.TranscodeSetting = CType(CType(cmbTranscodeSetting.SelectedItem, Item).Value, TranscodeMode)
                 Else
@@ -330,7 +330,7 @@ Public Class NewSyncWindow
                     End If
                 End If
 
-                ' Set ReplayGain setting
+                'Set ReplayGain setting
                 If cmbReplayGain.SelectedIndex > -1 Then
                     MySyncSettings.ReplayGainSetting = CType(CType(cmbReplayGain.SelectedItem, Item).Value, ReplayGainMode)
                 Else
@@ -342,7 +342,7 @@ Public Class NewSyncWindow
                 'Change remaining sync settings as specified by the user
                 MyGlobalSyncSettings.SourceDirectory = txtSourceDirectory.Text
                 MySyncSettings.SyncDirectory = txtSyncDirectory.Text
-                MySyncSettings.MaxThreads = CInt(spinThreads.Value)
+                MyGlobalSyncSettings.MaxThreads = CInt(spinThreads.Value)
                 MyGlobalSyncSettings.ffmpegPath = txt_ffmpegPath.Text
                 MySyncSettings.SetWatcherTags(NewTagsToSync)
                 MySyncSettings.SetWatcherCodecs(NewFileTypesToSync)

@@ -79,10 +79,10 @@ Module XML
     End Function
 
     Public Function ReadDefaultSettings(Codecs As List(Of Codec)) As ReturnObject
-        Dim DefaultSync As New SyncSettings("", New List(Of Codec), New List(Of Codec.Tag), TranscodeMode.LosslessOnly, Nothing, Environment.ProcessorCount, ReplayGainMode.None)
+        Dim DefaultSync As New SyncSettings("", New List(Of Codec), New List(Of Codec.Tag), TranscodeMode.LosslessOnly, Nothing, ReplayGainMode.None)
         Dim DefaultSyncList As New List(Of SyncSettings)
         DefaultSyncList.Add(DefaultSync)
-        Return ReadSettings(Codecs, Path.Combine(System.AppDomain.CurrentDomain.BaseDirectory, "DefaultSettings.xml"), New GlobalSyncSettings(False, "", "", DefaultSyncList, "Information"))
+        Return ReadSettings(Codecs, Path.Combine(System.AppDomain.CurrentDomain.BaseDirectory, "DefaultSettings.xml"), New GlobalSyncSettings(False, "", "", Environment.ProcessorCount, DefaultSyncList, "Information"))
     End Function
 
     Public Function ReadSettings(Codecs As List(Of Codec), FilePath As String, DefaultSettings As GlobalSyncSettings) As ReturnObject
@@ -109,6 +109,7 @@ Module XML
                         .SourceDirectory = If(Setting.Element("SourceDirectory"), Nothing),
                         .ffmpegPath = If(Setting.Element("ffmpegPath"), Nothing),
                         .LogLevel = If(Setting.OptionalElement("LogLevel"), Nothing),
+                        .MaxThreads = If(Setting.OptionalElement("Threads"), Nothing),
                         .SyncSettings = If(Setting.Elements("SyncSettings"), Nothing)
                     }
 
@@ -118,6 +119,7 @@ Module XML
                         If Not GlobalSettings(0).SourceDirectory Is Nothing Then GlobalSyncSettings.SourceDirectory = GlobalSettings(0).SourceDirectory.Value
                         If Not GlobalSettings(0).ffmpegPath Is Nothing Then GlobalSyncSettings.ffmpegPath = GlobalSettings(0).ffmpegPath.Value
                         If Not GlobalSettings(0).LogLevel Is Nothing Then GlobalSyncSettings.SetLogLevel(GlobalSettings(0).LogLevel)
+                        If Not GlobalSettings(0).MaxThreads Is Nothing Then GlobalSyncSettings.MaxThreads = CInt(GlobalSettings(0).MaxThreads)
                     Else
                         Throw New Exception("Settings file is malformed: too many <MusicFolderSyncer> elements.")
                     End If
@@ -129,7 +131,6 @@ Module XML
                                Select New With
                     {
                         .SyncDirectory = If(Setting.Element("SyncDirectory"), Nothing),
-                        .MaxThreads = If(Setting.OptionalElement("Threads"), Nothing),
                         .TranscodeSetting = If(Setting.OptionalElement("TranscodeMode"), Nothing),
                         .ReplayGain = If(Setting.OptionalElement("ReplayGainMode"), Nothing),
                         .Encoder = If(Setting.Element("Encoder"), Nothing),
@@ -145,7 +146,6 @@ Module XML
                         Dim NewSyncSettings As New SyncSettings(DefaultSettings.GetSyncSettings(0))
 
                         If Not MySetting.SyncDirectory Is Nothing Then NewSyncSettings.SyncDirectory = MySetting.SyncDirectory.Value
-                        If Not MySetting.MaxThreads Is Nothing Then NewSyncSettings.MaxThreads = CInt(MySetting.MaxThreads)
 
                         If Not MySetting.ReplayGain Is Nothing Then
                             NewSyncSettings.SetReplayGainSetting(MySetting.ReplayGain)
@@ -290,6 +290,7 @@ Module XML
                 MyWriter.WriteElementString("SourceDirectory", MyGlobalSyncSettings.SourceDirectory)
                 MyWriter.WriteElementString("ffmpegPath", MyGlobalSyncSettings.ffmpegPath)
                 MyWriter.WriteElementString("LogLevel", MyGlobalSyncSettings.GetLogLevel())
+                MyWriter.WriteElementString("Threads", MyGlobalSyncSettings.MaxThreads.ToString(EnglishGB))
 
                 'Write data for each defined sync
                 Dim SyncSettings As SyncSettings() = MyGlobalSyncSettings.GetSyncSettings()
@@ -298,7 +299,6 @@ Module XML
                 If SyncSettings.Count > 0 Then
                     For Each SyncSetting In SyncSettings
                         MyWriter.WriteStartElement("SyncSetting")
-                        MyWriter.WriteElementString("Threads", SyncSetting.MaxThreads.ToString(EnglishGB))
                         MyWriter.WriteElementString("SyncDirectory", SyncSetting.SyncDirectory)
                         MyWriter.WriteElementString("ReplayGainMode", SyncSetting.GetReplayGainSetting())
 
