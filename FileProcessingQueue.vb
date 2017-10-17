@@ -10,14 +10,15 @@ Class FileProcessingQueue
 
     Private TaskQueueMutex As New Object
     Private FileTaskList As New List(Of FileProcessingInfo)
-    Private WaitBeforeProcessingFiles_ms As Int32 = 5000    'Repeated events within this time period cause file processing to restart
+    Private WaitBeforeSlowProcessing_ms As Int32 = 5000     'Repeated file-changed events within this time period cause file processing to restart
+    Private WaitBeforeFastProcessing_ms As Int32 = 50       'Non-zero to give time for cancellation events to filter through
     Private TasksRunning As Int64 = 0
     Private MaxThreads As Int64 = 2
     Private IsDisposing As Boolean = False
 
-    Public Sub New(NewWaitBeforeProcessingFiles_ms As Int32, NewMaxThreads As Int64)
+    Public Sub New(WaitBeforeProcessingFiles_ms As Int32, NewMaxThreads As Int64)
 
-        WaitBeforeProcessingFiles_ms = NewWaitBeforeProcessingFiles_ms
+        WaitBeforeSlowProcessing_ms = WaitBeforeProcessingFiles_ms
         MaxThreads = NewMaxThreads
 
     End Sub
@@ -28,23 +29,17 @@ Class FileProcessingQueue
         Dim SleepTime_ms As Int32 = 50
         Dim WaitTime_ms = 0
 
-        'Only wait when a file was changed/created. A deleted or renamed file shouldn't require any transcoding so no point waiting
-        Select Case MyFileProcessingInfo.ActionToTake
-            Case Is = Changed
-                WaitTime_ms = WaitBeforeProcessingFiles_ms
-            Case Is = Created
-                WaitTime_ms = WaitBeforeProcessingFiles_ms
-            Case Is = Renamed
-                WaitTime_ms = 0
-            Case Is = Deleted
-                WaitTime_ms = 0
-            Case Is = DirectoryDeleted
-                WaitTime_ms = 0
-        End Select
-
         SyncLock TaskQueueMutex
             FileTaskList.Add(MyFileProcessingInfo)
         End SyncLock
+
+        'Only wait when a file was changed/created. A deleted or renamed file shouldn't require any transcoding so no point waiting
+        Select Case MyFileProcessingInfo.ActionToTake
+            Case Is = Changed, Created
+                WaitTime_ms = WaitBeforeSlowProcessing_ms
+            Case Is = Renamed, Deleted, DirectoryDeleted
+                WaitTime_ms = WaitBeforeFastProcessing_ms
+        End Select
 
         'Wait until there's a spare thread to use
         Do Until Interlocked.Read(TasksRunning) < MaxThreads
@@ -57,11 +52,13 @@ Class FileProcessingQueue
         Interlocked.Increment(TasksRunning)
 
         'Wait a pre-set amount of time and then cancel this task if we've been told to
-        If TimeSlept_ms > WaitTime_ms Then
-            MyLog.Write(MyFileProcessingInfo.ProcessID, "Already waited " & TimeSlept_ms & " ms before attempting to process file: " & MyFileProcessingInfo.FilePath, Debug)
-        Else
-            MyLog.Write(MyFileProcessingInfo.ProcessID, "Waiting " & WaitTime_ms & " ms before attempting to process file: " & MyFileProcessingInfo.FilePath, Debug)
-            Thread.Sleep(WaitTime_ms - TimeSlept_ms)
+        If WaitTime_ms > 0 Then
+            If TimeSlept_ms >= WaitTime_ms Then
+                MyLog.Write(MyFileProcessingInfo.ProcessID, "Already waited " & TimeSlept_ms & " ms before attempting to process file: " & MyFileProcessingInfo.FilePath, Debug)
+            Else
+                MyLog.Write(MyFileProcessingInfo.ProcessID, "Waiting " & WaitTime_ms & " ms before attempting to process file: " & MyFileProcessingInfo.FilePath, Debug)
+                Thread.Sleep(WaitTime_ms - TimeSlept_ms)
+            End If
         End If
 
         'Start processing the file based on the file event that triggered this task
