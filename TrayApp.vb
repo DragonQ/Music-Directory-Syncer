@@ -376,55 +376,55 @@ Public Class TrayApp
         Dim OldFilePath As String = ""
 
         'Only process this file if it is truly a file and not a directory
-        Using MyFileParser As New FileParser(UserGlobalSyncSettings, FileID, e.FullPath)
-            If sender Is FileWatcher Then
-                If (Not Directory.Exists(e.FullPath)) AndAlso (FilterMatch(e.Name)) Then
-                    Select Case e.ChangeType
-                        Case Is = IO.WatcherChangeTypes.Changed
-                            'File was changed, so re-transfer to all sync directories
-                            MyLog.Write(FileID, "Source file created or changed: " & e.FullPath, Information)
-                            If GlobalFileProcessingQueue.CancelFileTaskIfAlreadyRunning(e.FullPath) Then
-                                MyLog.Write(FileID, "File is already being processed, so cancelling original task", Debug)
-                            End If
-                            ActionTaken = True
-                            ChangeType = FileProcessingInfo.ActionType.Changed
-                        Case Is = IO.WatcherChangeTypes.Created
-                            'File was created, so re-transfer to all sync directories
-                            MyLog.Write(FileID, "Source file created or changed: " & e.FullPath, Information)
-                            If GlobalFileProcessingQueue.CancelFileTaskIfAlreadyRunning(e.FullPath) Then
-                                MyLog.Write(FileID, "File is already being processed, so cancelling original task", Debug)
-                            End If
-                            ActionTaken = True
-                            ChangeType = FileProcessingInfo.ActionType.Created
-                        Case Is = IO.WatcherChangeTypes.Renamed
-                            'File was deleted, so delete all matching synced files
-                            MyLog.Write(FileID, "Source file renamed: " & e.FullPath, Information)
-                            ActionTaken = True
-                            ChangeType = FileProcessingInfo.ActionType.Renamed
-                            OldFilePath = CType(e, RenamedEventArgs).OldFullPath
-                        Case Is = IO.WatcherChangeTypes.Deleted
-                            'File was deleted, so delete all matching synced files
-                            MyLog.Write(FileID, "Source file deleted: " & e.FullPath, Information)
-                            ActionTaken = True
-                            ChangeType = FileProcessingInfo.ActionType.Deleted
-                    End Select
-                Else
-                    MyLog.Write(FileID, "Directory or ignored file changed but IGNORED: " & e.FullPath, Debug)
-                End If
-            ElseIf sender Is DirectoryWatcher Then
-                If e.ChangeType = IO.WatcherChangeTypes.Deleted Then
-                    'Directory was deleted, so delete all matching synced directories
-                    'This is done in a separate thread so we don't clog up the FileSystemWatcher events thread
-                    MyLog.Write(FileID, "Source directory deleted: " & e.FullPath, Information)
-                    ActionTaken = True
-                    ChangeType = FileProcessingInfo.ActionType.DirectoryDeleted
-                Else
-                    MyLog.Write(FileID, "Source directory changed but IGNORED: " & e.FullPath, Debug)
-                End If
+        If sender Is FileWatcher Then
+            If (Not Directory.Exists(e.FullPath)) AndAlso (FilterMatch(e.Name)) Then
+                Select Case e.ChangeType
+                    Case Is = IO.WatcherChangeTypes.Changed
+                        'File was changed, so re-transfer to all sync directories
+                        MyLog.Write(FileID, "Source file changed: " & e.FullPath, Information)
+                        If GlobalFileProcessingQueue.CancelFileTaskIfAlreadyRunning(e.FullPath) Then
+                            MyLog.Write(FileID, "File is already being processed, so cancelling original task", Debug)
+                        End If
+                        ActionTaken = True
+                        ChangeType = FileProcessingInfo.ActionType.Changed
+                    Case Is = IO.WatcherChangeTypes.Created
+                        'File was created, so re-transfer to all sync directories
+                        MyLog.Write(FileID, "Source file created: " & e.FullPath, Information)
+                        If GlobalFileProcessingQueue.CancelFileTaskIfAlreadyRunning(e.FullPath) Then
+                            MyLog.Write(FileID, "File is already being processed, so cancelling original task", Debug)
+                        End If
+                        ActionTaken = True
+                        ChangeType = FileProcessingInfo.ActionType.Created
+                    Case Is = IO.WatcherChangeTypes.Renamed
+                        'File was deleted, so delete all matching synced files
+                        MyLog.Write(FileID, "Source file renamed: " & e.FullPath, Information)
+                        ActionTaken = True
+                        ChangeType = FileProcessingInfo.ActionType.Renamed
+                        OldFilePath = CType(e, RenamedEventArgs).OldFullPath
+                    Case Is = IO.WatcherChangeTypes.Deleted
+                        'File was deleted, so delete all matching synced files
+                        MyLog.Write(FileID, "Source file deleted: " & e.FullPath, Information)
+                        ActionTaken = True
+                        ChangeType = FileProcessingInfo.ActionType.Deleted
+                End Select
+            Else
+                MyLog.Write(FileID, "Directory or ignored file changed but IGNORED: " & e.FullPath, Debug)
             End If
+        ElseIf sender Is DirectoryWatcher Then
+            If e.ChangeType = IO.WatcherChangeTypes.Deleted Then
+                'Directory was deleted, so delete all matching synced directories
+                'This is done in a separate thread so we don't clog up the FileSystemWatcher events thread
+                MyLog.Write(FileID, "Source directory deleted: " & e.FullPath, Information)
+                ActionTaken = True
+                ChangeType = FileProcessingInfo.ActionType.DirectoryDeleted
+            Else
+                MyLog.Write(FileID, "Source directory changed but IGNORED: " & e.FullPath, Debug)
+            End If
+        End If
 
-            If ActionTaken Then
-                'Create new file processing task in a separate thread so we don't clog up the FileSystemWatcher events thread
+        If ActionTaken Then
+            'Create new file processing task in a separate thread so we don't clog up the FileSystemWatcher events thread
+            Using MyFileParser As New FileParser(UserGlobalSyncSettings, FileID, e.FullPath)
                 Dim TokenSource As New CancellationTokenSource()
                 Dim NewFileProcessingInfo As New FileProcessingInfo(FileID, e.FullPath, MyFileParser, ChangeType, TokenSource, OldFilePath)
                 Dim t As Task(Of ReturnObject) = Task.Run(Function() GlobalFileProcessingQueue.AddTask(NewFileProcessingInfo), NewFileProcessingInfo.CancelState.Token)
@@ -444,10 +444,9 @@ Public Class TrayApp
                                    End Select
                                End Sub,
                                TaskContinuationOptions.ExecuteSynchronously)
-            End If
-        End Using
+            End Using
 
-        If ActionTaken Then 'Don't increment file ID unnecessarily
+            'Increment file ID since it was processed
             If Interlocked.Equals(FileID, MaxFileID) Then
                 Interlocked.Add(FileID, -MaxFileID)
             Else
@@ -485,7 +484,7 @@ Public Class TrayApp
         End If
 
         '=================================== DEBUG CODE BELOW:
-        GlobalFileProcessingQueue.PrintRunningTasks()
+        'GlobalFileProcessingQueue.PrintRunningTasks()
         '===================================
 
     End Sub
