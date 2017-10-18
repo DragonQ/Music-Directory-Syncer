@@ -55,132 +55,7 @@ Class FileParser
         End If
     End Sub
 
-#Region " Safe File Operations "
-    Private Shared Function SafeCopy(SourceFilePath As String, SyncFilePath As String) As ReturnObject
-        Dim Result As ReturnObject = Nothing
-
-        If File.Exists(SourceFilePath) Then
-            Using SourceFileStream As FileStream = WaitForFile(SourceFilePath, FileMode.Open, FileAccess.Read, FileShare.Read, FileTimeout)
-                Result = SafeCopy(SourceFileStream, SyncFilePath)
-            End Using
-        Else
-            Result = New ReturnObject(False, "File does not exist: " & SourceFilePath, 0)
-        End If
-
-        Return Result
-    End Function
-
-    Private Shared Function SafeCopy(SourceFileStream As FileStream, SyncFilePath As String) As ReturnObject
-
-        Dim MyReturnObject As ReturnObject
-
-        Try
-            If SourceFileStream Is Nothing Then Throw New Exception("Could not get file system lock on source file.")
-            Dim OutputDirectory As String = Path.GetDirectoryName(SyncFilePath)
-            Directory.CreateDirectory(OutputDirectory)
-            Using NewFile As FileStream = WaitForFile(SyncFilePath, FileMode.CreateNew, FileAccess.ReadWrite, FileShare.None, FileTimeout)
-                If Not NewFile Is Nothing Then
-                    SourceFileStream.CopyTo(NewFile)
-                    MyReturnObject = New ReturnObject(True, "", Nothing)
-                Else
-                    MyReturnObject = New ReturnObject(False, "Could not get file system lock on destination file.", Nothing)
-                End If
-            End Using
-        Catch ex As Exception
-            MyReturnObject = New ReturnObject(False, ex.Message, 0)
-        End Try
-
-        Return MyReturnObject
-
-    End Function
-
-    Private Shared Function WaitForFile(fullPath As String, mode As FileMode, access As FileAccess, share As FileShare, timeoutSeconds As Int32) As FileStream
-        Dim msBetweenTries As Int32 = 500
-        Dim numTries As Int32 = CInt(Math.Ceiling(timeoutSeconds / (msBetweenTries / 1000)))
-
-        For count As Integer = 0 To numTries
-            Dim fs As FileStream = Nothing
-
-            Try
-                fs = New FileStream(fullPath, mode, access, share)
-
-                fs.ReadByte()
-                fs.Seek(0, SeekOrigin.Begin)
-
-                Return fs
-            Catch generatedExceptionName As IOException
-                If fs IsNot Nothing Then
-                    fs.Dispose()
-                End If
-                Thread.Sleep(msBetweenTries)
-            End Try
-        Next
-
-        Return Nothing
-    End Function
-#End Region
-
 #Region " Transfer File To Sync Folder "
-
-    Public Function TransferToSyncFolder() As ReturnObject
-
-        Dim MyReturnObject As ReturnObject
-
-        Try
-            If Not FileLock Then Throw New System.Exception("Could not get file system lock on source file.")
-            Dim TranscodedFilePath As String = Nothing
-            Dim NewFilesSize As Int64 = 0
-            For Each SyncSetting In SyncSettings
-                Dim FileCodec As Codec = CheckFileCodec(SyncSetting.GetWatcherCodecs())
-                If Not FileCodec Is Nothing Then
-                    If CheckFileForSync(FileCodec, SyncSetting) Then
-                        Dim SyncFilePath As String = SyncSetting.SyncDirectory & FilePath.Substring(MyGlobalSyncSettings.SourceDirectory.Length)
-
-                        If SyncSetting.TranscodeSetting = All OrElse (SyncSetting.TranscodeSetting = LosslessOnly AndAlso FileCodec.CompressionType = Lossless) Then 'Need to transcode file
-                            If TranscodedFilePath Is Nothing Then 'File hasn't been transcoded for another sync, so transcode it
-                                MyLog.Write(ProcessID, "...transcoding file to " & SyncSetting.Encoder.Name & "...", Debug)
-                                Dim Result As ReturnObject = TranscodeFile(SyncFilePath, SyncSetting)
-                                If Result.Success Then
-                                    SyncFilePath = Path.Combine(Path.GetDirectoryName(SyncFilePath), Path.GetFileNameWithoutExtension(SyncFilePath)) &
-                                                    SyncSetting.Encoder.GetFileExtensions(0)
-                                    TranscodedFilePath = SyncFilePath
-                                Else
-                                    Throw New Exception(Result.ErrorMessage)
-                                End If
-                            Else
-                                MyLog.Write(ProcessID, "...copying already transcoded file...", Debug)
-                                SyncFilePath = Path.Combine(Path.GetDirectoryName(SyncFilePath), Path.GetFileNameWithoutExtension(SyncFilePath)) &
-                                                SyncSetting.Encoder.GetFileExtensions(0)
-                                Dim Result As ReturnObject = SafeCopy(TranscodedFilePath, SyncFilePath)
-                                If Not Result.Success Then Throw New Exception(Result.ErrorMessage)
-
-                            End If
-                        Else
-                            Directory.CreateDirectory(Path.GetDirectoryName(SyncFilePath))
-                            Dim Result As ReturnObject = SafeCopy(SourceFileStream, SyncFilePath)
-                            If Not Result.Success Then Throw New Exception(Result.ErrorMessage)
-                        End If
-
-                        Dim NewFile As New FileInfo(SyncFilePath)
-                        NewFilesSize += NewFile.Length
-                        MyLog.Write(ProcessID, "...successfully added file to sync folder...", Debug)
-                    End If
-                Else
-                    MyLog.Write(ProcessID, "Ignoring file: """ & FilePath.Substring(MyGlobalSyncSettings.SourceDirectory.Length) & """", Information)
-                End If
-            Next
-
-            MyReturnObject = New ReturnObject(True, "", NewFilesSize)
-            MyLog.Write(ProcessID, "Sync file processed: """ & FilePath.Substring(MyGlobalSyncSettings.SourceDirectory.Length) & """", Information)
-        Catch ex As Exception
-            MyLog.Write(ProcessID, "Sync file processing failed: """ & FilePath.Substring(MyGlobalSyncSettings.SourceDirectory.Length) & """. Exception: " & ex.Message, Warning)
-            MyReturnObject = New ReturnObject(False, ex.Message, 0)
-        End Try
-
-        Return MyReturnObject
-
-    End Function
-
     Public Function DeleteInSyncFolder() As ReturnObject
 
         Dim MyReturnObject As ReturnObject
@@ -257,6 +132,64 @@ Class FileParser
 
     End Function
 
+    Public Function TransferToSyncFolder() As ReturnObject
+
+        Dim MyReturnObject As ReturnObject
+
+        Try
+            If Not FileLock Then Throw New System.Exception("Could not get file system lock on source file.")
+            Dim TranscodedFilePath As String = Nothing
+            Dim NewFilesSize As Int64 = 0
+            For Each SyncSetting In SyncSettings
+                Dim FileCodec As Codec = CheckFileCodec(SyncSetting.GetWatcherCodecs())
+                If Not FileCodec Is Nothing Then
+                    If CheckFileForSync(FileCodec, SyncSetting) Then
+                        Dim SyncFilePath As String = SyncSetting.SyncDirectory & FilePath.Substring(MyGlobalSyncSettings.SourceDirectory.Length)
+
+                        If SyncSetting.TranscodeSetting = All OrElse (SyncSetting.TranscodeSetting = LosslessOnly AndAlso FileCodec.CompressionType = Lossless) Then 'Need to transcode file
+                            If TranscodedFilePath Is Nothing Then 'File hasn't been transcoded for another sync, so transcode it
+                                MyLog.Write(ProcessID, "...transcoding file to " & SyncSetting.Encoder.Name & "...", Debug)
+                                Dim Result As ReturnObject = TranscodeFile(SyncFilePath, SyncSetting)
+                                If Result.Success Then
+                                    SyncFilePath = Path.Combine(Path.GetDirectoryName(SyncFilePath), Path.GetFileNameWithoutExtension(SyncFilePath)) &
+                                                    SyncSetting.Encoder.GetFileExtensions(0)
+                                    TranscodedFilePath = SyncFilePath
+                                Else
+                                    Throw New Exception(Result.ErrorMessage)
+                                End If
+                            Else
+                                MyLog.Write(ProcessID, "...copying already transcoded file...", Debug)
+                                SyncFilePath = Path.Combine(Path.GetDirectoryName(SyncFilePath), Path.GetFileNameWithoutExtension(SyncFilePath)) &
+                                                SyncSetting.Encoder.GetFileExtensions(0)
+                                Dim Result As ReturnObject = SafeCopy(TranscodedFilePath, SyncFilePath)
+                                If Not Result.Success Then Throw New Exception(Result.ErrorMessage)
+
+                            End If
+                        Else
+                            Directory.CreateDirectory(Path.GetDirectoryName(SyncFilePath))
+                            Dim Result As ReturnObject = SafeCopy(SourceFileStream, SyncFilePath)
+                            If Not Result.Success Then Throw New Exception(Result.ErrorMessage)
+                        End If
+
+                        Dim NewFile As New FileInfo(SyncFilePath)
+                        NewFilesSize += NewFile.Length
+                        MyLog.Write(ProcessID, "...successfully added file to sync folder...", Debug)
+                    End If
+                Else
+                    MyLog.Write(ProcessID, "Ignoring file: """ & FilePath.Substring(MyGlobalSyncSettings.SourceDirectory.Length) & """", Information)
+                End If
+            Next
+
+            MyReturnObject = New ReturnObject(True, "", NewFilesSize)
+            MyLog.Write(ProcessID, "Sync file processed: """ & FilePath.Substring(MyGlobalSyncSettings.SourceDirectory.Length) & """", Information)
+        Catch ex As Exception
+            MyLog.Write(ProcessID, "Sync file processing failed: """ & FilePath.Substring(MyGlobalSyncSettings.SourceDirectory.Length) & """. Exception: " & ex.Message, Warning)
+            MyReturnObject = New ReturnObject(False, ex.Message, 0)
+        End Try
+
+        Return MyReturnObject
+
+    End Function
 
     Public Function RenameInSyncFolder(OldFilePath As String) As ReturnObject
 
@@ -393,6 +326,71 @@ Class FileParser
 
         Return New ReturnObject(True, "")
 
+    End Function
+#End Region
+
+#Region " Safe File Operations "
+    Private Shared Function SafeCopy(SourceFilePath As String, SyncFilePath As String) As ReturnObject
+        Dim Result As ReturnObject = Nothing
+
+        If File.Exists(SourceFilePath) Then
+            Using SourceFileStream As FileStream = WaitForFile(SourceFilePath, FileMode.Open, FileAccess.Read, FileShare.Read, FileTimeout)
+                Result = SafeCopy(SourceFileStream, SyncFilePath)
+            End Using
+        Else
+            Result = New ReturnObject(False, "File does not exist: " & SourceFilePath, 0)
+        End If
+
+        Return Result
+    End Function
+
+    Private Shared Function SafeCopy(SourceFileStream As FileStream, SyncFilePath As String) As ReturnObject
+
+        Dim MyReturnObject As ReturnObject
+
+        Try
+            If SourceFileStream Is Nothing Then Throw New Exception("Could not get file system lock on source file.")
+            Dim OutputDirectory As String = Path.GetDirectoryName(SyncFilePath)
+            Directory.CreateDirectory(OutputDirectory)
+            Using NewFile As FileStream = WaitForFile(SyncFilePath, FileMode.CreateNew, FileAccess.ReadWrite, FileShare.None, FileTimeout)
+                If Not NewFile Is Nothing Then
+                    SourceFileStream.CopyTo(NewFile)
+                    MyReturnObject = New ReturnObject(True, "", Nothing)
+                Else
+                    MyReturnObject = New ReturnObject(False, "Could not get file system lock on destination file.", Nothing)
+                End If
+            End Using
+        Catch ex As Exception
+            MyReturnObject = New ReturnObject(False, ex.Message, 0)
+        End Try
+
+        Return MyReturnObject
+
+    End Function
+
+    Private Shared Function WaitForFile(fullPath As String, mode As FileMode, access As FileAccess, share As FileShare, timeoutSeconds As Int32) As FileStream
+        Dim msBetweenTries As Int32 = 500
+        Dim numTries As Int32 = CInt(Math.Ceiling(timeoutSeconds / (msBetweenTries / 1000)))
+
+        For count As Integer = 0 To numTries
+            Dim fs As FileStream = Nothing
+
+            Try
+                fs = New FileStream(fullPath, mode, access, share)
+
+                fs.ReadByte()
+                fs.Seek(0, SeekOrigin.Begin)
+
+                Return fs
+            Catch generatedExceptionName As IOException
+                If fs IsNot Nothing Then
+                    fs.Dispose()
+                End If
+                Thread.Sleep(msBetweenTries)
+            End Try
+        Next
+
+        Return Nothing
     End Function
 #End Region
 
