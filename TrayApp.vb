@@ -22,7 +22,7 @@ Public Class TrayApp
 
     Private WithEvents DirectoryWatcher As MyFileSystemWatcher = Nothing
     Private WithEvents FileWatcher As MyFileSystemWatcher = Nothing
-    Private FileID As Int32 = 0
+    Private FileID As Int32 = 1
 
     Private FileWatcherInterval_ms As Int32 = 200           'Repeated events within this time period don't even get reported to our watchers
     Private WaitBeforeProcessingFiles_ms As Int32 = 5000    'Repeated events within this time period cause file processing to restart
@@ -481,7 +481,7 @@ Public Class TrayApp
         Else
             MyLog.Write(MyFileProcessingInfo.ProcessID, "Could not remove file processing task from queue! " & MyFileProcessingInfo.FilePath, Warning)
         End If
-        MyLog.Write(FileID, "Tasks still running: " & GlobalFileProcessingQueue.CountTasksAlreadyRunning(), Information)
+        MyLog.Write(0, "Tasks still running: " & GlobalFileProcessingQueue.CountTasksAlreadyRunning(), Information)
 
     End Sub
 
@@ -493,7 +493,7 @@ Public Class TrayApp
         Else
             MyLog.Write(MyFileProcessingInfo.ProcessID, "Could not remove file processing task from queue! " & MyFileProcessingInfo.FilePath, Warning)
         End If
-        MyLog.Write(FileID, "Tasks still running: " & GlobalFileProcessingQueue.CountTasksAlreadyRunning(), Information)
+        MyLog.Write(0, "Tasks still running: " & GlobalFileProcessingQueue.CountTasksAlreadyRunning(), Information)
 
     End Sub
 

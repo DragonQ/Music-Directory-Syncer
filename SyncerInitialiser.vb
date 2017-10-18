@@ -1,4 +1,5 @@
-﻿Imports MusicFolderSyncer.Toolkit
+﻿#Region " Namespaces "
+Imports MusicFolderSyncer.Toolkit
 Imports MusicFolderSyncer.Logger.LogLevel
 Imports System.IO
 Imports System.Environment
@@ -6,7 +7,7 @@ Imports System.Threading
 Imports System.Security.AccessControl
 Imports System.Security.Principal
 Imports CodeProject
-
+#End Region
 
 Public Class SyncerInitialiser
 
