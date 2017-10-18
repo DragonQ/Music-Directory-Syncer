@@ -212,7 +212,7 @@ Public Class TrayApp
     Public Sub ExitApplication()
         'Perform any clean-up here then exit the application
         MyLog.Write("===============================================================")
-        MyLog.Write("  PROGRAM CLEAN EXIT")
+        MyLog.Write("  " & ApplicationName & " - CLEAN EXIT")
         MyLog.Write("===============================================================")
         MyLog.Write("")
         Tray.Visible = False
