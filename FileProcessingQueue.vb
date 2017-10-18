@@ -106,15 +106,15 @@ Class FileProcessingQueue
 
     Public Sub PrintRunningTasks()
         If MyLog.DebugLevel = Logger.LogLevel.Debug AndAlso CountTasksAlreadyRunning() > 0 Then
-            MyLog.Write(0, "[[ REMAINING TASKS: ]]", Debug)
+            MyLog.Write("[[ REMAINING TASKS: ]]", Debug)
             Dim i As Int32 = 0
             Dim FileTaskList As List(Of FileProcessingInfo) = GetFileTaskList()
             For Each MyFileProcessingInfo As FileProcessingInfo In FileTaskList
                 i += 1
-                MyLog.Write(0, "[[" & i & ": " & MyFileProcessingInfo.FilePath & "]]", Debug)
+                MyLog.Write("[[" & i & ": " & MyFileProcessingInfo.FilePath & "]]", Debug)
             Next
         Else
-            MyLog.Write(0, "[[ NO REMAINING TASKS ]] ", Debug)
+            MyLog.Write("[[ NO REMAINING TASKS ]] ", Debug)
         End If
     End Sub
 

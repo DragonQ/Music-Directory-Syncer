@@ -481,7 +481,7 @@ Public Class TrayApp
         Else
             MyLog.Write(MyFileProcessingInfo.ProcessID, "Could not remove file processing task from queue! " & MyFileProcessingInfo.FilePath, Warning)
         End If
-        MyLog.Write(0, "Tasks still running: " & GlobalFileProcessingQueue.CountTasksAlreadyRunning(), Information)
+        MyLog.Write("Tasks still running: " & GlobalFileProcessingQueue.CountTasksAlreadyRunning(), Information)
 
     End Sub
 
@@ -493,7 +493,7 @@ Public Class TrayApp
         Else
             MyLog.Write(MyFileProcessingInfo.ProcessID, "Could not remove file processing task from queue! " & MyFileProcessingInfo.FilePath, Warning)
         End If
-        MyLog.Write(0, "Tasks still running: " & GlobalFileProcessingQueue.CountTasksAlreadyRunning(), Information)
+        MyLog.Write("Tasks still running: " & GlobalFileProcessingQueue.CountTasksAlreadyRunning(), Information)
 
     End Sub
 
