@@ -2,14 +2,16 @@
     xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
     xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
     xmlns:Controls="clr-namespace:Btl.Controls;assembly=Btl.Controls.MyControls"
-    Title="Edit Global Sync Settings" Width="500" Height="128" SizeToContent="Height" ResizeMode="NoResize">
+    Title="Edit Global Sync Settings" Width="520" Height="155" SizeToContent="Height" ResizeMode="NoResize">
     <Grid Margin="0,0,0,0" HorizontalAlignment="Stretch" VerticalAlignment="Stretch">
-        <Label Content="Source Directory:" HorizontalAlignment="Left" Height="26" Margin="0,7,0,0" VerticalAlignment="Top" Width="108" HorizontalContentAlignment="Right"/>
-        <Label Content="ffmpeg Location:" HorizontalAlignment="Left" Height="26" Margin="0,31,0,0" VerticalAlignment="Top" Width="108" HorizontalContentAlignment="Right" RenderTransformOrigin="0.5,0.5"/>
-        <TextBox x:Name="txtSourceDirectory" Height="21" Margin="113,11,86,0" TextWrapping="Wrap" Text="\\192.168.1.99\Audio\Music" VerticalAlignment="Top" MaxLines="1" TabIndex="10"/>
-        <TextBox x:Name="txt_ffmpegPath" Height="21" Margin="113,35,86,0" TextWrapping="Wrap" Text="\\192.168.1.99\Audio\Music test2" VerticalAlignment="Top" MaxLines="1" TabIndex="16"/>
+        <Label Content="Source Directory:" HorizontalAlignment="Left" Height="26" Margin="2,7,0,0" VerticalAlignment="Top" Width="116" HorizontalContentAlignment="Right"/>
+        <Label Content="ffmpeg Location:" HorizontalAlignment="Left" Height="26" Margin="2,31,0,0" VerticalAlignment="Top" Width="116" HorizontalContentAlignment="Right" RenderTransformOrigin="0.5,0.5"/>
+        <TextBox x:Name="txtSourceDirectory" Height="21" Margin="123,11,86,0" TextWrapping="Wrap" Text="\\192.168.1.99\Audio\Music" VerticalAlignment="Top" MaxLines="1" TabIndex="10"/>
+        <TextBox x:Name="txt_ffmpegPath" Height="21" Margin="123,35,86,0" TextWrapping="Wrap" Text="\\192.168.1.99\Audio\Music test2" VerticalAlignment="Top" MaxLines="1" TabIndex="16"/>
         <Button x:Name="btnBrowseSourceDirectory" Content="Browse..." Margin="0,11,10,0" VerticalAlignment="Top" Height="21" TabIndex="13" HorizontalAlignment="Right" Width="71" Click="btnBrowseSourceDirectory_Click"/>
         <Button x:Name="btnBrowse_ffmmpegPath" Content="Browse..." Margin="0,35,10,0" VerticalAlignment="Top" Height="21" TabIndex="19" HorizontalAlignment="Right" Width="71" Click="btnBrowse_ffmmpegPath_Click"/>
+        <Label Content="Processing Threads:" HorizontalAlignment="Left" Height="26" Margin="2,57,0,0" VerticalAlignment="Top" Width="116" HorizontalContentAlignment="Right" RenderTransformOrigin="0.5,0.5"/>
+        <Controls:SpinnerControl x:Name="spinThreads" HorizontalAlignment="Left" Margin="123,60,0,0" VerticalAlignment="Top" Minimum="1" Width="49" Value="1" IsTabStop="True" TabIndex="20"/>
         <Button x:Name="btnSave" Content="Save" Margin="0,65,104,10" Click="btnSave_Click" VerticalAlignment="Bottom" HorizontalAlignment="Right" Height="24" Width="89" TabIndex="21"/>
         <Button x:Name="btnCancel" Content="Cancel" Margin="0,65,10,10" Click="btnCancel_Click" VerticalAlignment="Bottom" HorizontalAlignment="Right" Height="24" Width="89" TabIndex="22"/>
     </Grid>

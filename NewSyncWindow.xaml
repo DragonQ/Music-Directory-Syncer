@@ -60,8 +60,8 @@
                 <Button x:Name="btnBrowse_ffmpeg" Content="Browse..." Margin="0,58,10,0" VerticalAlignment="Top" Height="21" HorizontalAlignment="Right" Width="71" TabIndex="44" Click="btnBrowseFFMPEG_Click"/>
             </Grid>
         </GroupBox>
-        <Label Content="Threads:" HorizontalAlignment="Right" Margin="0,0,267,106" Width="54" HorizontalContentAlignment="Right" Height="26" VerticalAlignment="Bottom"/>
-        <Controls:SpinnerControl x:Name="spinThreads" HorizontalAlignment="Right" Margin="0,0,213,108" VerticalAlignment="Bottom" Minimum="2" Width="49" Value="1" IsTabStop="True" TabIndex="50"/>
+        <Label Content="Processing Threads:" HorizontalAlignment="Right" Margin="0,0,267,106" Width="120" HorizontalContentAlignment="Right" Height="26" VerticalAlignment="Bottom"/>
+        <Controls:SpinnerControl x:Name="spinThreads" HorizontalAlignment="Right" Margin="0,0,213,108" VerticalAlignment="Bottom" Minimum="1" Width="49" Value="1" IsTabStop="True" TabIndex="50"/>
         <Button x:Name="btnNewSync" Content="Start New Sync" Margin="0,0,10,107" VerticalAlignment="Bottom" Click="btnNewSync_Click" Height="24" HorizontalAlignment="Right" Width="186" TabIndex="52"/>
         <GroupBox x:Name="boxProgress" Header="Sync Progress" Margin="10,0,10,10" Height="92" VerticalAlignment="Bottom">
             <Grid Margin="0,0,0,0">

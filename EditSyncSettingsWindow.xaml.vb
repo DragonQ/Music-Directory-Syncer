@@ -23,6 +23,8 @@ Public Class EditSyncSettingsWindow
         ' Set run-time properties of window objects
         txtSourceDirectory.Text = MyGlobalSyncSettings.SourceDirectory
         txt_ffmpegPath.Text = MyGlobalSyncSettings.ffmpegPath
+        spinThreads.Maximum = Environment.ProcessorCount
+        spinThreads.Value = MyGlobalSyncSettings.MaxThreads
 
     End Sub
 #End Region
@@ -74,9 +76,14 @@ Public Class EditSyncSettingsWindow
                 Throw New Exception("Specified ffmpeg path is not valid.")
             End If
 
+            If Not CInt(spinThreads.Value) > 0 Then
+                Throw New Exception("Number of processing threads is not valid.")
+            End If
+
             ' Apply settings
             MyGlobalSyncSettings.SourceDirectory = txtSourceDirectory.Text
             MyGlobalSyncSettings.ffmpegPath = txt_ffmpegPath.Text
+            MyGlobalSyncSettings.MaxThreads = CInt(spinThreads.Value)
 
             ' Save settings to file
             Dim MyResult As ReturnObject = SaveSyncSettings(MyGlobalSyncSettings)
@@ -109,6 +116,7 @@ Public Class EditSyncSettingsWindow
         btnCancel.IsEnabled = Enable
         txtSourceDirectory.IsEnabled = Enable
         txt_ffmpegPath.IsEnabled = Enable
+        spinThreads.IsEnabled = Enable
     End Sub
 #End Region
 
