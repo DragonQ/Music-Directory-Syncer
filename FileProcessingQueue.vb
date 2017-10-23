@@ -41,27 +41,21 @@ Class FileProcessingQueue
                 WaitTime_ms = WaitBeforeFastProcessing_ms
         End Select
 
-        'Wait until there's a spare thread to use
-        Do Until Interlocked.Read(TasksRunning) < MaxThreads
+        'Wait a pre-set amount of time until there's a spare thread to use
+        MyLog.Write(MyFileProcessingInfo.ProcessID, "Waiting " & WaitTime_ms & " ms before attempting to process file: " & MyFileProcessingInfo.FilePath, Debug)
+        Do Until TimeSlept_ms >= WaitTime_ms AndAlso Interlocked.Read(TasksRunning) < MaxThreads
             If IsDisposing Then
                 Return New ReturnObject(False, "File system watcher has been stopped, aborting pending file processing.", Nothing)
             End If
             TimeSlept_ms += SleepTime_ms
             Thread.Sleep(SleepTime_ms)
         Loop
-        Interlocked.Increment(TasksRunning)
 
-        'Wait a pre-set amount of time and then cancel this task if we've been told to
-        If WaitTime_ms > 0 Then
-            If TimeSlept_ms >= WaitTime_ms Then
-                MyLog.Write(MyFileProcessingInfo.ProcessID, "Already waited " & TimeSlept_ms & " ms before attempting to process file: " & MyFileProcessingInfo.FilePath, Debug)
-            Else
-                MyLog.Write(MyFileProcessingInfo.ProcessID, "Waiting " & WaitTime_ms & " ms before attempting to process file: " & MyFileProcessingInfo.FilePath, Debug)
-                Thread.Sleep(WaitTime_ms - TimeSlept_ms)
-            End If
-        End If
+        'Cancel this task if we've been told to
+        MyFileProcessingInfo.CancelState.Token.ThrowIfCancellationRequested()
 
         'Start processing the file based on the file event that triggered this task
+        Interlocked.Increment(TasksRunning)
         Dim Result As ReturnObject = ProcessFile(MyFileProcessingInfo)
         Interlocked.Decrement(TasksRunning)
         Return Result
@@ -192,9 +186,6 @@ Class FileProcessingQueue
         Dim SuccessMessage = ""
         Dim FailureMessage = ""
 
-        MyFileProcessingInfo.CancelState.Token.ThrowIfCancellationRequested()
-
-        'No other tasks are running using this file, so we are free to continue
         Select Case MyFileProcessingInfo.ActionToTake
             Case Is = FileProcessingInfo.ActionType.DirectoryDeleted
                 MyLog.Write(MyFileProcessingInfo.ProcessID, "Processing directory: " & MyFileProcessingInfo.FilePath, Information)
