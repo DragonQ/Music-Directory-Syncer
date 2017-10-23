@@ -354,6 +354,8 @@ Public Class TrayApp
 
         MyLog.Write(FileID, "Directory renamed: " & e.FullPath, Information)
 
+        IncrementFileID()
+
         Dim NewDirectory As New DirectoryInfo(e.FullPath)
         For Each SubDirectory As DirectoryInfo In NewDirectory.GetDirectories("*", SearchOption.TopDirectoryOnly)
             Dim NewDirName = Path.Combine(e.FullPath.Replace(UserGlobalSyncSettings.SourceDirectory & "\", ""), SubDirectory.Name)
@@ -436,7 +438,7 @@ Public Class TrayApp
                                            MyLog.Write(NewFileProcessingInfo.ProcessID, "Task completed. Cancelled flag: " & t1.IsCanceled, Debug)
                                            FileProcessingCompleted(t1.Result)
                                        Case TaskStatus.Canceled
-                                           MyLog.Write(NewFileProcessingInfo.ProcessID, "File processing cancelled before attempting to process file: " & NewFileProcessingInfo.FilePath, Debug)
+                                           MyLog.Write(NewFileProcessingInfo.ProcessID, "File processing cancelled before attempting to process file: " & NewFileProcessingInfo.FilePath, Information)
                                            FileProcessingCompleted(New ReturnObject(False, "", NewFileProcessingInfo))
                                        Case TaskStatus.Faulted
                                            MyLog.Write("Task failed because: " & t1.Exception.InnerException.Message, Warning)
@@ -445,14 +447,9 @@ Public Class TrayApp
                                End Sub,
                                TaskContinuationOptions.ExecuteSynchronously)
             End Using
-
-            'Increment file ID since it was processed
-            If Interlocked.Equals(FileID, MaxFileID) Then
-                Interlocked.Add(FileID, -MaxFileID)
-            Else
-                Interlocked.Increment(FileID)
-            End If
         End If
+
+        IncrementFileID()
 
     End Sub
 
@@ -481,7 +478,7 @@ Public Class TrayApp
         Else
             MyLog.Write(MyFileProcessingInfo.ProcessID, "Could not remove file processing task from queue! " & MyFileProcessingInfo.FilePath, Warning)
         End If
-        MyLog.Write("Tasks still running: " & GlobalFileProcessingQueue.CountTasksAlreadyRunning(), Information)
+        MyLog.Write(MyFileProcessingInfo.ProcessID, "Tasks still running: " & GlobalFileProcessingQueue.CountTasksAlreadyRunning(), Debug)
 
     End Sub
 
@@ -493,7 +490,7 @@ Public Class TrayApp
         Else
             MyLog.Write(MyFileProcessingInfo.ProcessID, "Could not remove file processing task from queue! " & MyFileProcessingInfo.FilePath, Warning)
         End If
-        MyLog.Write("Tasks still running: " & GlobalFileProcessingQueue.CountTasksAlreadyRunning(), Information)
+        MyLog.Write(MyFileProcessingInfo.ProcessID, "Tasks still running: " & GlobalFileProcessingQueue.CountTasksAlreadyRunning(), Debug)
 
     End Sub
 
@@ -514,6 +511,14 @@ Public Class TrayApp
         Return False
 
     End Function
+
+    Private Sub IncrementFileID()
+        If Interlocked.Equals(FileID, MaxFileID) Then
+            Interlocked.Add(FileID, -MaxFileID)
+        Else
+            Interlocked.Increment(FileID)
+        End If
+    End Sub
 #End Region
 
 #Region " Re-Apply Sync Callbacks "
