@@ -92,7 +92,7 @@ Module XML
 
         Try
             'If SyncSettings.xml doesn't exist, return nothing
-            If Not File.Exists(FilePath) Then Return New ReturnObject(True, "", Nothing)
+            If Not File.Exists(FilePath) Then Return New ReturnObject(True, "")
 
             'Create StringWriter to store XML text
             Dim SettingsFile As String = File.ReadAllText(FilePath)
@@ -261,7 +261,7 @@ Module XML
                 Throw New Exception("No sync settings found!")
             End If
         Catch ex As Exception
-            Return New ReturnObject(False, ex.Message, Nothing)
+            Return New ReturnObject(False, ex.Message)
         End Try
 
     End Function
@@ -350,9 +350,9 @@ Module XML
                 File.WriteAllText(FilePath, StringToWrite)
             End If
 
-            Return New ReturnObject(True, "", Nothing)
+            Return New ReturnObject(True, "")
         Catch ex As Exception
-            Return New ReturnObject(False, ex.Message, Nothing)
+            Return New ReturnObject(False, ex.Message)
         End Try
 
     End Function

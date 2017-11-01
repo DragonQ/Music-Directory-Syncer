@@ -70,17 +70,17 @@ Public Class SyncerInitialiser
             MyFiles = FastDirectoryEnumerator.EnumerateFiles(FolderPath, "*.*", SearchOption.AllDirectories).ToArray
         Catch ex As Exception
             MyLog.Write("Failed to grab file list from source directory. Exception: " & ex.Message, Warning)
-            e.Result = New ReturnObject(False, ex.Message, "")
+            e.Result = New ReturnObject(False, ex.Message)
             Exit Sub
         End Try
 
         If MyFiles Is Nothing Then
             MyLog.Write("Failed to grab file list from source directory. Exception: EnumerateFiles returned nothing.", Warning)
-            e.Result = New ReturnObject(False, "EnumerateFiles returned nothing.", "")
+            e.Result = New ReturnObject(False, "EnumerateFiles returned nothing.")
             Exit Sub
         ElseIf MyFiles.Length < 1 Then
             MyLog.Write("Failed to grab file list from source directory. Exception: EnumerateFiles returned no files.", Warning)
-            e.Result = New ReturnObject(False, "EnumerateFiles returned no files.", "")
+            e.Result = New ReturnObject(False, "EnumerateFiles returned no files.")
             Exit Sub
         End If
 
@@ -102,7 +102,7 @@ Public Class SyncerInitialiser
                     MyError &= NewLine & NewLine & ex.InnerException.ToString
                 End If
                 MyLog.Write("Failed to delete existing files in sync folder [1]. Exception: " & MyError, Warning)
-                e.Result = New ReturnObject(False, ex.Message, "")
+                e.Result = New ReturnObject(False, ex.Message)
                 Exit Sub
             End Try
         Next
@@ -123,7 +123,7 @@ Public Class SyncerInitialiser
                     MyError &= NewLine & NewLine & ex.InnerException.ToString
                 End If
                 MyLog.Write("Failed to delete existing files in sync folder [2]. Exception: " & MyError, Warning)
-                e.Result = New ReturnObject(False, ex.Message, "")
+                e.Result = New ReturnObject(False, ex.Message)
                 Exit Sub
             End Try
         Next
@@ -203,7 +203,7 @@ Public Class SyncerInitialiser
             Do
                 If SyncBackgroundWorker.CancellationPending Then
                     e.Cancel = True
-                    e.Result = New ReturnObject(False, "Sync was cancelled.", "")
+                    e.Result = New ReturnObject(False, "Sync was cancelled.")
                     Exit Sub
                 End If
 
@@ -227,7 +227,7 @@ Public Class SyncerInitialiser
 
         Catch ex As Exception
             MyLog.Write("Failed to complete sync. Exception: " & ex.Message, Warning)
-            e.Result = New ReturnObject(False, ex.Message, "")
+            e.Result = New ReturnObject(False, ex.Message)
         End Try
 
         e.Result = New ReturnObject(True, Nothing, SyncFolderSize)

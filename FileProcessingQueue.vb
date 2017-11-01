@@ -45,7 +45,7 @@ Class FileProcessingQueue
         MyLog.Write(MyFileProcessingInfo.ProcessID, "Waiting " & WaitTime_ms & " ms before attempting to process file: " & MyFileProcessingInfo.FilePath, Debug)
         Do Until TimeSlept_ms >= WaitTime_ms AndAlso Interlocked.Read(TasksRunning) < MaxThreads
             If IsDisposing Then
-                Return New ReturnObject(False, "File system watcher has been stopped, aborting pending file processing.", Nothing)
+                Return New ReturnObject(False, "File system watcher has been stopped, aborting pending file processing.")
             End If
             TimeSlept_ms += SleepTime_ms
             Thread.Sleep(SleepTime_ms)

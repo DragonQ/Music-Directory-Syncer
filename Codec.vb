@@ -89,7 +89,7 @@ Public Class Codec
             Case Is = "AAC"
                 Return AACCodec.MatchTag(FilePath, Tags)
             Case Else
-                Return New ReturnObject(False, "Codec not recognised: " & Me.Name, Nothing)
+                Return New ReturnObject(False, "Codec not recognised: " & Me.Name)
         End Select
 
     End Function
@@ -188,10 +188,10 @@ Public Class Codec
                         Return New ReturnObject(True, "", False)
                     End If
                 Catch ex As Exception
-                    Return New ReturnObject(False, ex.Message, Nothing)
+                    Return New ReturnObject(False, ex.Message)
                 End Try
             Else
-                Return New ReturnObject(False, "Tags is nothing", Nothing)
+                Return New ReturnObject(False, "Tags is nothing")
             End If
 
         End Function
@@ -255,10 +255,10 @@ Public Class Codec
                         Return New ReturnObject(True, "", False)
                     End If
                 Catch ex As Exception
-                    Return New ReturnObject(False, ex.Message, Nothing)
+                    Return New ReturnObject(False, ex.Message)
                 End Try
             Else
-                Return New ReturnObject(False, "Tags is nothing", Nothing)
+                Return New ReturnObject(False, "Tags is nothing")
             End If
 
         End Function
@@ -319,10 +319,10 @@ Public Class Codec
                         Return New ReturnObject(True, "", False)
                     End If
                 Catch ex As Exception
-                    Return New ReturnObject(False, ex.Message, Nothing)
+                    Return New ReturnObject(False, ex.Message)
                 End Try
             Else
-                Return New ReturnObject(False, "Tags is nothing", Nothing)
+                Return New ReturnObject(False, "Tags is nothing")
             End If
 
         End Function
@@ -396,7 +396,7 @@ Public Class Codec
                                         Next
                                     End If
                                 Catch ex As Exception
-                                    Return New ReturnObject(False, ex.Message, Nothing)
+                                    Return New ReturnObject(False, ex.Message)
                                 End Try
 
                                 'If we matched a tag, we can end our search now
@@ -411,10 +411,10 @@ Public Class Codec
                         End If
                     End If
                 Catch ex As Exception
-                    Return New ReturnObject(False, ex.Message, Nothing)
+                    Return New ReturnObject(False, ex.Message)
                 End Try
             Else
-                Return New ReturnObject(False, "Tags is nothing", Nothing)
+                Return New ReturnObject(False, "Tags is nothing")
             End If
 
         End Function

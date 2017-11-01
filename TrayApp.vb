@@ -282,7 +282,7 @@ Public Class TrayApp
     Private Function StartWatcher() As ReturnObject
 
         If Not Directory.Exists(UserGlobalSyncSettings.SourceDirectory) Then
-            Return New ReturnObject(False, "Directory """ + UserGlobalSyncSettings.SourceDirectory + """ does not exist!", Nothing)
+            Return New ReturnObject(False, "Directory """ + UserGlobalSyncSettings.SourceDirectory + """ does not exist!")
         End If
 
         Try
@@ -322,7 +322,7 @@ Public Class TrayApp
 
             Return New ReturnObject(True, Nothing)
         Catch ex As Exception
-            Return New ReturnObject(False, ex.Message, Nothing)
+            Return New ReturnObject(False, ex.Message)
         End Try
 
     End Function

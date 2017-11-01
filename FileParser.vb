@@ -163,7 +163,6 @@ Class FileParser
                                                 SyncSetting.Encoder.GetFileExtensions(0)
                                 Dim Result As ReturnObject = SafeCopy(TranscodedFilePath, SyncFilePath)
                                 If Not Result.Success Then Throw New Exception(Result.ErrorMessage)
-
                             End If
                         Else
                             Directory.CreateDirectory(Path.GetDirectoryName(SyncFilePath))
@@ -230,8 +229,6 @@ Class FileParser
                             MyLog.Write(ProcessID, "...old file doesn't exist in sync folder: """ & OldSyncFilePath & """, creating now...", Warning)
 
                             If SyncSetting.TranscodeSetting = All OrElse (SyncSetting.TranscodeSetting = LosslessOnly AndAlso FileCodec.CompressionType = Lossless) Then 'Need to transcode file
-
-
                                 If TranscodedFilePath Is Nothing Then 'File hasn't been transcoded for another sync, so transcode it
                                     MyLog.Write(ProcessID, "...transcoding file to " & SyncSetting.Encoder.Name & "...", Debug)
                                     Dim Result As ReturnObject = TranscodeFile(SyncFilePath, SyncSetting)
@@ -338,7 +335,7 @@ Class FileParser
                 Result = SafeCopy(SourceFileStream, SyncFilePath)
             End Using
         Else
-            Result = New ReturnObject(False, "File does not exist: " & SourceFilePath, 0)
+            Result = New ReturnObject(False, "File does not exist: " & SourceFilePath)
         End If
 
         Return Result
@@ -355,13 +352,13 @@ Class FileParser
             Using NewFile As FileStream = WaitForFile(SyncFilePath, FileMode.CreateNew, FileAccess.ReadWrite, FileShare.None, FileTimeout)
                 If Not NewFile Is Nothing Then
                     SourceFileStream.CopyTo(NewFile)
-                    MyReturnObject = New ReturnObject(True, "", Nothing)
+                    MyReturnObject = New ReturnObject(True, "")
                 Else
-                    MyReturnObject = New ReturnObject(False, "Could not get file system lock on destination file.", Nothing)
+                    MyReturnObject = New ReturnObject(False, "Could not get file system lock on destination file.")
                 End If
             End Using
         Catch ex As Exception
-            MyReturnObject = New ReturnObject(False, ex.Message, 0)
+            MyReturnObject = New ReturnObject(False, ex.Message)
         End Try
 
         Return MyReturnObject
