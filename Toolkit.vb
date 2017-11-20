@@ -50,7 +50,7 @@ Namespace Toolkit
 #End Region
 
 #Region " File/Directory Browsers "
-    Class Browsers
+    Public Class Browsers
         Public Shared Function CreateDirectoryBrowser(StartingDirectory As String, Title As String) As ReturnObject
 
             Using SelectDirectoryDialog = New CommonOpenFileDialog()
