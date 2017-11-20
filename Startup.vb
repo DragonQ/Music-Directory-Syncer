@@ -10,6 +10,7 @@ Module Startup
     Public EnglishGB As System.Globalization.CultureInfo = System.Globalization.CultureInfo.CreateSpecificCulture("en-GB")
     Private Const LogLevel As Logger.LogLevel = Information
     Public MyLogFilePath As String = Path.Combine(System.AppDomain.CurrentDomain.BaseDirectory, ApplicationName & ".log")
+    Public MyVersion As String = ""
 
     Public Const ApplicationName As String = "Music Folder Syncer"
     Public MyLog As Logger
@@ -21,14 +22,16 @@ Module Startup
 #Region " Sub Main "
     Sub Main()
 
+        ' Create public logger for entire program to use
         MyLog = New Logger(MyLogFilePath, LogLevel)
 
-        Dim MyAssembly As System.Reflection.Assembly = System.Reflection.Assembly.GetExecutingAssembly()
-        Dim MyVersionInfo As FileVersionInfo = FileVersionInfo.GetVersionInfo(MyAssembly.Location)
-        Dim MyVersion As String = MyVersionInfo.FileVersion
-
+        ' Grab version number and write to log
+        MyVersion = ThisAssembly.Git.BaseTag
+        If ThisAssembly.Git.IsDirty Then
+            MyVersion &= "." & ThisAssembly.Git.Commits & "-" & ThisAssembly.Git.Commit
+        End If
         MyLog.Write("===============================================================")
-        MyLog.Write("  " & ApplicationName & " v" & MyVersion & " - STARTUP")
+        MyLog.Write("  " & ApplicationName & " " & MyVersion & " - STARTUP")
         MyLog.Write("===============================================================")
 
         ' Read Codecs.xml file to import list of recognised codecs
