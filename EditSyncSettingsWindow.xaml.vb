@@ -1,6 +1,7 @@
 ﻿#Region " Namespaces "
 Imports MusicFolderSyncer.Logger.LogLevel
 Imports MusicFolderSyncer.Toolkit
+Imports MusicFolderSyncer.Toolkit.Browsers
 Imports System.IO
 #End Region
 
@@ -38,7 +39,7 @@ Public Class EditSyncSettingsWindow
             DefaultDirectory = MyGlobalSyncSettings.SourceDirectory
         End If
 
-        Dim Browser As ReturnObject = CreateDirectoryBrowser(DefaultDirectory)
+        Dim Browser As ReturnObject = CreateDirectoryBrowser(DefaultDirectory, "Select Source Directory")
 
         If Browser.Success Then
             txtSourceDirectory.Text = CStr(Browser.MyObject)
@@ -54,7 +55,7 @@ Public Class EditSyncSettingsWindow
             DefaultPath = MyGlobalSyncSettings.ffmpegPath
         End If
 
-        Dim Browser As ReturnObject = CreateFileBrowser(DefaultPath)
+        Dim Browser As ReturnObject = CreateFileBrowser_ffmpeg(DefaultPath)
 
         If Browser.Success Then
             txt_ffmpegPath.Text = CStr(Browser.MyObject)

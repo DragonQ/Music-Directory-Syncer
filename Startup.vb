@@ -2,7 +2,6 @@
 Imports MusicFolderSyncer.Logger.LogLevel
 Imports MusicFolderSyncer.Toolkit
 Imports System.IO
-Imports Microsoft.WindowsAPICodePack.Dialogs
 #End Region
 
 Module Startup
@@ -74,70 +73,5 @@ Module Startup
 
     End Sub
 #End Region
-
-    Public Function CreateDirectoryBrowser(StartingDirectory As String) As ReturnObject
-
-        Using SelectDirectoryDialog = New CommonOpenFileDialog()
-            With SelectDirectoryDialog
-                .Title = "Select Sync Directory"
-                .IsFolderPicker = True
-                .AddToMostRecentlyUsedList = False
-                .AllowNonFileSystemItems = True
-                .DefaultDirectory = Environment.GetFolderPath(Environment.SpecialFolder.MyDocuments)
-                If Directory.Exists(StartingDirectory) Then
-                    .InitialDirectory = StartingDirectory
-                Else
-                    .InitialDirectory = .DefaultDirectory
-                End If
-                .EnsureFileExists = False
-                .EnsurePathExists = True
-                .EnsureReadOnly = False
-                .EnsureValidNames = True
-                .Multiselect = False
-                .ShowPlacesList = True
-            End With
-
-            If SelectDirectoryDialog.ShowDialog() = CommonFileDialogResult.Ok Then
-                Return New ReturnObject(True, "", SelectDirectoryDialog.FileName)
-            Else
-                Return New ReturnObject(False, "")
-            End If
-        End Using
-
-    End Function
-
-    Public Function CreateFileBrowser(DefaultPath As String) As ReturnObject
-
-        Using SelectFileDialog = New CommonOpenFileDialog()
-            With SelectFileDialog
-                .Title = "Select ffmpeg.exe Path"
-                .IsFolderPicker = False
-                .AddToMostRecentlyUsedList = False
-                .AllowNonFileSystemItems = True
-
-                .DefaultDirectory = Environment.GetFolderPath(Environment.SpecialFolder.ProgramFiles)
-                If File.Exists(DefaultPath) Then
-                    .InitialDirectory = Path.GetDirectoryName(DefaultPath)
-                Else
-                    .InitialDirectory = .DefaultDirectory
-                End If
-
-                .EnsureFileExists = True
-                .EnsurePathExists = True
-                .EnsureReadOnly = False
-                .EnsureValidNames = True
-                .Multiselect = False
-                .ShowPlacesList = True
-                .Filters.Add(New CommonFileDialogFilter("ffmpeg Executable", "*.exe"))
-            End With
-
-            If SelectFileDialog.ShowDialog() = CommonFileDialogResult.Ok Then
-                Return New ReturnObject(True, "", SelectFileDialog.FileName)
-            Else
-                Return New ReturnObject(False, "")
-            End If
-        End Using
-
-    End Function
 
 End Module
