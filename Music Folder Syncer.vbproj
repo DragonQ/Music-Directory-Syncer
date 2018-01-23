@@ -96,9 +96,8 @@
       <SpecificVersion>False</SpecificVersion>
       <HintPath>Resources\Btl.Controls.MyControls.dll</HintPath>
     </Reference>
-    <Reference Include="Fast Directory Enumerator, Version=1.0.0.0, Culture=neutral, processorArchitecture=MSIL">
-      <SpecificVersion>False</SpecificVersion>
-      <HintPath>Resources\Fast Directory Enumerator.dll</HintPath>
+    <Reference Include="FastFileInfo">
+      <HintPath>Resources\FastFileInfo.dll</HintPath>
     </Reference>
     <Reference Include="Microsoft.WindowsAPICodePack, Version=1.1.0.0, Culture=neutral, processorArchitecture=MSIL">
       <HintPath>packages\Microsoft.WindowsAPICodePack-Core.1.1.0.2\lib\Microsoft.WindowsAPICodePack.dll</HintPath>
@@ -244,11 +243,11 @@
     <PostBuildEvent>xcopy /Y "$(ProjectDir)Resources\Codecs.xml" "$(ProjectDir)$(OutDir)"
 xcopy /Y "$(ProjectDir)Resources\DefaultSettings.xml" "$(ProjectDir)$(OutDir)"</PostBuildEvent>
   </PropertyGroup>
-  <Import Project="packages\GitInfo.2.0.6\build\GitInfo.targets" Condition="Exists('packages\GitInfo.2.0.6\build\GitInfo.targets')" />
+  <Import Project="packages\GitInfo.2.0.8\build\GitInfo.targets" Condition="Exists('packages\GitInfo.2.0.8\build\GitInfo.targets')" />
   <Target Name="EnsureNuGetPackageBuildImports" BeforeTargets="PrepareForBuild">
     <PropertyGroup>
       <ErrorText>This project references NuGet package(s) that are missing on this computer. Use NuGet Package Restore to download them.  For more information, see http://go.microsoft.com/fwlink/?LinkID=322105. The missing file is {0}.</ErrorText>
     </PropertyGroup>
-    <Error Condition="!Exists('packages\GitInfo.2.0.6\build\GitInfo.targets')" Text="$([System.String]::Format('$(ErrorText)', 'packages\GitInfo.2.0.6\build\GitInfo.targets'))" />
+    <Error Condition="!Exists('packages\GitInfo.2.0.8\build\GitInfo.targets')" Text="$([System.String]::Format('$(ErrorText)', 'packages\GitInfo.2.0.8\build\GitInfo.targets'))" />
   </Target>
 </Project>

@@ -6,7 +6,7 @@ Imports System.Environment
 Imports System.Threading
 Imports System.Security.AccessControl
 Imports System.Security.Principal
-Imports CodeProject
+Imports Opulos.Core.IO
 #End Region
 
 Public Class SyncerInitialiser
@@ -61,13 +61,13 @@ Public Class SyncerInitialiser
     Private Sub SyncFolder(sender As Object, e As DoWorkEventArgs)
 
         Dim FolderPath As String = MyGlobalSyncSettings.SourceDirectory
-        Dim MyFiles As FileData() = Nothing
+        Dim MyFiles As FastFileInfo() = Nothing
         Dim MyFilesToProcess As New List(Of String)
 
         MyLog.Write("Scanning files in source directory.", Information)
 
         Try
-            MyFiles = FastDirectoryEnumerator.EnumerateFiles(FolderPath, "*.*", SearchOption.AllDirectories).ToArray
+            MyFiles = FastFileInfo.EnumerateFiles(FolderPath, "*.*", SearchOption.AllDirectories).ToArray
         Catch ex As Exception
             MyLog.Write("Failed to grab file list from source directory. Exception: " & ex.Message, Warning)
             e.Result = New ReturnObject(False, ex.Message)
@@ -182,7 +182,7 @@ Public Class SyncerInitialiser
             ThreadPool.SetMinThreads(MyGlobalSyncSettings.MaxThreads, MyGlobalSyncSettings.MaxThreads)
             ThreadPool.SetMaxThreads(MyGlobalSyncSettings.MaxThreads, MyGlobalSyncSettings.MaxThreads)
 
-            For Each MyFile As FileData In MyFiles
+            For Each MyFile As FastFileInfo In MyFiles
                 If FileID = MaxFileID Then
                     FileID = 1
                 Else
@@ -190,7 +190,7 @@ Public Class SyncerInitialiser
                 End If
 
                 ThreadsStarted += One
-                Dim InputObjects As Object() = {FileID, MyFile.Path, MySyncSettings}
+                Dim InputObjects As Object() = {FileID, MyFile.FullName, MySyncSettings}
                 ThreadPool.QueueUserWorkItem(New WaitCallback(AddressOf TransferToSyncFolderDelegate), InputObjects)
             Next
 
