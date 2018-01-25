@@ -232,12 +232,11 @@ Public Class SyncerInitialiser
 
             '==============================================================================================
 
+            e.Result = New ReturnObject(True, Nothing, SyncFolderSize)
         Catch ex As Exception
             MyLog.Write("Failed to complete sync. Exception: " & ex.Message, Warning)
             e.Result = New ReturnObject(False, ex.Message)
         End Try
-
-        e.Result = New ReturnObject(True, Nothing, SyncFolderSize)
 
     End Sub
 
