@@ -61,13 +61,13 @@ Public Class SyncerInitialiser
     Private Sub SyncFolder(sender As Object, e As DoWorkEventArgs)
 
         Dim FolderPath As String = MyGlobalSyncSettings.SourceDirectory
-        Dim MyFiles As FastFileInfo() = Nothing
+        Dim MyFiles As IEnumerable(Of FastFileInfo) = Nothing
         Dim MyFilesToProcess As New List(Of String)
 
         MyLog.Write("Scanning files in source directory.", Information)
 
         Try
-            MyFiles = FastFileInfo.EnumerateFiles(FolderPath, "*.*", SearchOption.AllDirectories).ToArray
+            MyFiles = FastFileInfo.EnumerateFiles(FolderPath, "*.*", SearchOption.AllDirectories)
         Catch ex As Exception
             MyLog.Write("Failed to grab file list from source directory. Exception: " & ex.Message, Warning)
             e.Result = New ReturnObject(False, ex.Message)
@@ -78,13 +78,8 @@ Public Class SyncerInitialiser
             MyLog.Write("Failed to grab file list from source directory. Exception: EnumerateFiles returned nothing.", Warning)
             e.Result = New ReturnObject(False, "EnumerateFiles returned nothing.")
             Exit Sub
-        ElseIf MyFiles.Length < 1 Then
-            MyLog.Write("Failed to grab file list from source directory. Exception: EnumerateFiles returned no files.", Warning)
-            e.Result = New ReturnObject(False, "EnumerateFiles returned no files.")
-            Exit Sub
         End If
 
-        Dim ThreadsToRun As Int32 = MyFiles.Count
         Dim ThreadsStarted As UInt32 = 0
         Dim FileID As Int32 = 0
         Dim One As UInt32 = 1
@@ -135,6 +130,7 @@ Public Class SyncerInitialiser
             '==============================================================================================
             '============== My own custom way of handling threads, replaced with ThreadPool ===============
             '==============================================================================================
+            'Dim ThreadsToRun As Int32 = MyFiles.Count
             'For Each MyFile As FileData In MyFiles
             '    Do
             '        Dim MyThreadsRunning As Int64 = Interlocked.Read(ThreadsRunning)
@@ -183,6 +179,12 @@ Public Class SyncerInitialiser
             ThreadPool.SetMaxThreads(MyGlobalSyncSettings.MaxThreads, MyGlobalSyncSettings.MaxThreads)
 
             For Each MyFile As FastFileInfo In MyFiles
+                If SyncBackgroundWorker.CancellationPending Then
+                    e.Cancel = True
+                    e.Result = New ReturnObject(False, "Sync was cancelled.")
+                    Exit Sub
+                End If
+
                 If FileID = MaxFileID Then
                     FileID = 1
                 Else
@@ -193,6 +195,11 @@ Public Class SyncerInitialiser
                 Dim InputObjects As Object() = {FileID, MyFile.FullName, MySyncSettings}
                 ThreadPool.QueueUserWorkItem(New WaitCallback(AddressOf TransferToSyncFolderDelegate), InputObjects)
             Next
+
+            If ThreadsStarted < 1 Then
+                MyLog.Write("Failed to grab file list from source directory. Exception: EnumerateFiles returned no files.", Warning)
+                Throw New Exception("No files found in source directory.")
+            End If
 
             'All threads have been started, now wait for them all to finish
             Dim CheckPointThreadsCompleted As Int64 = Interlocked.Read(ThreadsCompleted)
@@ -225,12 +232,11 @@ Public Class SyncerInitialiser
 
             '==============================================================================================
 
+            e.Result = New ReturnObject(True, Nothing, SyncFolderSize)
         Catch ex As Exception
             MyLog.Write("Failed to complete sync. Exception: " & ex.Message, Warning)
             e.Result = New ReturnObject(False, ex.Message)
         End Try
-
-        e.Result = New ReturnObject(True, Nothing, SyncFolderSize)
 
     End Sub
 
