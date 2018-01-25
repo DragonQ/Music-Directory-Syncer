@@ -179,6 +179,12 @@ Public Class SyncerInitialiser
             ThreadPool.SetMaxThreads(MyGlobalSyncSettings.MaxThreads, MyGlobalSyncSettings.MaxThreads)
 
             For Each MyFile As FastFileInfo In MyFiles
+                If SyncBackgroundWorker.CancellationPending Then
+                    e.Cancel = True
+                    e.Result = New ReturnObject(False, "Sync was cancelled.")
+                    Exit Sub
+                End If
+
                 If FileID = MaxFileID Then
                     FileID = 1
                 Else
