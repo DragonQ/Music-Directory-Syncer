@@ -63,6 +63,7 @@ Public Class SyncerInitialiser
         Dim FolderPath As String = MyGlobalSyncSettings.SourceDirectory
         Dim MyFiles As IEnumerable(Of FastFileInfo) = Nothing
         Dim MyFilesToProcess As New List(Of String)
+        Dim CancelTokenSource As New CancellationTokenSource()
 
         MyLog.Write("Scanning files in source directory.", Information)
 
@@ -180,6 +181,7 @@ Public Class SyncerInitialiser
 
             For Each MyFile As FastFileInfo In MyFiles
                 If SyncBackgroundWorker.CancellationPending Then
+                    CancelTokenSource.Cancel()
                     e.Cancel = True
                     e.Result = New ReturnObject(False, "Sync was cancelled.")
                     Exit Sub
@@ -192,7 +194,7 @@ Public Class SyncerInitialiser
                 End If
 
                 ThreadsStarted += One
-                Dim InputObjects As Object() = {FileID, MyFile.FullName, MySyncSettings}
+                Dim InputObjects As Object() = {FileID, MyFile.FullName, MySyncSettings, CancelTokenSource.Token}
                 ThreadPool.QueueUserWorkItem(New WaitCallback(AddressOf TransferToSyncFolderDelegate), InputObjects)
             Next
 
@@ -209,6 +211,7 @@ Public Class SyncerInitialiser
 
             Do
                 If SyncBackgroundWorker.CancellationPending Then
+                    CancelTokenSource.Cancel()
                     e.Cancel = True
                     e.Result = New ReturnObject(False, "Sync was cancelled.")
                     Exit Sub
@@ -244,12 +247,14 @@ Public Class SyncerInitialiser
 
         Try
             Dim InputObjects As Object() = CType(Input, Object())
-            Dim ProcessID As Int32 = CType(InputObjects(0), Int32)
-            Dim FilePath As String = CType(InputObjects(1), String)
-            Dim NewSyncSettings As SyncSettings() = CType(InputObjects(2), SyncSettings())
-            Dim TransferResult As ReturnObject
+            Dim CancelToken As CancellationToken = CType(InputObjects(3), CancellationToken)
 
-            Try
+            If Not CancelToken.IsCancellationRequested Then
+                Dim ProcessID As Int32 = CType(InputObjects(0), Int32)
+                Dim FilePath As String = CType(InputObjects(1), String)
+                Dim NewSyncSettings As SyncSettings() = CType(InputObjects(2), SyncSettings())
+                Dim TransferResult As ReturnObject
+
                 Using MyFileParser As New FileParser(MyGlobalSyncSettings, ProcessID, FilePath, NewSyncSettings)
                     TransferResult = MyFileParser.TransferToSyncFolder()
                 End Using
@@ -262,15 +267,13 @@ Public Class SyncerInitialiser
                 Else
                     MyLog.Write(ProcessID, "File could not be processed. Error: " & TransferResult.ErrorMessage, Warning)
                 End If
-            Catch ex As Exception
-                MyLog.Write(ProcessID, "File could not be processed. Malformed input to TransferToSyncFolderDelegate subroutine.", Warning)
-            End Try
+            End If
         Catch ex As Exception
             MyLog.Write(Int32.MaxValue, "File could not be processed. Malformed input to TransferToSyncFolderDelegate.", Warning)
+        Finally
+            Interlocked.Increment(ThreadsCompleted)
+            'Interlocked.Decrement(ThreadsRunning)
         End Try
-
-        Interlocked.Increment(ThreadsCompleted)
-        'Interlocked.Decrement(ThreadsRunning)
 
     End Sub
 
