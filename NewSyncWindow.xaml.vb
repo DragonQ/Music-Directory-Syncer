@@ -439,10 +439,11 @@ Public Class NewSyncWindow
             Try
                 MyLog.Write("Sync cancelled, now force-closing ffmpeg instances...", Warning)
 
-                Dim taskkill As New ProcessStartInfo("taskkill")
-                taskkill.CreateNoWindow = True
-                taskkill.UseShellExecute = False
-                taskkill.Arguments = " /F /IM " & Path.GetFileName(MyGlobalSyncSettings.ffmpegPath) & " /T"
+                Dim taskkill As New ProcessStartInfo("taskkill") With {
+                    .CreateNoWindow = True,
+                    .UseShellExecute = False,
+                    .Arguments = " /F /IM " & Path.GetFileName(MyGlobalSyncSettings.ffmpegPath) & " /T"
+                }
                 Dim taskkillProcess As Process = Process.Start(taskkill)
                 taskkillProcess.WaitForExit()
 
@@ -486,7 +487,7 @@ Public Class NewSyncWindow
             If SecondsTaken > 60 Then 'Longer than one minute
                 Dim MinutesTaken As Int32 = CInt(Math.Round(SecondsTaken / 60, 0, MidpointRounding.AwayFromZero) - 1)
                 Dim SecondsRemaining = SecondsTaken - MinutesTaken * 60
-                TimeTaken = String.Format(EnglishGB, "{0:0} minutes {1:00} seconds", {MinutesTaken, SecondsRemaining})
+                TimeTaken = String.Format(EnglishGB, "{0:0} minutes {1:00} seconds", MinutesTaken, SecondsRemaining)
             Else
                 TimeTaken = String.Format(EnglishGB, "{0:0}", SecondsTaken) & " s"
             End If

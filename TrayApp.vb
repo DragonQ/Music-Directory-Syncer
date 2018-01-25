@@ -55,10 +55,11 @@ Public Class TrayApp
                                                      mnuSep3, mnuExit})
 
         'Initialize the notification area icon
-        Tray = New NotifyIcon
-        Tray.Icon = My.Resources.Tray_Icon
-        Tray.ContextMenuStrip = MainMenu
-        Tray.Text = ApplicationName
+        Tray = New NotifyIcon With {
+            .Icon = My.Resources.Tray_Icon,
+            .ContextMenuStrip = MainMenu,
+            .Text = ApplicationName
+        }
 
         'Either display the Create New Sync window or start the file system watcher for background syncing
         If LaunchNewSyncWindow Then
@@ -290,11 +291,12 @@ Public Class TrayApp
             GlobalFileProcessingQueue = New FileProcessingQueue(WaitBeforeProcessingFiles_ms, UserGlobalSyncSettings.MaxThreads)
 
             'Create file watcher
-            FileWatcher = New MyFileSystemWatcher(UserGlobalSyncSettings.SourceDirectory)
-            FileWatcher.IncludeSubdirectories = True
-            FileWatcher.NotifyFilter = NotifyFilters.FileName Or NotifyFilters.LastWrite
-            FileWatcher.EnableRaisingEvents = True
-            FileWatcher.Interval = FileWatcherInterval_ms
+            FileWatcher = New MyFileSystemWatcher(UserGlobalSyncSettings.SourceDirectory) With {
+                .IncludeSubdirectories = True,
+                .NotifyFilter = NotifyFilters.FileName Or NotifyFilters.LastWrite,
+                .EnableRaisingEvents = True,
+                .Interval = FileWatcherInterval_ms
+            }
 
             'Add handlers for file watcher
             AddHandler FileWatcher.Changed, AddressOf FileChanged
@@ -303,11 +305,12 @@ Public Class TrayApp
             AddHandler FileWatcher.Deleted, AddressOf FileChanged
 
             'Create directory watcher
-            DirectoryWatcher = New MyFileSystemWatcher(UserGlobalSyncSettings.SourceDirectory)
-            DirectoryWatcher.IncludeSubdirectories = True
-            DirectoryWatcher.NotifyFilter = NotifyFilters.DirectoryName
-            DirectoryWatcher.EnableRaisingEvents = True
-            DirectoryWatcher.Interval = FileWatcherInterval_ms
+            DirectoryWatcher = New MyFileSystemWatcher(UserGlobalSyncSettings.SourceDirectory) With {
+                .IncludeSubdirectories = True,
+                .NotifyFilter = NotifyFilters.DirectoryName,
+                .EnableRaisingEvents = True,
+                .Interval = FileWatcherInterval_ms
+            }
 
             'Add handlers for directory watcher
             AddHandler DirectoryWatcher.Changed, AddressOf FileChanged
@@ -546,10 +549,11 @@ Public Class TrayApp
             Try
                 MyLog.Write("Sync cancelled, now force-closing ffmpeg instances...", Warning)
 
-                Dim taskkill As New ProcessStartInfo("taskkill")
-                taskkill.CreateNoWindow = True
-                taskkill.UseShellExecute = False
-                taskkill.Arguments = " /F /IM " & Path.GetFileName(UserGlobalSyncSettings.ffmpegPath) & " /T"
+                Dim taskkill As New ProcessStartInfo("taskkill") With {
+                    .CreateNoWindow = True,
+                    .UseShellExecute = False,
+                    .Arguments = " /F /IM " & Path.GetFileName(UserGlobalSyncSettings.ffmpegPath) & " /T"
+                }
                 Dim taskkillProcess As Process = Process.Start(taskkill)
                 taskkillProcess.WaitForExit()
 
@@ -582,7 +586,7 @@ Public Class TrayApp
                     If SecondsTaken > 60 Then 'Longer than one minute
                         Dim MinutesTaken As Int32 = CInt(Math.Round(SecondsTaken / 60, 0, MidpointRounding.AwayFromZero) - 1)
                         Dim SecondsRemaining = SecondsTaken - MinutesTaken * 60
-                        TimeTaken = String.Format(EnglishGB, "{0:0} minutes {1:00} seconds", {MinutesTaken, SecondsRemaining})
+                        TimeTaken = String.Format(EnglishGB, "{0:0} minutes {1:00} seconds", MinutesTaken, SecondsRemaining)
                     Else
                         TimeTaken = String.Format(EnglishGB, "{0:0}", SecondsTaken) & " s"
                     End If

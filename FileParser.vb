@@ -290,9 +290,10 @@ Class FileParser
         End Try
 
         Try
-            Dim ffmpeg As New ProcessStartInfo(MyGlobalSyncSettings.ffmpegPath)
-            ffmpeg.CreateNoWindow = True
-            ffmpeg.UseShellExecute = False
+            Dim ffmpeg As New ProcessStartInfo(MyGlobalSyncSettings.ffmpegPath) With {
+                .CreateNoWindow = True,
+                .UseShellExecute = False
+            }
 
             Dim FiltersString As String = ""
             If SyncSetting.ReplayGainSetting <> ReplayGainMode.None Then
