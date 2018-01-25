@@ -8,7 +8,7 @@ Imports System.Threading
 Class FileProcessingQueue
     Implements IDisposable
 
-    Private TaskQueueMutex As New Object
+    Private TaskQueueMutex As Object
     Private FileTaskList As New List(Of FileProcessingInfo)
     Private WaitBeforeSlowProcessing_ms As Int32 = 5000     'Repeated file-changed events within this time period cause file processing to restart
     Private WaitBeforeFastProcessing_ms As Int32 = 50       'Non-zero to give time for cancellation events to filter through
@@ -18,6 +18,7 @@ Class FileProcessingQueue
 
     Public Sub New(WaitBeforeProcessingFiles_ms As Int32, NewMaxThreads As Int64)
 
+        TaskQueueMutex = New Object
         WaitBeforeSlowProcessing_ms = WaitBeforeProcessingFiles_ms
         MaxThreads = NewMaxThreads
 
