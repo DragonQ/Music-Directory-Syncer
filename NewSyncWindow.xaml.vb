@@ -341,8 +341,8 @@ Public Class NewSyncWindow
                 End If
 
                 'Change remaining sync settings as specified by the user
-                MyGlobalSyncSettings.SourceDirectory = txtSourceDirectory.Text
-                MySyncSettings.SyncDirectory = txtSyncDirectory.Text
+                MyGlobalSyncSettings.SourceDirectory = txtSourceDirectory.Text.TrimEnd("\"c)
+                MySyncSettings.SyncDirectory = txtSyncDirectory.Text.TrimEnd("\"c)
                 MyGlobalSyncSettings.MaxThreads = CInt(spinThreads.Value)
                 MyGlobalSyncSettings.ffmpegPath = txt_ffmpegPath.Text
                 MySyncSettings.SetWatcherTags(NewTagsToSync)

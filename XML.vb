@@ -116,7 +116,7 @@ Module XML
                 If GlobalSettings.Count > 0 Then
                     If GlobalSettings.Count = 1 Then
                         If Not GlobalSettings(0).EnableSync Is Nothing Then GlobalSyncSettings.SyncIsEnabled = True
-                        If Not GlobalSettings(0).SourceDirectory Is Nothing Then GlobalSyncSettings.SourceDirectory = GlobalSettings(0).SourceDirectory.Value
+                        If Not GlobalSettings(0).SourceDirectory Is Nothing Then GlobalSyncSettings.SourceDirectory = GlobalSettings(0).SourceDirectory.Value.TrimEnd("\"c)
                         If Not GlobalSettings(0).ffmpegPath Is Nothing Then GlobalSyncSettings.ffmpegPath = GlobalSettings(0).ffmpegPath.Value
                         If Not GlobalSettings(0).LogLevel Is Nothing Then GlobalSyncSettings.SetLogLevel(GlobalSettings(0).LogLevel)
                         If Not GlobalSettings(0).MaxThreads Is Nothing Then GlobalSyncSettings.MaxThreads = CInt(GlobalSettings(0).MaxThreads)
@@ -145,7 +145,7 @@ Module XML
                         'Apply all default values before searching for this sync's settings
                         Dim NewSyncSettings As New SyncSettings(DefaultSettings.GetSyncSettings(0))
 
-                        If Not MySetting.SyncDirectory Is Nothing Then NewSyncSettings.SyncDirectory = MySetting.SyncDirectory.Value
+                        If Not MySetting.SyncDirectory Is Nothing Then NewSyncSettings.SyncDirectory = MySetting.SyncDirectory.Value.TrimEnd("\"c)
 
                         If Not MySetting.ReplayGain Is Nothing Then
                             NewSyncSettings.SetReplayGainSetting(MySetting.ReplayGain)

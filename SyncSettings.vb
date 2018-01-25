@@ -11,7 +11,7 @@
     Public Sub New(MySyncIsEnabled As Boolean, MySourceDirectory As String, My_ffmpegPath As String, MyMaxThreads As Int32, MySyncSettingsList As List(Of SyncSettings), MyLogLevel As String)
 
         SyncIsEnabled = MySyncIsEnabled
-        SourceDirectory = MySourceDirectory
+        SourceDirectory = MySourceDirectory.TrimEnd("\"c)
         ffmpegPath = My_ffmpegPath
         MaxThreads = MyMaxThreads
         If Not MySyncSettingsList Is Nothing Then SyncSettings = MySyncSettingsList.ToArray()
@@ -77,7 +77,7 @@ Public Class SyncSettings
     Public Sub New(MySyncDirectory As String, MyWatcherCodecs As List(Of Codec), MyWatcherTags As List(Of Codec.Tag),
                    MyTranscodeLosslessFiles As TranscodeMode, MyEncoder As Codec, MyReplayGain As ReplayGainMode)
 
-        SyncDirectory = MySyncDirectory
+        SyncDirectory = MySyncDirectory.TrimEnd("\"c)
         WatcherCodecFilter = MyWatcherCodecs.ToArray
         WatcherTags = MyWatcherTags.ToArray
         TranscodeSetting = MyTranscodeLosslessFiles
