@@ -337,7 +337,7 @@ Public Class TrayApp
         MyLog.Write("File system watcher stopped.", Information)
 
         If ShowTooltip AndAlso Tray.Visible Then
-            If GlobalFileProcessingQueue.CountTasksAlreadyRunning() > 0 Then
+            If GlobalFileProcessingQueue IsNot Nothing AndAlso GlobalFileProcessingQueue.CountTasksAlreadyRunning() > 0 Then
                 Tray.ShowBalloonTip(BalloonTime, ApplicationName, "Syncer disabled. Currently processing files will be allowed to complete.", ToolTipIcon.Info)
             Else
                 Tray.ShowBalloonTip(BalloonTime, ApplicationName, "Syncer disabled.", ToolTipIcon.Info)
