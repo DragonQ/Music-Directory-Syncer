@@ -429,6 +429,7 @@ Public Class NewSyncWindow
         SyncTimer.Stop()
         txtFilesRemaining.Text = ""
         txtFilesProcessed.Text = ""
+        btnNewSync.Content = "Start New Sync"
         FilesCompletedProgressBar.Value = 100
 
         SyncInProgress = False
