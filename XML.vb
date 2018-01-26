@@ -18,7 +18,7 @@ Module XML
     <System.Runtime.CompilerServices.Extension> _
     Public Function OptionalElement(ActionElement As XElement, ElementName As String) As String
         Dim Element = ActionElement.Element(ElementName)
-        Return If((Element IsNot Nothing), Element.Value, Nothing)
+        Return Element?.Value
     End Function
 
     Public Function ReadCodecs() As List(Of Codec)
@@ -80,8 +80,9 @@ Module XML
 
     Public Function ReadDefaultSettings(Codecs As List(Of Codec)) As ReturnObject
         Dim DefaultSync As New SyncSettings("", New List(Of Codec), New List(Of Codec.Tag), TranscodeMode.LosslessOnly, Nothing, ReplayGainMode.None)
-        Dim DefaultSyncList As New List(Of SyncSettings)
-        DefaultSyncList.Add(DefaultSync)
+        Dim DefaultSyncList As New List(Of SyncSettings) From {
+            DefaultSync
+        }
         Return ReadSettings(Codecs, Path.Combine(System.AppDomain.CurrentDomain.BaseDirectory, "DefaultSettings.xml"), New GlobalSyncSettings(False, "", "", Environment.ProcessorCount, DefaultSyncList, "Information"))
     End Function
 
@@ -269,9 +270,10 @@ Module XML
     Public Function SaveSyncSettings(MyGlobalSyncSettings As GlobalSyncSettings) As ReturnObject
 
         Try
-            Dim XMLSettings As XmlWriterSettings = New XmlWriterSettings()
-            XMLSettings.Indent = True
-            XMLSettings.Encoding = New System.Text.UTF8Encoding
+            Dim XMLSettings As XmlWriterSettings = New XmlWriterSettings With {
+                .Indent = True,
+                .Encoding = New System.Text.UTF8Encoding
+            }
             Dim StringToWrite As String = Nothing
 
             'Create StringWriter to store XML text

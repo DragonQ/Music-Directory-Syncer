@@ -462,8 +462,7 @@ Public Class NewSyncWindow
 
         If e.Result Is Nothing Then
             MyLog.Write("Sync failed: no result from background worker.", Fatal)
-            System.Windows.MessageBox.Show("No result from background worker.", "Sync Failed!",
-                    MessageBoxButton.OK, MessageBoxImage.Error)
+            System.Windows.MessageBox.Show("No result from background worker.", "Sync Failed!", MessageBoxButton.OK, MessageBoxImage.Error)
             FilesCompletedProgressBar.IsIndeterminate = False
             EnableDisableControls(True)
             Exit Sub
