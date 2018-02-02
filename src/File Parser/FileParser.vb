@@ -17,7 +17,7 @@ Class FileParser
     Private ProcessID As Int32
     Private Shared FileTimeout As Int32 = 60
     ReadOnly Property FilePath As String
-    Private FileLock As Boolean
+    Private HaveFileLock As Boolean
     Private MyGlobalSyncSettings As GlobalSyncSettings
     Private SyncSettings As SyncSettings()
     Private SourceFileStream As FileStream = Nothing
@@ -40,13 +40,13 @@ Class FileParser
             SourceFileStream = WaitForFile(FilePath, FileMode.Open, FileAccess.Read, FileShare.Read, FileTimeout)
             If SourceFileStream Is Nothing Then
                 MyLog.Write(ProcessID, "Could not get file system lock on source file: """ & FilePath.Substring(MyGlobalSyncSettings.SourceDirectory.Length) & """.", Warning)
-                FileLock = False
+                HaveFileLock = False
             Else
-                FileLock = True
+                HaveFileLock = True
             End If
         Else
             MyLog.Write(ProcessID, "Source file doesn't exist: """ & FilePath.Substring(MyGlobalSyncSettings.SourceDirectory.Length) & """.", Debug)
-            FileLock = False
+            HaveFileLock = False
         End If
 
     End Sub
@@ -140,7 +140,7 @@ Class FileParser
         Dim MyReturnObject As ReturnObject
 
         Try
-            If Not FileLock Then Throw New System.Exception("Could not get file system lock on source file.")
+            If Not HaveFileLock Then Throw New System.Exception("Could not get file system lock on source file.")
             Dim TranscodedFilePath As String = Nothing
             Dim NewFilesSize As Int64 = 0
             For Each SyncSetting In SyncSettings
@@ -198,7 +198,7 @@ Class FileParser
         Dim MyReturnObject As ReturnObject
 
         Try
-            If Not FileLock Then Throw New System.Exception("Could not get file system lock on source file.")
+            If Not HaveFileLock Then Throw New System.Exception("Could not get file system lock on source file.")
             Dim TranscodedFilePath As String = Nothing
             For Each SyncSetting In SyncSettings
                 Dim FileCodec As Codec = CheckFileCodec(SyncSetting.GetWatcherCodecs())

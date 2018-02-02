@@ -21,7 +21,7 @@ Public Class NewSyncWindow
     Dim MyGlobalSyncSettings As GlobalSyncSettings
     Dim MySyncSettings As SyncSettings
     Dim MySyncSettingsList As List(Of SyncSettings)
-    Dim NewSync As Boolean
+    Dim IsNewSync As Boolean
     Dim SyncInProgress As Boolean = False
 
 #Region " New "
@@ -35,7 +35,7 @@ Public Class NewSyncWindow
         MyGlobalSyncSettings = NewGlobalSyncSettings
         MySyncSettingsList = MyGlobalSyncSettings.GetSyncSettings().ToList()
         MySyncSettings = New SyncSettings(MySyncSettingsList(0))
-        NewSync = MyNewSync
+        IsNewSync = MyNewSync
 
         ' Define collection for FileTypesToSync, which is bound to lstFileTypesToSync
         FileTypesToSync = New ObservableCollection(Of Codec)
@@ -104,7 +104,7 @@ Public Class NewSyncWindow
         txtSourceDirectory.Focus()
 
         ' Disable fields if this is an additional sync setup
-        If Not NewSync Then
+        If Not IsNewSync Then
             txt_ffmpegPath.IsEnabled = False
             btnBrowse_ffmpeg.IsEnabled = False
             txtSourceDirectory.IsEnabled = False
@@ -349,7 +349,7 @@ Public Class NewSyncWindow
                 MySyncSettings.SetWatcherCodecs(NewFileTypesToSync)
 
                 'Update GlobalSyncSettings object
-                If NewSync Then
+                If IsNewSync Then
                     MySyncSettingsList = New List(Of SyncSettings)
                 End If
                 MySyncSettingsList.Add(MySyncSettings)
@@ -380,7 +380,7 @@ Public Class NewSyncWindow
         'Directory controls
         txtSyncDirectory.IsEnabled = Enable
         btnBrowseSyncDirectory.IsEnabled = Enable
-        If NewSync Then
+        If IsNewSync Then
             txtSourceDirectory.IsEnabled = Enable
             btnBrowseSourceDirectory.IsEnabled = Enable
             spinThreads.IsEnabled = Enable

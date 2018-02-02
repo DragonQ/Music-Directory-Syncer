@@ -496,7 +496,6 @@ Public Class TrayApp
 
     Private Shared Function FilterMatch(FileName As String) As Boolean
 
-        Dim Match As Boolean = False
         Dim FileExtension As String = Path.GetExtension(FileName).ToLower(EnglishGB)
         Dim SyncSettings As SyncSettings() = UserGlobalSyncSettings.GetSyncSettings()
 
