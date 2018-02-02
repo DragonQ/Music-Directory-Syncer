@@ -423,7 +423,7 @@ Public Class TrayApp
 
         If ActionTaken Then
             'Create new file processing task in a separate thread so we don't clog up the FileSystemWatcher events thread
-            Using MyFileParser As New FileParser(UserGlobalSyncSettings, FileID, e.FullPath)
+            Using MyFileParser As New FileParser(UserGlobalSyncSettings, FileID, e.FullPath, MyDirectoryPermissions)
                 Dim TokenSource As New CancellationTokenSource()
                 Dim NewFileProcessingInfo As New FileProcessingInfo(FileID, e.FullPath, MyFileParser, ChangeType, TokenSource, OldFilePath)
                 Dim t As Task(Of ReturnObject) = Task.Run(Function() GlobalFileProcessingQueue.AddTask(NewFileProcessingInfo), NewFileProcessingInfo.CancelState.Token)

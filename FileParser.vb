@@ -6,6 +6,7 @@ Imports MusicFolderSyncer.Codec.CodecType
 Imports MusicFolderSyncer.SyncSettings.TranscodeMode
 Imports System.IO
 Imports System.Environment
+Imports System.Security.AccessControl
 Imports System.Threading
 #End Region
 
@@ -20,9 +21,10 @@ Class FileParser
     Private MyGlobalSyncSettings As GlobalSyncSettings
     Private SyncSettings As SyncSettings()
     Private SourceFileStream As FileStream = Nothing
+    Private DirectoryAccessPermissions As DirectorySecurity
 
 #Region " New "
-    Public Sub New(ByRef NewGlobalSyncSettings As GlobalSyncSettings, ByVal NewProcessID As Int32, ByVal NewFilePath As String, Optional NewSyncSettings As SyncSettings() = Nothing)
+    Public Sub New(ByRef NewGlobalSyncSettings As GlobalSyncSettings, ByVal NewProcessID As Int32, ByVal NewFilePath As String, ByVal NewDirectoryAccessPermissions As DirectorySecurity, Optional NewSyncSettings As SyncSettings() = Nothing)
 
         ProcessID = NewProcessID
         FilePath = NewFilePath
@@ -32,6 +34,7 @@ Class FileParser
         Else
             SyncSettings = NewSyncSettings
         End If
+        DirectoryAccessPermissions = NewDirectoryAccessPermissions
 
         If File.Exists(FilePath) Then
             SourceFileStream = WaitForFile(FilePath, FileMode.Open, FileAccess.Read, FileShare.Read, FileTimeout)
@@ -165,7 +168,7 @@ Class FileParser
                                 If Not Result.Success Then Throw New Exception(Result.ErrorMessage)
                             End If
                         Else
-                            Directory.CreateDirectory(Path.GetDirectoryName(SyncFilePath))
+                            Directory.CreateDirectory(Path.GetDirectoryName(SyncFilePath), DirectoryAccessPermissions)
                             Dim Result As ReturnObject = SafeCopy(SourceFileStream, SyncFilePath)
                             If Not Result.Success Then Throw New Exception(Result.ErrorMessage)
                         End If
@@ -215,7 +218,7 @@ Class FileParser
 
                         If File.Exists(OldSyncFilePath) Then
                             Dim DirName = Path.GetDirectoryName(SyncFilePath)
-                            If Not Directory.Exists(DirName) Then Directory.CreateDirectory(DirName)
+                            If Not Directory.Exists(DirName) Then Directory.CreateDirectory(DirName, DirectoryAccessPermissions)
                             File.Move(OldSyncFilePath, SyncFilePath)
                             MyLog.Write(ProcessID, "...successfully renamed file in sync folder.", Information)
 
@@ -247,7 +250,7 @@ Class FileParser
                                                     SyncSetting.Encoder.GetFileExtensions(0)
                                 End If
                             Else
-                                Directory.CreateDirectory(Path.GetDirectoryName(SyncFilePath))
+                                Directory.CreateDirectory(Path.GetDirectoryName(SyncFilePath), DirectoryAccessPermissions)
                                 Dim Result As ReturnObject = SafeCopy(SourceFileStream, SyncFilePath)
                                 If Not Result.Success Then Throw New Exception(Result.ErrorMessage)
                             End If
@@ -279,7 +282,7 @@ Class FileParser
         Try
             Dim OutputDirectory As String = Path.GetDirectoryName(FileTo)
             OutputFilePath = Path.Combine(OutputDirectory, Path.GetFileNameWithoutExtension(FileTo)) & SyncSetting.Encoder.GetFileExtensions(0)
-            Directory.CreateDirectory(OutputDirectory)
+            Directory.CreateDirectory(OutputDirectory, DirectoryAccessPermissions)
         Catch ex As Exception
             Dim MyError As String = ex.Message
             If ex.InnerException IsNot Nothing Then
@@ -329,7 +332,7 @@ Class FileParser
 #End Region
 
 #Region " Safe File Operations "
-    Private Shared Function SafeCopy(SourceFilePath As String, SyncFilePath As String) As ReturnObject
+    Private Function SafeCopy(SourceFilePath As String, SyncFilePath As String) As ReturnObject
         Dim Result As ReturnObject = Nothing
 
         If File.Exists(SourceFilePath) Then
@@ -343,14 +346,14 @@ Class FileParser
         Return Result
     End Function
 
-    Private Shared Function SafeCopy(SourceFileStream As FileStream, SyncFilePath As String) As ReturnObject
+    Private Function SafeCopy(SourceFileStream As FileStream, SyncFilePath As String) As ReturnObject
 
         Dim MyReturnObject As ReturnObject
 
         Try
             If SourceFileStream Is Nothing Then Throw New Exception("Could not get file system lock on source file.")
             Dim OutputDirectory As String = Path.GetDirectoryName(SyncFilePath)
-            Directory.CreateDirectory(OutputDirectory)
+            Directory.CreateDirectory(OutputDirectory, DirectoryAccessPermissions)
             Using NewFile As FileStream = WaitForFile(SyncFilePath, FileMode.CreateNew, FileAccess.ReadWrite, FileShare.None, FileTimeout)
                 If Not NewFile Is Nothing Then
                     SourceFileStream.CopyTo(NewFile)

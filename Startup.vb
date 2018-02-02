@@ -2,6 +2,8 @@
 Imports MusicFolderSyncer.Logger.LogLevel
 Imports MusicFolderSyncer.Toolkit
 Imports System.IO
+Imports System.Security.AccessControl
+Imports System.Security.Principal
 #End Region
 
 Module Startup
@@ -10,6 +12,7 @@ Module Startup
     Private Const LogLevel As Logger.LogLevel = Information
     Public MyLogFilePath As String = Path.Combine(System.AppDomain.CurrentDomain.BaseDirectory, ApplicationName & ".log")
     Public MyVersion As String = ""
+    Public MyDirectoryPermissions As DirectorySecurity
 
     Public Const ApplicationName As String = "Music Folder Syncer"
     Public MyLog As Logger
@@ -51,6 +54,27 @@ Module Startup
         End If
 
         MyLog.DebugLevel = DefaultGlobalSyncSettings.LogLevel
+
+        'Create global directory access permissions
+        Dim CurrentUser As WindowsIdentity = WindowsIdentity.GetCurrent()
+        Dim SystemUser = New SecurityIdentifier(WellKnownSidType.LocalSystemSid, Nothing)
+        Dim OtherUsers = New SecurityIdentifier(WellKnownSidType.BuiltinUsersSid, Nothing)
+        MyDirectoryPermissions = New DirectorySecurity
+        MyDirectoryPermissions.AddAccessRule(New FileSystemAccessRule(CurrentUser.User,
+                                                                      FileSystemRights.FullControl,
+                                                                      InheritanceFlags.ContainerInherit Or InheritanceFlags.ObjectInherit,
+                                                                      PropagationFlags.None,
+                                                                      AccessControlType.Allow))
+        MyDirectoryPermissions.AddAccessRule(New FileSystemAccessRule(SystemUser,
+                                                                      FileSystemRights.FullControl,
+                                                                      InheritanceFlags.ContainerInherit Or InheritanceFlags.ObjectInherit,
+                                                                      PropagationFlags.None,
+                                                                      AccessControlType.Allow))
+        MyDirectoryPermissions.AddAccessRule(New FileSystemAccessRule(OtherUsers,
+                                                                      FileSystemRights.ReadAndExecute,
+                                                                      InheritanceFlags.ContainerInherit Or InheritanceFlags.ObjectInherit,
+                                                                      PropagationFlags.None,
+                                                                      AccessControlType.Allow))
 
         ' Read SyncSettings.xml file to import current sync settings (if there is one)
         Dim Settings As ReturnObject = XML.ReadSyncSettings(Codecs, DefaultGlobalSyncSettings)

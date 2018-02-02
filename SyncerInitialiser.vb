@@ -103,16 +103,11 @@ Public Class SyncerInitialiser
             End Try
         Next
 
-        'Create directory access rule
-        Dim sid = New SecurityIdentifier(WellKnownSidType.AuthenticatedUserSid, Nothing)
-        Dim FullAccess As New DirectorySecurity()
-        FullAccess.AddAccessRule(New FileSystemAccessRule(sid, FileSystemRights.FullControl, AccessControlType.Allow))
-
         'Create sync folder
         For Each Sync As SyncSettings In MySyncSettings
             Try
                 MyLog.Write("Creating sync folder: " & Sync.SyncDirectory, Information)
-                Directory.CreateDirectory(Sync.SyncDirectory, FullAccess)
+                Directory.CreateDirectory(Sync.SyncDirectory, MyDirectoryPermissions)
             Catch ex As Exception
                 Dim MyError As String = ex.Message
                 If ex.InnerException IsNot Nothing Then
@@ -194,7 +189,7 @@ Public Class SyncerInitialiser
                 End If
 
                 ThreadsStarted += One
-                Dim InputObjects As Object() = {FileID, MyFile.FullName, MySyncSettings, CancelTokenSource.Token}
+                Dim InputObjects As Object() = {FileID, MyFile.FullName, MySyncSettings, MyDirectoryPermissions, CancelTokenSource.Token}
                 ThreadPool.QueueUserWorkItem(New WaitCallback(AddressOf TransferToSyncFolderDelegate), InputObjects)
             Next
 
@@ -247,15 +242,16 @@ Public Class SyncerInitialiser
 
         Try
             Dim InputObjects As Object() = CType(Input, Object())
-            Dim CancelToken As CancellationToken = CType(InputObjects(3), CancellationToken)
+            Dim CancelToken As CancellationToken = CType(InputObjects(4), CancellationToken)
 
             If Not CancelToken.IsCancellationRequested Then
                 Dim ProcessID As Int32 = CType(InputObjects(0), Int32)
                 Dim FilePath As String = CType(InputObjects(1), String)
                 Dim NewSyncSettings As SyncSettings() = CType(InputObjects(2), SyncSettings())
+                Dim AccessPermissions As DirectorySecurity = CType(InputObjects(3), DirectorySecurity)
                 Dim TransferResult As ReturnObject
 
-                Using MyFileParser As New FileParser(MyGlobalSyncSettings, ProcessID, FilePath, NewSyncSettings)
+                Using MyFileParser As New FileParser(MyGlobalSyncSettings, ProcessID, FilePath, AccessPermissions, NewSyncSettings)
                     TransferResult = MyFileParser.TransferToSyncFolder()
                 End Using
                 If TransferResult.Success Then
