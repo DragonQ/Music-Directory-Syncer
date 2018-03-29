@@ -135,39 +135,39 @@
       <Generator>MSBuild:Compile</Generator>
       <SubType>Designer</SubType>
     </None>
-    <Compile Include="FileWatcher.vb">
+    <Compile Include="src\File Watcher\FileWatcher.vb">
       <SubType>Component</SubType>
     </Compile>
-    <Compile Include="FileParser.vb" />
-    <Compile Include="Logger.vb" />
-    <Compile Include="EditSyncSettingsWindow.xaml.vb">
+    <Compile Include="src\File Parser\FileParser.vb" />
+    <Compile Include="src\Logger.vb" />
+    <Compile Include="src\GUI\EditSyncSettingsWindow.xaml.vb">
       <DependentUpon>EditSyncSettingsWindow.xaml</DependentUpon>
     </Compile>
-    <Compile Include="FileProcessingQueue.vb" />
-    <Compile Include="SyncerInitialiser.vb" />
+    <Compile Include="src\File Watcher\FileProcessingQueue.vb" />
+    <Compile Include="src\File Parser\SyncerInitialiser.vb" />
     <Compile Include="My Project\Resources.Designer.vb">
       <AutoGen>True</AutoGen>
       <DesignTime>True</DesignTime>
       <DependentUpon>Resources.resx</DependentUpon>
     </Compile>
-    <Compile Include="NewSyncWindow.xaml.vb">
+    <Compile Include="src\GUI\NewSyncWindow.xaml.vb">
       <DependentUpon>NewSyncWindow.xaml</DependentUpon>
     </Compile>
-    <Compile Include="Startup.vb" />
-    <Compile Include="SyncSettings.vb" />
-    <Compile Include="Toolkit.vb" />
-    <Compile Include="TrayApp.vb" />
-    <Compile Include="XML.vb" />
+    <Compile Include="src\Startup.vb" />
+    <Compile Include="src\Sync Settings\SyncSettings.vb" />
+    <Compile Include="src\Tools\Toolkit.vb" />
+    <Compile Include="src\TrayApp.vb" />
+    <Compile Include="src\Tools\XML.vb" />
     <Compile Include="Application.xaml.vb">
       <DependentUpon>Application.xaml</DependentUpon>
       <SubType>Code</SubType>
     </Compile>
-    <Compile Include="Codec.vb" />
-    <Page Include="EditSyncSettingsWindow.xaml">
+    <Compile Include="src\Sync Settings\Codec.vb" />
+    <Page Include="src\GUI\EditSyncSettingsWindow.xaml">
       <Generator>MSBuild:Compile</Generator>
       <SubType>Designer</SubType>
     </Page>
-    <Page Include="NewSyncWindow.xaml">
+    <Page Include="src\GUI\NewSyncWindow.xaml">
       <SubType>Designer</SubType>
       <Generator>MSBuild:Compile</Generator>
     </Page>
