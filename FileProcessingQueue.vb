@@ -9,6 +9,7 @@ Class FileProcessingQueue
     Implements IDisposable
 
     Private TaskQueueMutex As Object
+    Private TasksRunningMutex As Object
     Private FileTaskList As New List(Of FileProcessingInfo)
     Private WaitBeforeSlowProcessing_ms As Int32 = 5000     'Repeated file-changed events within this time period cause file processing to restart
     Private WaitBeforeFastProcessing_ms As Int32 = 50       'Non-zero to give time for cancellation events to filter through
@@ -19,6 +20,7 @@ Class FileProcessingQueue
     Public Sub New(WaitBeforeProcessingFiles_ms As Int32, NewMaxThreads As Int64)
 
         TaskQueueMutex = New Object
+        TasksRunningMutex = New Object
         WaitBeforeSlowProcessing_ms = WaitBeforeProcessingFiles_ms
         MaxThreads = NewMaxThreads
 
@@ -44,21 +46,43 @@ Class FileProcessingQueue
 
         'Wait a pre-set amount of time until there's a spare thread to use
         MyLog.Write(MyFileProcessingInfo.ProcessID, "Waiting " & WaitTime_ms & " ms before attempting to process file: " & MyFileProcessingInfo.FilePath, Debug)
-        Do Until TimeSlept_ms >= WaitTime_ms AndAlso Interlocked.Read(TasksRunning) < MaxThreads
+        Do
+            'Do nothing if we are disposing
             If IsDisposing Then
+                MyLog.Write(MyFileProcessingInfo.ProcessID, "IsDisposing", Debug)
                 Return New ReturnObject(False, "File system watcher has been stopped, aborting pending file processing.")
             End If
-            TimeSlept_ms += SleepTime_ms
+
+            'Cancel this task if we've been told to
+            MyFileProcessingInfo.CancelState.Token.ThrowIfCancellationRequested()
+
+            'If we've waited long enough, check if we can start
+            If TimeSlept_ms >= WaitTime_ms Then
+                'Check number of tasks running to see if we can continue
+                SyncLock TasksRunningMutex
+                    If TasksRunning < MaxThreads Then
+                        TasksRunning += 1
+                        MyLog.Write(MyFileProcessingInfo.ProcessID, "Tasks running after increment: " & TasksRunning, Debug)
+                        Exit Do
+                    End If
+                End SyncLock
+            End If
+
+            'Wait
+            MyLog.Write(MyFileProcessingInfo.ProcessID, "Sleeping for " & SleepTime_ms & " ms...", Debug)
             Thread.Sleep(SleepTime_ms)
+            TimeSlept_ms += SleepTime_ms
+            MyLog.Write(MyFileProcessingInfo.ProcessID, "Time slept so far: " & TimeSlept_ms & " ms", Debug)
         Loop
 
-        'Cancel this task if we've been told to
-        MyFileProcessingInfo.CancelState.Token.ThrowIfCancellationRequested()
-
         'Start processing the file based on the file event that triggered this task
-        Interlocked.Increment(TasksRunning)
         Dim Result As ReturnObject = ProcessFile(MyFileProcessingInfo)
-        Interlocked.Decrement(TasksRunning)
+
+        SyncLock TasksRunningMutex
+            TasksRunning -= 1
+            MyLog.Write(MyFileProcessingInfo.ProcessID, "Tasks running after decrement: " & TasksRunning, Debug)
+        End SyncLock
+
         Return Result
 
     End Function
@@ -86,14 +110,13 @@ Class FileProcessingQueue
         Dim TaskCancelled As Boolean = False
 
         SyncLock TaskQueueMutex
-
+            MyLog.Write("Checking if file is already being processed: " & FilePath, Debug)
             For Each MyFileProcessingInfo As FileProcessingInfo In FileTaskList
                 If MyFileProcessingInfo.FilePath = FilePath Then 'Cancel task
                     MyFileProcessingInfo.CancelState.Cancel()
                     TaskCancelled = True
                 End If
             Next
-
         End SyncLock
 
         Return TaskCancelled
@@ -130,8 +153,14 @@ Class FileProcessingQueue
         IsDisposing = True
 
         'Wait for current tasks to exit
-        Do Until Interlocked.Read(TasksRunning) = 0
-            Thread.Sleep(50)
+        Dim SleepTime_ms As Int32 = 50
+        Do
+            SyncLock TasksRunningMutex
+                If TasksRunning = 0 Then
+                    Exit Do
+                End If
+            End SyncLock
+            Thread.Sleep(SleepTime_ms)
         Loop
 
         'Dispose of task queue mutex
