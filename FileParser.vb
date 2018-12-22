@@ -290,8 +290,9 @@ Class FileParser
         End Try
 
         Try
+            Dim CreateWindow As Boolean = (MyLog.DebugLevel = Debug)
             Dim ffmpeg As New ProcessStartInfo(MyGlobalSyncSettings.ffmpegPath) With {
-                .CreateNoWindow = True,
+                .CreateNoWindow = Not CreateWindow,
                 .UseShellExecute = False
             }
 
