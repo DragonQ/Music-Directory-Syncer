@@ -423,27 +423,26 @@ Public Class TrayApp
 
         If ActionTaken Then
             'Create new file processing task in a separate thread so we don't clog up the FileSystemWatcher events thread
-            Using MyFileParser As New FileParser(UserGlobalSyncSettings, FileID, e.FullPath, MyDirectoryPermissions)
-                Dim TokenSource As New CancellationTokenSource()
-                Dim NewFileProcessingInfo As New FileProcessingInfo(FileID, e.FullPath, MyFileParser, ChangeType, TokenSource, OldFilePath)
-                Dim t As Task(Of ReturnObject) = Task.Run(Function() GlobalFileProcessingQueue.AddTask(NewFileProcessingInfo), NewFileProcessingInfo.CancelState.Token)
+            Dim MyFileParser As New FileParser(UserGlobalSyncSettings, FileID, e.FullPath, MyDirectoryPermissions)
+            Dim TokenSource As New CancellationTokenSource()
+            Dim NewFileProcessingInfo As New FileProcessingInfo(FileID, e.FullPath, MyFileParser, ChangeType, TokenSource, OldFilePath)
+            Dim t As Task(Of ReturnObject) = Task.Run(Function() GlobalFileProcessingQueue.AddTask(NewFileProcessingInfo), NewFileProcessingInfo.CancelState.Token)
 
-                'Set return function on the main thread for task completion
-                t.ContinueWith(Sub(t1)
-                                   Select Case t1.Status
-                                       Case TaskStatus.RanToCompletion
-                                           MyLog.Write(NewFileProcessingInfo.ProcessID, "Task completed. Cancelled flag: " & t1.IsCanceled, Debug)
-                                           FileProcessingCompleted(t1.Result)
-                                       Case TaskStatus.Canceled
-                                           MyLog.Write(NewFileProcessingInfo.ProcessID, "File processing cancelled before attempting to process file: " & NewFileProcessingInfo.FilePath, Information)
-                                           FileProcessingCompleted(New ReturnObject(False, "", NewFileProcessingInfo))
-                                       Case TaskStatus.Faulted
-                                           MyLog.Write("Task failed because: " & t1.Exception.InnerException.Message, Warning)
-                                           FileProcessingFailure(NewFileProcessingInfo)
-                                   End Select
-                               End Sub,
+            'Set return function on the main thread for task completion
+            t.ContinueWith(Sub(t1)
+                               Select Case t1.Status
+                                   Case TaskStatus.RanToCompletion
+                                       MyLog.Write(NewFileProcessingInfo.ProcessID, "Task completed. Cancelled flag: " & t1.IsCanceled, Debug)
+                                       FileProcessingCompleted(t1.Result)
+                                   Case TaskStatus.Canceled
+                                       MyLog.Write(NewFileProcessingInfo.ProcessID, "File processing cancelled before attempting to process file: " & NewFileProcessingInfo.FilePath, Information)
+                                       FileProcessingCompleted(New ReturnObject(False, "", NewFileProcessingInfo))
+                                   Case TaskStatus.Faulted
+                                       MyLog.Write("Task failed because: " & t1.Exception.InnerException.Message, Warning)
+                                       FileProcessingFailure(NewFileProcessingInfo)
+                               End Select
+                           End Sub,
                                TaskContinuationOptions.ExecuteSynchronously)
-            End Using
         End If
 
         IncrementFileID()
@@ -477,6 +476,8 @@ Public Class TrayApp
         End If
         MyLog.Write(MyFileProcessingInfo.ProcessID, "Tasks still queued or running: " & GlobalFileProcessingQueue.CountTasksAlreadyRunning(), Debug)
 
+        MyFileProcessingInfo.Dispose()
+
     End Sub
 
     Private Sub FileProcessingFailure(MyFileProcessingInfo As FileProcessingInfo)
@@ -488,6 +489,8 @@ Public Class TrayApp
             MyLog.Write(MyFileProcessingInfo.ProcessID, "Could not remove file processing task from queue! " & MyFileProcessingInfo.FilePath, Warning)
         End If
         MyLog.Write(MyFileProcessingInfo.ProcessID, "Tasks still queued or running: " & GlobalFileProcessingQueue.CountTasksAlreadyRunning(), Debug)
+
+        MyFileProcessingInfo.Dispose()
 
     End Sub
 

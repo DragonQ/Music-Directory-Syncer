@@ -186,6 +186,8 @@ Class FileProcessingQueue
 
     Public Class FileProcessingInfo
 
+        Implements IDisposable
+
         ReadOnly Property ProcessID As Int32
         ReadOnly Property FilePath As String
         ReadOnly Property OldFilePath As String
@@ -209,6 +211,12 @@ Class FileProcessingQueue
             CancelState = NewCancelState
             OldFilePath = OriginalFilePath
             ActionToTake = ChangeType
+        End Sub
+
+        Public Overridable Sub Dispose() Implements IDisposable.Dispose
+            If Not FileParser Is Nothing Then
+                FileParser.Dispose()
+            End If
         End Sub
 
     End Class
