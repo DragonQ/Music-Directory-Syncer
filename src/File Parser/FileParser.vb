@@ -141,7 +141,6 @@ Class FileParser
 
         Try
             If Not HaveFileLock Then Throw New System.Exception("Could not get file system lock on source file.")
-            Dim TranscodedFilePath As String = Nothing
             Dim NewFilesSize As Int64 = 0
             For Each SyncSetting In SyncSettings
                 Dim FileCodec As Codec = CheckFileCodec(SyncSetting.GetWatcherCodecs())
@@ -150,22 +149,13 @@ Class FileParser
                         Dim SyncFilePath As String = SyncSetting.SyncDirectory & FilePath.Substring(MyGlobalSyncSettings.SourceDirectory.Length)
 
                         If SyncSetting.TranscodeSetting = All OrElse (SyncSetting.TranscodeSetting = LosslessOnly AndAlso FileCodec.CompressionType = Lossless) Then 'Need to transcode file
-                            If TranscodedFilePath Is Nothing Then 'File hasn't been transcoded for another sync, so transcode it
-                                MyLog.Write(ProcessID, "...transcoding file to " & SyncSetting.Encoder.Name & "...", Debug)
-                                Dim Result As ReturnObject = TranscodeFile(SyncFilePath, SyncSetting)
-                                If Result.Success Then
-                                    SyncFilePath = Path.Combine(Path.GetDirectoryName(SyncFilePath), Path.GetFileNameWithoutExtension(SyncFilePath)) &
-                                                    SyncSetting.Encoder.GetFileExtensions(0)
-                                    TranscodedFilePath = SyncFilePath
-                                Else
-                                    Throw New Exception(Result.ErrorMessage)
-                                End If
-                            Else
-                                MyLog.Write(ProcessID, "...copying already transcoded file...", Debug)
+                            MyLog.Write(ProcessID, "...transcoding file to " & SyncSetting.Encoder.Name & "...", Debug)
+                            Dim Result As ReturnObject = TranscodeFile(SyncFilePath, SyncSetting)
+                            If Result.Success Then
                                 SyncFilePath = Path.Combine(Path.GetDirectoryName(SyncFilePath), Path.GetFileNameWithoutExtension(SyncFilePath)) &
                                                 SyncSetting.Encoder.GetFileExtensions(0)
-                                Dim Result As ReturnObject = SafeCopy(TranscodedFilePath, SyncFilePath)
-                                If Not Result.Success Then Throw New Exception(Result.ErrorMessage)
+                            Else
+                                Throw New Exception(Result.ErrorMessage)
                             End If
                         Else
                             Directory.CreateDirectory(Path.GetDirectoryName(SyncFilePath), DirectoryAccessPermissions)
@@ -199,7 +189,6 @@ Class FileParser
 
         Try
             If Not HaveFileLock Then Throw New System.Exception("Could not get file system lock on source file.")
-            Dim TranscodedFilePath As String = Nothing
             For Each SyncSetting In SyncSettings
                 Dim FileCodec As Codec = CheckFileCodec(SyncSetting.GetWatcherCodecs())
                 If Not FileCodec Is Nothing Then
@@ -232,22 +221,13 @@ Class FileParser
                             MyLog.Write(ProcessID, "...old file doesn't exist in sync folder: """ & OldSyncFilePath & """, creating now...", Warning)
 
                             If SyncSetting.TranscodeSetting = All OrElse (SyncSetting.TranscodeSetting = LosslessOnly AndAlso FileCodec.CompressionType = Lossless) Then 'Need to transcode file
-                                If TranscodedFilePath Is Nothing Then 'File hasn't been transcoded for another sync, so transcode it
-                                    MyLog.Write(ProcessID, "...transcoding file to " & SyncSetting.Encoder.Name & "...", Debug)
-                                    Dim Result As ReturnObject = TranscodeFile(SyncFilePath, SyncSetting)
-                                    If Result.Success Then
-                                        SyncFilePath = Path.Combine(Path.GetDirectoryName(SyncFilePath), Path.GetFileNameWithoutExtension(SyncFilePath)) &
-                                                        SyncSetting.Encoder.GetFileExtensions(0)
-                                        TranscodedFilePath = SyncFilePath
-                                    Else
-                                        Throw New Exception(Result.ErrorMessage)
-                                    End If
-                                Else 'File was transcoded before for a previous sync, so just copy that file
-                                    MyLog.Write(ProcessID, "...copying already transcoded file...", Debug)
-                                    Dim Result As ReturnObject = SafeCopy(TranscodedFilePath, SyncFilePath)
-                                    If Not Result.Success Then Throw New Exception(Result.ErrorMessage)
+                                MyLog.Write(ProcessID, "...transcoding file to " & SyncSetting.Encoder.Name & "...", Debug)
+                                Dim Result As ReturnObject = TranscodeFile(SyncFilePath, SyncSetting)
+                                If Result.Success Then
                                     SyncFilePath = Path.Combine(Path.GetDirectoryName(SyncFilePath), Path.GetFileNameWithoutExtension(SyncFilePath)) &
-                                                    SyncSetting.Encoder.GetFileExtensions(0)
+                                                        SyncSetting.Encoder.GetFileExtensions(0)
+                                Else
+                                    Throw New Exception(Result.ErrorMessage)
                                 End If
                             Else
                                 Directory.CreateDirectory(Path.GetDirectoryName(SyncFilePath), DirectoryAccessPermissions)
