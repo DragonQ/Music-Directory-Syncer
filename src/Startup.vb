@@ -29,7 +29,7 @@ Module Startup
 
         ' Grab version number and write to log
         MyVersion = ThisAssembly.Git.BaseTag
-        If ThisAssembly.Git.IsDirty Then
+        If Convert.ToInt32(ThisAssembly.Git.Commits) > 0 Then
             MyVersion &= "." & ThisAssembly.Git.Commits & "-" & ThisAssembly.Git.Commit
         End If
         MyLog.Write("===============================================================")
