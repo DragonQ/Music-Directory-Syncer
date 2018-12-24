@@ -26,19 +26,28 @@ Class FileProcessingQueue
 
     End Sub
 
+    <System.Diagnostics.DebuggerNonUserCode()>
+    Public Sub ThrowIfCancellationRequested(CancelToken As CancellationToken)
+        CancelToken.ThrowIfCancellationRequested()
+    End Sub
+
     Public Function AddTask(MyFileProcessingInfo As FileProcessingInfo) As ReturnObject
 
         Dim TimeSlept_ms As Int32 = 0
         Dim SleepTime_ms As Int32 = 50
         Dim WaitTime_ms = 0
 
+        'Add the task to the queue
         SyncLock TaskQueueMutex
+            MyLog.Write(MyFileProcessingInfo.ProcessID, "Adding to FileTaskList: " & MyFileProcessingInfo.FilePath, Debug)
             FileTaskList.Add(MyFileProcessingInfo)
         End SyncLock
 
         'Only wait when a file was changed/created. A deleted or renamed file shouldn't require any transcoding so no point waiting
         Select Case MyFileProcessingInfo.ActionToTake
             Case Is = Changed, Created
+                'Cancel all other file tasks if they are accessing the same file as this task
+                CancelFileTaskIfAlreadyRunning(MyFileProcessingInfo)
                 WaitTime_ms = WaitBeforeSlowProcessing_ms
             Case Is = Renamed, Deleted, DirectoryDeleted
                 WaitTime_ms = WaitBeforeFastProcessing_ms
@@ -54,7 +63,7 @@ Class FileProcessingQueue
             End If
 
             'Cancel this task if we've been told to
-            MyFileProcessingInfo.CancelState.Token.ThrowIfCancellationRequested()
+            ThrowIfCancellationRequested(MyFileProcessingInfo.CancelState.Token)
 
             'If we've waited long enough, check if we can start
             If TimeSlept_ms >= WaitTime_ms Then
@@ -69,10 +78,8 @@ Class FileProcessingQueue
             End If
 
             'Wait
-            MyLog.Write(MyFileProcessingInfo.ProcessID, "Sleeping for " & SleepTime_ms & " ms...", Debug)
             Thread.Sleep(SleepTime_ms)
             TimeSlept_ms += SleepTime_ms
-            MyLog.Write(MyFileProcessingInfo.ProcessID, "Time slept so far: " & TimeSlept_ms & " ms", Debug)
         Loop
 
         'Start processing the file based on the file event that triggered this task
@@ -92,7 +99,6 @@ Class FileProcessingQueue
         Dim TaskIndexes As New List(Of Int32)
 
         SyncLock TaskQueueMutex
-
             For i As Int32 = 0 To FileTaskList.Count - 1
                 If FileTaskList(i).ProcessID = FileID Then 'Cancel task
                     FileTaskList.RemoveAt(i)
@@ -100,21 +106,22 @@ Class FileProcessingQueue
                     Exit For
                 End If
             Next
-
         End SyncLock
 
         Return TaskRemoved
     End Function
 
-    Public Function CancelFileTaskIfAlreadyRunning(FilePath As String) As Boolean
+    Public Function CancelFileTaskIfAlreadyRunning(MyFileProcessingInfo As FileProcessingInfo) As Boolean
         Dim TaskCancelled As Boolean = False
 
         SyncLock TaskQueueMutex
-            MyLog.Write("Checking if file is already being processed: " & FilePath, Debug)
-            For Each MyFileProcessingInfo As FileProcessingInfo In FileTaskList
-                If MyFileProcessingInfo.FilePath = FilePath Then 'Cancel task
+            MyLog.Write(MyFileProcessingInfo.ProcessID, "Checking if file is already being processed: " & MyFileProcessingInfo.FilePath, Debug)
+            For Each OtherFileProcessingInfo As FileProcessingInfo In FileTaskList
+                MyLog.Write(MyFileProcessingInfo.ProcessID, "File is already being processed: " & OtherFileProcessingInfo.FilePath, Debug)
+                If OtherFileProcessingInfo.ProcessID <> MyFileProcessingInfo.ProcessID AndAlso OtherFileProcessingInfo.FilePath = MyFileProcessingInfo.FilePath Then 'Cancel task
                     MyFileProcessingInfo.CancelState.Cancel()
                     TaskCancelled = True
+                    MyLog.Write(MyFileProcessingInfo.ProcessID, "File is already being processed, so cancelling original task", Debug)
                 End If
             Next
         End SyncLock
@@ -168,11 +175,17 @@ Class FileProcessingQueue
             TaskQueueMutex = Nothing
         End If
 
+        'Dispose of task running mutex
+        If TasksRunningMutex IsNot Nothing Then
+            TasksRunningMutex = Nothing
+        End If
+
         GC.SuppressFinalize(Me)
 
     End Sub
 
     Public Class FileProcessingInfo
+
         ReadOnly Property ProcessID As Int32
         ReadOnly Property FilePath As String
         ReadOnly Property OldFilePath As String

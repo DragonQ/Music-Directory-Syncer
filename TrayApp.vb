@@ -387,17 +387,11 @@ Public Class TrayApp
                     Case Is = IO.WatcherChangeTypes.Changed
                         'File was changed, so re-transfer to all sync directories
                         MyLog.Write(FileID, "Source file changed: " & e.FullPath, Information)
-                        If GlobalFileProcessingQueue.CancelFileTaskIfAlreadyRunning(e.FullPath) Then
-                            MyLog.Write(FileID, "File is already being processed, so cancelling original task", Debug)
-                        End If
                         ActionTaken = True
                         ChangeType = FileProcessingInfo.ActionType.Changed
                     Case Is = IO.WatcherChangeTypes.Created
                         'File was created, so re-transfer to all sync directories
                         MyLog.Write(FileID, "Source file created: " & e.FullPath, Information)
-                        If GlobalFileProcessingQueue.CancelFileTaskIfAlreadyRunning(e.FullPath) Then
-                            MyLog.Write(FileID, "File is already being processed, so cancelling original task", Debug)
-                        End If
                         ActionTaken = True
                         ChangeType = FileProcessingInfo.ActionType.Created
                     Case Is = IO.WatcherChangeTypes.Renamed
@@ -481,7 +475,7 @@ Public Class TrayApp
         Else
             MyLog.Write(MyFileProcessingInfo.ProcessID, "Could not remove file processing task from queue! " & MyFileProcessingInfo.FilePath, Warning)
         End If
-        MyLog.Write(MyFileProcessingInfo.ProcessID, "Tasks still running: " & GlobalFileProcessingQueue.CountTasksAlreadyRunning(), Debug)
+        MyLog.Write(MyFileProcessingInfo.ProcessID, "Tasks still queued or running: " & GlobalFileProcessingQueue.CountTasksAlreadyRunning(), Debug)
 
     End Sub
 
@@ -493,7 +487,7 @@ Public Class TrayApp
         Else
             MyLog.Write(MyFileProcessingInfo.ProcessID, "Could not remove file processing task from queue! " & MyFileProcessingInfo.FilePath, Warning)
         End If
-        MyLog.Write(MyFileProcessingInfo.ProcessID, "Tasks still running: " & GlobalFileProcessingQueue.CountTasksAlreadyRunning(), Debug)
+        MyLog.Write(MyFileProcessingInfo.ProcessID, "Tasks still queued or running: " & GlobalFileProcessingQueue.CountTasksAlreadyRunning(), Debug)
 
     End Sub
 
