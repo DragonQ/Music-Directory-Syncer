@@ -10,7 +10,7 @@ Public Class Codec
 
     ReadOnly Property Name As String
     Property CompressionType As CodecType
-    Private Profiles As Profile()
+    Private ReadOnly Profiles As Profile()
     Private ReadOnly FileExtensions As String()
     Property IsEnabled As Boolean = True
 
@@ -132,7 +132,7 @@ Public Class Codec
         End Sub
     End Class
 
-    Class Mpeg4TestFile
+    Private Class Mpeg4TestFile
         Inherits Mpeg4.File
         Public Sub New(path As String)
 

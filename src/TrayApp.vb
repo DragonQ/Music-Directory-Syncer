@@ -24,10 +24,10 @@ Public Class TrayApp
     Private WithEvents FileWatcher As MyFileSystemWatcher = Nothing
     Private FileID As Int32 = 1
 
-    Private FileWatcherInterval_ms As Int32 = 200           'Repeated events within this time period don't even get reported to our watchers
-    Private WaitBeforeProcessingFiles_ms As Int32 = 5000    'Repeated events within this time period cause file processing to restart
+    Private Const FileWatcherInterval_ms As Int32 = 200           'Repeated events within this time period don't even get reported to our watchers
+    Private Const WaitBeforeProcessingFiles_ms As Int32 = 5000    'Repeated events within this time period cause file processing to restart
     Private MySyncer As SyncerInitialiser = Nothing
-    Private SyncTimer As New Stopwatch()
+    Private ReadOnly SyncTimer As New Stopwatch()
     Private SyncInProgress As Boolean = False
     Private GlobalFileProcessingQueue As FileProcessingQueue
 #End Region
@@ -569,7 +569,7 @@ Public Class TrayApp
                 If Result.Success Then
                     'Work out size of sync folder
                     Dim SyncSize As Double = CType(Result.MyObject, Double) / (2 ^ 20) ' Convert to MiB
-                    Dim SyncSizeString As String = ""
+                    Dim SyncSizeString As String
                     If SyncSize > 1024 Then ' Directory size is greater than 1 GiB
                         SyncSizeString = String.Format(EnglishGB, "{0:0.0}", SyncSize / (2 ^ 10)) & " GiB"
                     Else
@@ -578,7 +578,7 @@ Public Class TrayApp
 
                     'Work out how long the sync took
                     Dim SecondsTaken As Int64 = CInt(Math.Round(SyncTimer.ElapsedMilliseconds / 1000, 0))
-                    Dim TimeTaken As String = ""
+                    Dim TimeTaken As String
                     If SecondsTaken > 60 Then 'Longer than one minute
                         Dim MinutesTaken As Int32 = CInt(Math.Round(SecondsTaken / 60, 0, MidpointRounding.AwayFromZero) - 1)
                         Dim SecondsRemaining = SecondsTaken - MinutesTaken * 60

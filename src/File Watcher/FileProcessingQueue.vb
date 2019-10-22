@@ -11,10 +11,10 @@ Class FileProcessingQueue
     Private TaskQueueMutex As Object
     Private TasksRunningMutex As Object
     Private FileTaskList As New List(Of FileProcessingInfo)
-    Private WaitBeforeSlowProcessing_ms As Int32 = 5000     'Repeated file-changed events within this time period cause file processing to restart
-    Private WaitBeforeFastProcessing_ms As Int32 = 50       'Non-zero to give time for cancellation events to filter through
+    Private ReadOnly WaitBeforeSlowProcessing_ms As Int32 = 5000     'Repeated file-changed events within this time period cause file processing to restart
+    Private Const WaitBeforeFastProcessing_ms As Int32 = 50       'Non-zero to give time for cancellation events to filter through
     Private TasksRunning As Int64 = 0
-    Private MaxThreads As Int64 = 2
+    Private ReadOnly MaxThreads As Int64 = 2
     Private IsDisposing As Boolean = False
 
     Public Sub New(WaitBeforeProcessingFiles_ms As Int32, NewMaxThreads As Int64)
@@ -96,7 +96,6 @@ Class FileProcessingQueue
 
     Public Function RemoveTaskFromQueue(FileID As Int32) As Boolean
         Dim TaskRemoved As Boolean = False
-        Dim TaskIndexes As New List(Of Int32)
 
         SyncLock TaskQueueMutex
             For i As Int32 = 0 To FileTaskList.Count - 1
@@ -133,8 +132,11 @@ Class FileProcessingQueue
         If MyLog.DebugLevel = Logger.LogLevel.Debug AndAlso CountTasksAlreadyRunning() > 0 Then
             MyLog.Write("[[ REMAINING TASKS: ]]", Debug)
             Dim i As Int32 = 0
-            Dim FileTaskList As List(Of FileProcessingInfo) = GetFileTaskList()
-            For Each MyFileProcessingInfo As FileProcessingInfo In FileTaskList
+            Dim SafeFileTaskList As List(Of FileProcessingInfo)
+            SyncLock TaskQueueMutex
+                SafeFileTaskList = FileTaskList
+            End SyncLock
+            For Each MyFileProcessingInfo As FileProcessingInfo In SafeFileTaskList
                 i += 1
                 MyLog.Write("[[" & i & ": " & MyFileProcessingInfo.FilePath & "]]", Debug)
             Next
@@ -220,16 +222,6 @@ Class FileProcessingQueue
         End Sub
 
     End Class
-
-    Private Function GetFileTaskList() As List(Of FileProcessingInfo)
-        Dim Result As List(Of FileProcessingInfo) = Nothing
-
-        SyncLock TaskQueueMutex
-            Result = FileTaskList
-        End SyncLock
-
-        Return Result
-    End Function
 
     Private Function ProcessFile(MyFileProcessingInfo As FileProcessingInfo) As ReturnObject
 

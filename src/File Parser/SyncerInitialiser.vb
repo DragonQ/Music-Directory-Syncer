@@ -12,11 +12,11 @@ Imports Opulos.Core.IO
 Public Class SyncerInitialiser
 
     Public WithEvents SyncBackgroundWorker As New BackgroundWorker
-    Dim ThreadsCompleted As Int64 = 0
-    Dim SyncFolderSize As Int64 = 0
-    Dim MyGlobalSyncSettings As GlobalSyncSettings
-    Dim MySyncSettings As SyncSettings()
-    Dim CallbackUpdateMilliseconds As Int32 = 500  'Update UI twice a second by default
+    Private ThreadsCompleted As Int64 = 0
+    Private SyncFolderSize As Int64 = 0
+    Private MyGlobalSyncSettings As GlobalSyncSettings
+    ReadOnly MySyncSettings As SyncSettings()
+    ReadOnly CallbackUpdateMilliseconds As Int32 = 500  'Update UI twice a second by default
 
     Public Sub New(NewGlobalSyncSettings As GlobalSyncSettings, NewCallbackUpdateMilliseconds As Int32)
         'This is used where we want to re-apply every single sync in one sweep
@@ -62,179 +62,179 @@ Public Class SyncerInitialiser
 
         Dim FolderPath As String = MyGlobalSyncSettings.SourceDirectory
         Dim MyFiles As IEnumerable(Of FastFileInfo) = Nothing
-        Dim MyFilesToProcess As New List(Of String)
-        Dim CancelTokenSource As New CancellationTokenSource()
 
-        MyLog.Write("Scanning files in source directory.", Information)
+        Using CancelTokenSource As New CancellationTokenSource()
+            MyLog.Write("Scanning files in source directory.", Information)
 
-        Try
-            MyFiles = FastFileInfo.EnumerateFiles(FolderPath, "*.*", SearchOption.AllDirectories)
-        Catch ex As Exception
-            MyLog.Write("Failed to grab file list from source directory. Exception: " & ex.Message, Warning)
-            e.Result = New ReturnObject(False, ex.Message)
-            Exit Sub
-        End Try
-
-        If MyFiles Is Nothing Then
-            MyLog.Write("Failed to grab file list from source directory. Exception: EnumerateFiles returned nothing.", Warning)
-            e.Result = New ReturnObject(False, "EnumerateFiles returned nothing.")
-            Exit Sub
-        End If
-
-        Dim ThreadsStarted As UInt32 = 0
-        Dim FileID As Int32 = 0
-        Dim One As UInt32 = 1
-
-        'Delete existing sync folder if necessary
-        For Each Sync As SyncSettings In MySyncSettings
             Try
-                MyLog.Write("Deleting sync folder: " & Sync.SyncDirectory, Information)
-                Directory.Delete(Sync.SyncDirectory, True)
-            Catch ex As DirectoryNotFoundException
-                'Do nothing
+                MyFiles = FastFileInfo.EnumerateFiles(FolderPath, "*.*", SearchOption.AllDirectories)
             Catch ex As Exception
-                Dim MyError As String = ex.Message
-                If ex.InnerException IsNot Nothing Then
-                    MyError &= NewLine & NewLine & ex.InnerException.ToString
-                End If
-                MyLog.Write("Failed to delete existing files in sync folder [1]. Exception: " & MyError, Warning)
+                MyLog.Write("Failed to grab file list from source directory. Exception: " & ex.Message, Warning)
                 e.Result = New ReturnObject(False, ex.Message)
                 Exit Sub
             End Try
-        Next
 
-        'Create sync folder
-        For Each Sync As SyncSettings In MySyncSettings
-            Try
-                MyLog.Write("Creating sync folder: " & Sync.SyncDirectory, Information)
-                Directory.CreateDirectory(Sync.SyncDirectory, MyDirectoryPermissions)
-            Catch ex As Exception
-                Dim MyError As String = ex.Message
-                If ex.InnerException IsNot Nothing Then
-                    MyError &= NewLine & NewLine & ex.InnerException.ToString
-                End If
-                MyLog.Write("Failed to delete existing files in sync folder [2]. Exception: " & MyError, Warning)
-                e.Result = New ReturnObject(False, ex.Message)
+            If MyFiles Is Nothing Then
+                MyLog.Write("Failed to grab file list from source directory. Exception: EnumerateFiles returned nothing.", Warning)
+                e.Result = New ReturnObject(False, "EnumerateFiles returned nothing.")
                 Exit Sub
-            End Try
-        Next
-
-        MyLog.Write("Starting file processing threads.", Information)
-        SyncFolderSize = 0
-
-        Try
-            '==============================================================================================
-            '============== My own custom way of handling threads, replaced with ThreadPool ===============
-            '==============================================================================================
-            'Dim ThreadsToRun As Int32 = MyFiles.Count
-            'For Each MyFile As FileData In MyFiles
-            '    Do
-            '        Dim MyThreadsRunning As Int64 = Interlocked.Read(ThreadsRunning)
-            '        SyncBackgroundWorker.ReportProgress(CInt(Interlocked.Read(ThreadsCompleted) / ThreadsToRun * 100), MyThreadsRunning)
-
-            '        If MyThreadsRunning < MySyncSettings.MaxThreads Then
-            '            Interlocked.Increment(ThreadsRunning)
-
-            '            Dim NewThread As New Thread(New ParameterizedThreadStart(AddressOf TransferToSyncFolderDelegate))
-            '            NewThread.IsBackground = True
-            '            Dim InputObjects As Object() = {MyFile.Path, CodecsToCheck}
-
-            '            NewThread.Start(InputObjects)
-
-            '            ThreadsStarted += One
-            '            MyLog.Write("[" & NewThread.ManagedThreadId & "] Processing file: """ & MyFile.Path & """...", Debug)
-            '            Exit Do
-            '        Else
-            '            Thread.Sleep(50)
-            '        End If
-            '    Loop
-            'Next
-
-            ''All threads have been started, now wait for them all to finish
-            'Dim CheckPointThreadsCompleted As Int64 = Interlocked.Read(ThreadsCompleted)
-
-            'Do
-            '    Dim ThreadsCompletedSoFar As Int64 = Interlocked.Read(ThreadsCompleted)
-
-            '    If ThreadsCompletedSoFar >= ThreadsStarted Then
-            '        SyncBackgroundWorker.ReportProgress(100, 0)
-            '        MyLog.Write("All files processed. " & ThreadsStarted & " files synced.", Information)
-            '        Exit Do
-            '    Else
-            '        If ThreadsCompletedSoFar > CheckPointThreadsCompleted Then
-            '           SyncBackgroundWorker.ReportProgress(CInt(ThreadsCompletedSoFar / ThreadsStarted * 100), Interlocked.Read(ThreadsRunning))
-            '        End If
-            '        Thread.Sleep(50)
-            '    End If
-            'Loop
-
-            '==============================================================================================
-            '==============================================================================================
-
-            ThreadPool.SetMinThreads(MyGlobalSyncSettings.MaxThreads, MyGlobalSyncSettings.MaxThreads)
-            ThreadPool.SetMaxThreads(MyGlobalSyncSettings.MaxThreads, MyGlobalSyncSettings.MaxThreads)
-
-            For Each MyFile As FastFileInfo In MyFiles
-                If SyncBackgroundWorker.CancellationPending Then
-                    CancelTokenSource.Cancel()
-                    e.Cancel = True
-                    e.Result = New ReturnObject(False, "Sync was cancelled.")
-                    Exit Sub
-                End If
-
-                If FileID = MaxFileID Then
-                    FileID = 1
-                Else
-                    FileID += 1
-                End If
-
-                ThreadsStarted += One
-                Dim InputObjects As Object() = {FileID, MyFile.FullName, MySyncSettings, MyDirectoryPermissions, CancelTokenSource.Token}
-                ThreadPool.QueueUserWorkItem(New WaitCallback(AddressOf TransferToSyncFolderDelegate), InputObjects)
-            Next
-
-            If ThreadsStarted < 1 Then
-                MyLog.Write("Failed to grab file list from source directory. Exception: EnumerateFiles returned no files.", Warning)
-                Throw New Exception("No files found in source directory.")
             End If
 
-            'All threads have been started, now wait for them all to finish
-            Dim CheckPointThreadsCompleted As Int64 = Interlocked.Read(ThreadsCompleted)
-            Dim ThreadsRemaining As Int64 = ThreadsStarted - CheckPointThreadsCompleted
-            SyncBackgroundWorker.ReportProgress(CInt(CheckPointThreadsCompleted / ThreadsStarted * 100),
-                                                            {ThreadsRemaining, CheckPointThreadsCompleted})
+            Dim ThreadsStarted As UInt32 = 0
+            Dim FileID As Int32 = 0
+            Dim One As UInt32 = 1
 
-            Do
-                If SyncBackgroundWorker.CancellationPending Then
-                    CancelTokenSource.Cancel()
-                    e.Cancel = True
-                    e.Result = New ReturnObject(False, "Sync was cancelled.")
-                    Exit Sub
-                End If
-
-                Thread.Sleep(CallbackUpdateMilliseconds)
-
-                Dim ThreadsCompletedSoFar As Int64 = Interlocked.Read(ThreadsCompleted)
-
-                If ThreadsCompletedSoFar > CheckPointThreadsCompleted Then 'At least one thread has finished since the last check
-                    If ThreadsCompletedSoFar >= ThreadsStarted Then 'All files have been processed, so end background worker
-                        MyLog.Write("All files processed. " & ThreadsStarted & " files synced.", Information)
-                        Exit Do
-                    Else
-                        ThreadsRemaining = ThreadsStarted - ThreadsCompletedSoFar
-                        SyncBackgroundWorker.ReportProgress(CInt(ThreadsCompletedSoFar / ThreadsStarted * 100),
-                                                            {ThreadsRemaining, ThreadsCompletedSoFar})
+            'Delete existing sync folder if necessary
+            For Each Sync As SyncSettings In MySyncSettings
+                Try
+                    MyLog.Write("Deleting sync folder: " & Sync.SyncDirectory, Information)
+                    Directory.Delete(Sync.SyncDirectory, True)
+                Catch ex As DirectoryNotFoundException
+                    'Do nothing
+                Catch ex As Exception
+                    Dim MyError As String = ex.Message
+                    If ex.InnerException IsNot Nothing Then
+                        MyError &= NewLine & NewLine & ex.InnerException.ToString
                     End If
+                    MyLog.Write("Failed to delete existing files in sync folder [1]. Exception: " & MyError, Warning)
+                    e.Result = New ReturnObject(False, ex.Message)
+                    Exit Sub
+                End Try
+            Next
+
+            'Create sync folder
+            For Each Sync As SyncSettings In MySyncSettings
+                Try
+                    MyLog.Write("Creating sync folder: " & Sync.SyncDirectory, Information)
+                    Directory.CreateDirectory(Sync.SyncDirectory, MyDirectoryPermissions)
+                Catch ex As Exception
+                    Dim MyError As String = ex.Message
+                    If ex.InnerException IsNot Nothing Then
+                        MyError &= NewLine & NewLine & ex.InnerException.ToString
+                    End If
+                    MyLog.Write("Failed to delete existing files in sync folder [2]. Exception: " & MyError, Warning)
+                    e.Result = New ReturnObject(False, ex.Message)
+                    Exit Sub
+                End Try
+            Next
+
+            MyLog.Write("Starting file processing threads.", Information)
+            SyncFolderSize = 0
+
+            Try
+                '==============================================================================================
+                '============== My own custom way of handling threads, replaced with ThreadPool ===============
+                '==============================================================================================
+                'Dim ThreadsToRun As Int32 = MyFiles.Count
+                'For Each MyFile As FileData In MyFiles
+                '    Do
+                '        Dim MyThreadsRunning As Int64 = Interlocked.Read(ThreadsRunning)
+                '        SyncBackgroundWorker.ReportProgress(CInt(Interlocked.Read(ThreadsCompleted) / ThreadsToRun * 100), MyThreadsRunning)
+
+                '        If MyThreadsRunning < MySyncSettings.MaxThreads Then
+                '            Interlocked.Increment(ThreadsRunning)
+
+                '            Dim NewThread As New Thread(New ParameterizedThreadStart(AddressOf TransferToSyncFolderDelegate))
+                '            NewThread.IsBackground = True
+                '            Dim InputObjects As Object() = {MyFile.Path, CodecsToCheck}
+
+                '            NewThread.Start(InputObjects)
+
+                '            ThreadsStarted += One
+                '            MyLog.Write("[" & NewThread.ManagedThreadId & "] Processing file: """ & MyFile.Path & """...", Debug)
+                '            Exit Do
+                '        Else
+                '            Thread.Sleep(50)
+                '        End If
+                '    Loop
+                'Next
+
+                ''All threads have been started, now wait for them all to finish
+                'Dim CheckPointThreadsCompleted As Int64 = Interlocked.Read(ThreadsCompleted)
+
+                'Do
+                '    Dim ThreadsCompletedSoFar As Int64 = Interlocked.Read(ThreadsCompleted)
+
+                '    If ThreadsCompletedSoFar >= ThreadsStarted Then
+                '        SyncBackgroundWorker.ReportProgress(100, 0)
+                '        MyLog.Write("All files processed. " & ThreadsStarted & " files synced.", Information)
+                '        Exit Do
+                '    Else
+                '        If ThreadsCompletedSoFar > CheckPointThreadsCompleted Then
+                '           SyncBackgroundWorker.ReportProgress(CInt(ThreadsCompletedSoFar / ThreadsStarted * 100), Interlocked.Read(ThreadsRunning))
+                '        End If
+                '        Thread.Sleep(50)
+                '    End If
+                'Loop
+
+                '==============================================================================================
+                '==============================================================================================
+
+                ThreadPool.SetMinThreads(MyGlobalSyncSettings.MaxThreads, MyGlobalSyncSettings.MaxThreads)
+                ThreadPool.SetMaxThreads(MyGlobalSyncSettings.MaxThreads, MyGlobalSyncSettings.MaxThreads)
+
+                For Each MyFile As FastFileInfo In MyFiles
+                    If SyncBackgroundWorker.CancellationPending Then
+                        CancelTokenSource.Cancel()
+                        e.Cancel = True
+                        e.Result = New ReturnObject(False, "Sync was cancelled.")
+                        Exit Sub
+                    End If
+
+                    If FileID = MaxFileID Then
+                        FileID = 1
+                    Else
+                        FileID += 1
+                    End If
+
+                    ThreadsStarted += One
+                    Dim InputObjects As Object() = {FileID, MyFile.FullName, MySyncSettings, MyDirectoryPermissions, CancelTokenSource.Token}
+                    ThreadPool.QueueUserWorkItem(New WaitCallback(AddressOf TransferToSyncFolderDelegate), InputObjects)
+                Next
+
+                If ThreadsStarted < 1 Then
+                    MyLog.Write("Failed to grab file list from source directory. Exception: EnumerateFiles returned no files.", Warning)
+                    Throw New Exception("No files found in source directory.")
                 End If
-            Loop
 
-            '==============================================================================================
+                'All threads have been started, now wait for them all to finish
+                Dim CheckPointThreadsCompleted As Int64 = Interlocked.Read(ThreadsCompleted)
+                Dim ThreadsRemaining As Int64 = ThreadsStarted - CheckPointThreadsCompleted
+                SyncBackgroundWorker.ReportProgress(CInt(CheckPointThreadsCompleted / ThreadsStarted * 100),
+                                                                {ThreadsRemaining, CheckPointThreadsCompleted})
 
-            e.Result = New ReturnObject(True, Nothing, SyncFolderSize)
-        Catch ex As Exception
-            MyLog.Write("Failed to complete sync. Exception: " & ex.Message, Warning)
-            e.Result = New ReturnObject(False, ex.Message)
-        End Try
+                Do
+                    If SyncBackgroundWorker.CancellationPending Then
+                        CancelTokenSource.Cancel()
+                        e.Cancel = True
+                        e.Result = New ReturnObject(False, "Sync was cancelled.")
+                        Exit Sub
+                    End If
+
+                    Thread.Sleep(CallbackUpdateMilliseconds)
+
+                    Dim ThreadsCompletedSoFar As Int64 = Interlocked.Read(ThreadsCompleted)
+
+                    If ThreadsCompletedSoFar > CheckPointThreadsCompleted Then 'At least one thread has finished since the last check
+                        If ThreadsCompletedSoFar >= ThreadsStarted Then 'All files have been processed, so end background worker
+                            MyLog.Write("All files processed. " & ThreadsStarted & " files synced.", Information)
+                            Exit Do
+                        Else
+                            ThreadsRemaining = ThreadsStarted - ThreadsCompletedSoFar
+                            SyncBackgroundWorker.ReportProgress(CInt(ThreadsCompletedSoFar / ThreadsStarted * 100),
+                                                                {ThreadsRemaining, ThreadsCompletedSoFar})
+                        End If
+                    End If
+                Loop
+
+                '==============================================================================================
+
+                e.Result = New ReturnObject(True, Nothing, SyncFolderSize)
+            Catch ex As Exception
+                MyLog.Write("Failed to complete sync. Exception: " & ex.Message, Warning)
+                e.Result = New ReturnObject(False, ex.Message)
+            End Try
+        End Using
 
     End Sub
 

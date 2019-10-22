@@ -51,6 +51,10 @@ Namespace Toolkit
 
 #Region " File/Directory Browsers "
     Public Class Browsers
+        Public Sub New()
+            ' Unused, since there are only shared functions in this class
+        End Sub
+
         Public Shared Function CreateDirectoryBrowser(StartingDirectory As String, Title As String) As ReturnObject
 
             Using SelectDirectoryDialog = New CommonOpenFileDialog()

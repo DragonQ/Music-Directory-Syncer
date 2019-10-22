@@ -14,14 +14,14 @@ Class FileParser
 
     Implements IDisposable
 
-    Private ProcessID As Int32
-    Private Shared FileTimeout As Int32 = 60
+    Private ReadOnly ProcessID As Int32
+    Private Const FileTimeout As Int32 = 60
     ReadOnly Property FilePath As String
-    Private HaveFileLock As Boolean
+    Private ReadOnly HaveFileLock As Boolean
     Private MyGlobalSyncSettings As GlobalSyncSettings
-    Private SyncSettings As SyncSettings()
+    Private ReadOnly SyncSettings As SyncSettings()
     Private SourceFileStream As FileStream = Nothing
-    Private DirectoryAccessPermissions As DirectorySecurity
+    Private ReadOnly DirectoryAccessPermissions As DirectorySecurity
 
 #Region " New "
     Public Sub New(ByRef NewGlobalSyncSettings As GlobalSyncSettings, ByVal NewProcessID As Int32, ByVal NewFilePath As String, ByVal NewDirectoryAccessPermissions As DirectorySecurity, Optional NewSyncSettings As SyncSettings() = Nothing)
@@ -277,7 +277,7 @@ Class FileParser
     Private Function TranscodeFile(FileTo As String, SyncSetting As SyncSettings) As ReturnObject
 
         Dim FileFrom As String = FilePath
-        Dim OutputFilePath As String = ""
+        Dim OutputFilePath As String
 
         Try
             Dim OutputDirectory As String = Path.GetDirectoryName(FileTo)
@@ -301,7 +301,7 @@ Class FileParser
 
             Dim FiltersString As String = ""
             If SyncSetting.ReplayGainSetting <> ReplayGainMode.None Then
-                FiltersString = " -af volume=replaygain=" & SyncSetting.GetReplayGainSetting().ToLower
+                FiltersString = " -af volume=replaygain=" & SyncSetting.GetReplayGainSetting().ToLower(EnglishGB)
             End If
 
             ffmpeg.Arguments = "-i """ & FileFrom & """ -vn -c:a " & SyncSetting.Encoder.GetProfiles(0).Argument & FiltersString & " -hide_banner """ & OutputFilePath & """"
@@ -332,20 +332,6 @@ Class FileParser
 #End Region
 
 #Region " Safe File Operations "
-    Private Function SafeCopy(SourceFilePath As String, SyncFilePath As String) As ReturnObject
-        Dim Result As ReturnObject = Nothing
-
-        If File.Exists(SourceFilePath) Then
-            Using SourceFileStream As FileStream = WaitForFile(SourceFilePath, FileMode.Open, FileAccess.Read, FileShare.Read, FileTimeout)
-                Result = SafeCopy(SourceFileStream, SyncFilePath)
-            End Using
-        Else
-            Result = New ReturnObject(False, "File does not exist: " & SourceFilePath)
-        End If
-
-        Return Result
-    End Function
-
     Private Function SafeCopy(SourceFileStream As FileStream, SyncFilePath As String) As ReturnObject
 
         Dim MyReturnObject As ReturnObject

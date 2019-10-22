@@ -5,7 +5,7 @@
     Property ffmpegPath As String
     Property LogLevel As Logger.LogLevel
     Property MaxThreads As Int32 = 1
-    Dim SyncSettings As SyncSettings()
+    Private SyncSettings As SyncSettings()
 
 #Region " New "
     Public Sub New(MySyncIsEnabled As Boolean, MySourceDirectory As String, My_ffmpegPath As String, MyMaxThreads As Int32, MySyncSettingsList As List(Of SyncSettings), MyLogLevel As String)
@@ -45,7 +45,7 @@
         LogLevel = Logger.ConvertStringToLogLevel(NewLogLevel)
     End Sub
 
-    Public Function GetLogLevel() As String
+    Public Function GetLogLevelString() As String
         Return Logger.ConvertLogLevelToString(LogLevel)
     End Function
 

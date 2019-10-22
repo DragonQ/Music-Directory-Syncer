@@ -13,16 +13,16 @@ Imports System.Collections.Specialized
 
 Public Class NewSyncWindow
 
-    Dim MySyncer As SyncerInitialiser = Nothing
-    Dim ExitApplication As Boolean = False
-    Dim SyncTimer As New Stopwatch()
-    Dim TagsToSync As ObservableCollection(Of Codec.Tag)
-    Dim FileTypesToSync As ObservableCollection(Of Codec)
-    Dim MyGlobalSyncSettings As GlobalSyncSettings
-    Dim MySyncSettings As SyncSettings
-    Dim MySyncSettingsList As List(Of SyncSettings)
-    Dim IsNewSync As Boolean
-    Dim SyncInProgress As Boolean = False
+    Private MySyncer As SyncerInitialiser = Nothing
+    Private ExitApplication As Boolean = False
+    Private ReadOnly SyncTimer As New Stopwatch()
+    Private TagsToSync As ObservableCollection(Of Codec.Tag)
+    Private FileTypesToSync As ObservableCollection(Of Codec)
+    Private MyGlobalSyncSettings As GlobalSyncSettings
+    Private MySyncSettings As SyncSettings
+    Private MySyncSettingsList As List(Of SyncSettings)
+    Private IsNewSync As Boolean
+    Private SyncInProgress As Boolean = False
 
 #Region " New "
     Public Sub New(NewGlobalSyncSettings As GlobalSyncSettings, MyNewSync As Boolean)
@@ -473,7 +473,7 @@ Public Class NewSyncWindow
         If Result.Success Then
             'Work out size of sync folder
             Dim SyncSize As Double = CType(Result.MyObject, Double) / (2 ^ 20) ' Convert to MiB
-            Dim SyncSizeString As String = ""
+            Dim SyncSizeString As String
             If SyncSize > 1024 Then ' Directory size is greater than 1 GiB
                 SyncSizeString = String.Format(EnglishGB, "{0:0.0}", SyncSize / (2 ^ 10)) & " GiB"
             Else
@@ -482,7 +482,7 @@ Public Class NewSyncWindow
 
             'Work out how long the sync took
             Dim SecondsTaken As Int64 = CInt(Math.Round(SyncTimer.ElapsedMilliseconds / 1000, 0))
-            Dim TimeTaken As String = ""
+            Dim TimeTaken As String
             If SecondsTaken > 60 Then 'Longer than one minute
                 Dim MinutesTaken As Int32 = CInt(Math.Round(SecondsTaken / 60, 0, MidpointRounding.AwayFromZero) - 1)
                 Dim SecondsRemaining = SecondsTaken - MinutesTaken * 60

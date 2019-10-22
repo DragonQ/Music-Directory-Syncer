@@ -7,8 +7,7 @@ Imports System.IO
 
 Public Class EditSyncSettingsWindow
 
-    Dim MyGlobalSyncSettings As GlobalSyncSettings
-    Dim MySyncSettings As SyncSettings
+    Private MyGlobalSyncSettings As GlobalSyncSettings
 
 #Region " New "
     Public Sub New(NewGlobalSyncSettings As GlobalSyncSettings)
