@@ -59,7 +59,7 @@ Class FileParser
     End Sub
 
 #Region " Transfer File To Sync Folder "
-    Public Function DeleteInSyncFolder() As ReturnObject
+    Public Function DeleteInSyncFolder(Optional QuietMode As Boolean = False) As ReturnObject
 
         Dim MyReturnObject As ReturnObject
 
@@ -79,24 +79,30 @@ Class FileParser
                     'Delete file if it exists in sync folder
                     If File.Exists(SyncFilePath) Then
                         File.Delete(SyncFilePath)
-                        MyLog.Write(ProcessID, "...file in sync folder deleted: """ & SyncFilePath.Substring(SyncSetting.SyncDirectory.Length) & """.", Information)
+                        MyLog.Write(ProcessID, "...file in sync folder deleted: """ & SyncFilePath.Substring(SyncSetting.SyncDirectory.Length) & """.", Debug)
                     Else
-                        MyLog.Write(ProcessID, "...file doesn't exist in sync folder: """ & SyncFilePath.Substring(SyncSetting.SyncDirectory.Length) & """.", Information)
+                        MyLog.Write(ProcessID, "...file doesn't exist in sync folder: """ & SyncFilePath.Substring(SyncSetting.SyncDirectory.Length) & """.", Debug)
                     End If
 
                     'Delete folder if there are no more files in it
                     Dim DirName = Path.GetDirectoryName(SyncFilePath)
                     If Directory.Exists(DirName) AndAlso Directory.GetFiles(DirName, "*", SearchOption.AllDirectories).Length = 0 Then
                         Directory.Delete(DirName)
-                        MyLog.Write(ProcessID, "...parent directory is now empty so was deleted: """ & DirName.Substring(SyncSetting.SyncDirectory.Length) & """.", Information)
+                        MyLog.Write(ProcessID, "...parent directory is now empty so was deleted: """ & DirName.Substring(SyncSetting.SyncDirectory.Length) & """.", Debug)
                     End If
                 Else
                     Throw New Exception("File was being watched but could not determine its codec.")
                 End If
             Next
 
+            Dim LogLevel As Logger.LogLevel
+            If (QuietMode) Then
+                LogLevel = Debug
+            Else
+                LogLevel = Information
+            End If
+            MyLog.Write(ProcessID, "Sync file deleted: """ & FilePath.Substring(MyGlobalSyncSettings.SourceDirectory.Length) & """", LogLevel)
             MyReturnObject = New ReturnObject(True, "", 0)
-            MyLog.Write(ProcessID, "Sync file deleted: """ & FilePath.Substring(MyGlobalSyncSettings.SourceDirectory.Length) & """", Information)
         Catch ex As Exception
             MyLog.Write(ProcessID, "Sync file deletion failed: """ & FilePath.Substring(MyGlobalSyncSettings.SourceDirectory.Length) & """. Exception: " & ex.Message, Warning)
             MyReturnObject = New ReturnObject(False, ex.Message, 0)
@@ -118,14 +124,14 @@ Class FileParser
                 'Delete file if it exists in sync folder
                 If Directory.Exists(SyncFilePath) Then
                     Directory.Delete(SyncFilePath, True)
-                    MyLog.Write(ProcessID, "...directory in sync folder deleted: """ & SyncFilePath.Substring(SyncSetting.SyncDirectory.Length) & """.", Information)
+                    MyLog.Write(ProcessID, "...directory in sync folder deleted: """ & SyncFilePath.Substring(SyncSetting.SyncDirectory.Length) & """.", Debug)
                 Else
-                    MyLog.Write(ProcessID, "...directory doesn't exist in sync folder: """ & SyncFilePath.Substring(SyncSetting.SyncDirectory.Length) & """.", Information)
+                    MyLog.Write(ProcessID, "...directory doesn't exist in sync folder: """ & SyncFilePath.Substring(SyncSetting.SyncDirectory.Length) & """.", Debug)
                 End If
             Next
 
-            MyReturnObject = New ReturnObject(True, "", 0)
             MyLog.Write(ProcessID, "Sync directory deleted: """ & FilePath.Substring(MyGlobalSyncSettings.SourceDirectory.Length) & """", Information)
+            MyReturnObject = New ReturnObject(True, "", 0)
         Catch ex As Exception
             MyLog.Write(ProcessID, "Sync directory deletion failed: """ & FilePath.Substring(MyGlobalSyncSettings.SourceDirectory.Length) & """. Exception: " & ex.Message, Warning)
             MyReturnObject = New ReturnObject(False, ex.Message, 0)
@@ -209,13 +215,13 @@ Class FileParser
                             Dim DirName = Path.GetDirectoryName(SyncFilePath)
                             If Not Directory.Exists(DirName) Then Directory.CreateDirectory(DirName, DirectoryAccessPermissions)
                             File.Move(OldSyncFilePath, SyncFilePath)
-                            MyLog.Write(ProcessID, "...successfully renamed file in sync folder.", Information)
+                            MyLog.Write(ProcessID, "...successfully renamed file in sync folder.", Debug)
 
                             'Delete folder if there are no more files in it
                             Dim OldDirName = Path.GetDirectoryName(OldSyncFilePath)
                             If Directory.Exists(OldDirName) AndAlso Directory.GetFiles(OldDirName, "*", SearchOption.AllDirectories).Length = 0 Then
                                 Directory.Delete(OldDirName)
-                                MyLog.Write(ProcessID, "...old parent directory is now empty so was deleted: """ & OldDirName.Substring(SyncSetting.SyncDirectory.Length) & """.", Information)
+                                MyLog.Write(ProcessID, "...old parent directory is now empty so was deleted: """ & OldDirName.Substring(SyncSetting.SyncDirectory.Length) & """.", Debug)
                             End If
                         Else
                             MyLog.Write(ProcessID, "...old file doesn't exist in sync folder: """ & OldSyncFilePath & """, creating now...", Warning)
@@ -235,7 +241,7 @@ Class FileParser
                                 If Not Result.Success Then Throw New Exception(Result.ErrorMessage)
                             End If
 
-                            MyLog.Write(ProcessID, "...successfully added file to sync folder.", Information)
+                            MyLog.Write(ProcessID, "...successfully added file to sync folder.", Debug)
                         End If
                     End If
                 Else

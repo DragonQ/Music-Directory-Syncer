@@ -252,7 +252,7 @@ Class FileProcessingQueue
                 FailureMessage = "File processing failed:"
             Case Is = FileProcessingInfo.ActionType.Changed
                 MyLog.Write(MyFileProcessingInfo.ProcessID, "Processing file: " & MyFileProcessingInfo.FilePath, Information)
-                Result = MyFileProcessingInfo.FileParser.DeleteInSyncFolder()
+                Result = MyFileProcessingInfo.FileParser.DeleteInSyncFolder(True)
                 If Result.Success Then Result = MyFileProcessingInfo.FileParser.TransferToSyncFolder()
                 SuccessMessage = "File processed:"
                 FailureMessage = "File processing failed:"
