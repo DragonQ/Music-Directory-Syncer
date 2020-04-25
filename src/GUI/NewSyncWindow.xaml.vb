@@ -268,12 +268,6 @@ Public Class NewSyncWindow
 
     End Sub
 
-    Private Sub CancelSync()
-        If Not MySyncer Is Nothing Then
-            MySyncer.SyncBackgroundWorker.CancelAsync()
-        End If
-    End Sub
-
     Private Sub btnNewSync_Click(sender As Object, e As RoutedEventArgs)
 
         If SyncInProgress Then 'Sync in progress, so we must cancel
@@ -542,6 +536,12 @@ Public Class NewSyncWindow
             DialogResult = False
         End If
 
+    End Sub
+
+    Private Sub CancelSync()
+        If Not MySyncer Is Nothing Then
+            MySyncer.SyncBackgroundWorker.CancelAsync()
+        End If
     End Sub
 #End Region
 
