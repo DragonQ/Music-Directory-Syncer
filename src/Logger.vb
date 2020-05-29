@@ -1,5 +1,5 @@
 ﻿#Region " Namespaces "
-Imports MusicFolderSyncer.Logger.LogLevel
+Imports MusicDirectorySyncer.Logger.LogLevel
 Imports System.Environment
 #End Region
 

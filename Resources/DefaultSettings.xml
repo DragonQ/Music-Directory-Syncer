@@ -1,5 +1,5 @@
 <?xml version="1.0"?>
-<MusicFolderSyncer>
+<MusicDirectorySyncer>
   <ffmpegPath>C:\Program Files\ffmpeg\ffmpeg.exe</ffmpegPath>
   <!--<SourceDirectory>P:\Audio\Music</SourceDirectory>-->
   <LogLevel>Information</LogLevel>
@@ -30,4 +30,4 @@
       </Encoder>
     </SyncSetting>
   </SyncSettings>
-</MusicFolderSyncer>
+</MusicDirectorySyncer>

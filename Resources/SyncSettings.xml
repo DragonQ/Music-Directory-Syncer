@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="utf-8"?>
-<MusicFolderSyncer>
+<MusicDirectorySyncer>
   <EnableSync />
   <SourceDirectory>\\hda\Audio\Music</SourceDirectory>
   <ffmpegPath>C:\Program Files\ffmpeg\ffmpeg.exe</ffmpegPath>
@@ -60,4 +60,4 @@
       </Encoder>
     </SyncSetting>
   </SyncSettings>
-</MusicFolderSyncer>
+</MusicDirectorySyncer>

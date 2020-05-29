@@ -1,6 +1,6 @@
 ﻿#Region " Namespaces "
-Imports MusicFolderSyncer.Toolkit
-Imports MusicFolderSyncer.Logger.LogLevel
+Imports MusicDirectorySyncer.Toolkit
+Imports MusicDirectorySyncer.Logger.LogLevel
 Imports System.IO
 Imports System.Environment
 Imports System.Threading
@@ -13,7 +13,7 @@ Public Class SyncerInitialiser
 
     Public WithEvents SyncBackgroundWorker As New BackgroundWorker
     Private ThreadsCompleted As Int64 = 0
-    Private SyncFolderSize As Int64 = 0
+    Private SyncDirectorySize As Int64 = 0
     Private MyGlobalSyncSettings As GlobalSyncSettings
     ReadOnly MySyncSettings As SyncSettings()
     ReadOnly CallbackUpdateMilliseconds As Int32 = 500  'Update UI twice a second by default
@@ -53,21 +53,21 @@ Public Class SyncerInitialiser
         SyncBackgroundWorker.WorkerSupportsCancellation = True
 
         'Begin sync on background thread
-        AddHandler SyncBackgroundWorker.DoWork, AddressOf SyncFolder
+        AddHandler SyncBackgroundWorker.DoWork, AddressOf SyncDirectory
         SyncBackgroundWorker.RunWorkerAsync()
 
     End Sub
 
-    Private Sub SyncFolder(sender As Object, e As DoWorkEventArgs)
+    Private Sub SyncDirectory(sender As Object, e As DoWorkEventArgs)
 
-        Dim FolderPath As String = MyGlobalSyncSettings.SourceDirectory
+        Dim DirectoryPath As String = MyGlobalSyncSettings.SourceDirectory
         Dim MyFiles As IEnumerable(Of FastFileInfo) = Nothing
 
         Using CancelTokenSource As New CancellationTokenSource()
             MyLog.Write("Scanning files in source directory.", Information)
 
             Try
-                MyFiles = FastFileInfo.EnumerateFiles(FolderPath, "*.*", SearchOption.AllDirectories)
+                MyFiles = FastFileInfo.EnumerateFiles(DirectoryPath, "*.*", SearchOption.AllDirectories)
             Catch ex As Exception
                 MyLog.Write("Failed to grab file list from source directory. Exception: " & ex.Message, Warning)
                 e.Result = New ReturnObject(False, ex.Message)
@@ -84,10 +84,10 @@ Public Class SyncerInitialiser
             Dim FileID As Int32 = 0
             Dim One As UInt32 = 1
 
-            'Delete existing sync folder if necessary
+            'Delete existing sync directory if necessary
             For Each Sync As SyncSettings In MySyncSettings
                 Try
-                    MyLog.Write("Deleting sync folder: " & Sync.SyncDirectory, Information)
+                    MyLog.Write("Deleting sync directory: " & Sync.SyncDirectory, Information)
                     Directory.Delete(Sync.SyncDirectory, True)
                 Catch ex As DirectoryNotFoundException
                     'Do nothing
@@ -96,30 +96,30 @@ Public Class SyncerInitialiser
                     If ex.InnerException IsNot Nothing Then
                         MyError &= NewLine & NewLine & ex.InnerException.ToString
                     End If
-                    MyLog.Write("Failed to delete existing files in sync folder [1]. Exception: " & MyError, Warning)
+                    MyLog.Write("Failed to delete existing files in sync directory [1]. Exception: " & MyError, Warning)
                     e.Result = New ReturnObject(False, ex.Message)
                     Exit Sub
                 End Try
             Next
 
-            'Create sync folder
+            'Create sync directory
             For Each Sync As SyncSettings In MySyncSettings
                 Try
-                    MyLog.Write("Creating sync folder: " & Sync.SyncDirectory, Information)
+                    MyLog.Write("Creating sync directory: " & Sync.SyncDirectory, Information)
                     Directory.CreateDirectory(Sync.SyncDirectory, MyDirectoryPermissions)
                 Catch ex As Exception
                     Dim MyError As String = ex.Message
                     If ex.InnerException IsNot Nothing Then
                         MyError &= NewLine & NewLine & ex.InnerException.ToString
                     End If
-                    MyLog.Write("Failed to delete existing files in sync folder [2]. Exception: " & MyError, Warning)
+                    MyLog.Write("Failed to delete existing files in sync directory [2]. Exception: " & MyError, Warning)
                     e.Result = New ReturnObject(False, ex.Message)
                     Exit Sub
                 End Try
             Next
 
             MyLog.Write("Starting file processing threads.", Information)
-            SyncFolderSize = 0
+            SyncDirectorySize = 0
 
             Try
                 '==============================================================================================
@@ -134,7 +134,7 @@ Public Class SyncerInitialiser
                 '        If MyThreadsRunning < MySyncSettings.MaxThreads Then
                 '            Interlocked.Increment(ThreadsRunning)
 
-                '            Dim NewThread As New Thread(New ParameterizedThreadStart(AddressOf TransferToSyncFolderDelegate))
+                '            Dim NewThread As New Thread(New ParameterizedThreadStart(AddressOf TransferToSyncDirectoryDelegate))
                 '            NewThread.IsBackground = True
                 '            Dim InputObjects As Object() = {MyFile.Path, CodecsToCheck}
 
@@ -189,7 +189,7 @@ Public Class SyncerInitialiser
 
                     ThreadsStarted += One
                     Dim InputObjects As Object() = {FileID, MyFile.FullName, MySyncSettings, MyDirectoryPermissions, CancelTokenSource.Token}
-                    ThreadPool.QueueUserWorkItem(New WaitCallback(AddressOf TransferToSyncFolderDelegate), InputObjects)
+                    ThreadPool.QueueUserWorkItem(New WaitCallback(AddressOf TransferToSyncDirectoryDelegate), InputObjects)
                 Next
 
                 If ThreadsStarted < 1 Then
@@ -229,7 +229,7 @@ Public Class SyncerInitialiser
 
                 '==============================================================================================
 
-                e.Result = New ReturnObject(True, Nothing, SyncFolderSize)
+                e.Result = New ReturnObject(True, Nothing, SyncDirectorySize)
             Catch ex As Exception
                 MyLog.Write("Failed to complete sync. Exception: " & ex.Message, Warning)
                 e.Result = New ReturnObject(False, ex.Message)
@@ -238,7 +238,7 @@ Public Class SyncerInitialiser
 
     End Sub
 
-    Private Sub TransferToSyncFolderDelegate(ByVal Input As Object)
+    Private Sub TransferToSyncDirectoryDelegate(ByVal Input As Object)
 
         Try
             Dim InputObjects As Object() = CType(Input, Object())
@@ -252,20 +252,20 @@ Public Class SyncerInitialiser
                 Dim TransferResult As ReturnObject
 
                 Using MyFileParser As New FileParser(MyGlobalSyncSettings, ProcessID, FilePath, AccessPermissions, NewSyncSettings)
-                    TransferResult = MyFileParser.TransferToSyncFolder()
+                    TransferResult = MyFileParser.TransferToSyncDirectory()
                 End Using
                 If TransferResult.Success Then
                     Dim NewSize As Int64 = CType(TransferResult.MyObject, Int64)
 
                     If NewSize > 0 Then
-                        Interlocked.Add(SyncFolderSize, NewSize)
+                        Interlocked.Add(SyncDirectorySize, NewSize)
                     End If
                 Else
                     MyLog.Write(ProcessID, "File could not be processed. Error: " & TransferResult.ErrorMessage, Warning)
                 End If
             End If
         Catch ex As Exception
-            MyLog.Write(Int32.MaxValue, "File could not be processed. Malformed input to TransferToSyncFolderDelegate.", Warning)
+            MyLog.Write(Int32.MaxValue, "File could not be processed. Malformed input to TransferToSyncDirectoryDelegate.", Warning)
         Finally
             Interlocked.Increment(ThreadsCompleted)
             'Interlocked.Decrement(ThreadsRunning)

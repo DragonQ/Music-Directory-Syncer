@@ -1,6 +1,6 @@
 ﻿#Region " Namespaces "
-Imports MusicFolderSyncer.Logger.LogLevel
-Imports MusicFolderSyncer.Toolkit
+Imports MusicDirectorySyncer.Logger.LogLevel
+Imports MusicDirectorySyncer.Toolkit
 Imports System.IO
 Imports System.Security.AccessControl
 Imports System.Security.Principal
@@ -14,7 +14,7 @@ Module Startup
     Public MyVersion As String = ""
     Public MyDirectoryPermissions As DirectorySecurity
 
-    Public Const ApplicationName As String = "Music Folder Syncer"
+    Public Const ApplicationName As String = "Music Directory Syncer"
     Public MyLog As Logger
     Public UserGlobalSyncSettings As GlobalSyncSettings = Nothing
     Public DefaultGlobalSyncSettings As GlobalSyncSettings = Nothing

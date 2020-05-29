@@ -1,7 +1,7 @@
 ﻿#Region " Namespaces "
-Imports MusicFolderSyncer.Toolkit
-Imports MusicFolderSyncer.Logger.LogLevel
-Imports MusicFolderSyncer.FileProcessingQueue
+Imports MusicDirectorySyncer.Toolkit
+Imports MusicDirectorySyncer.Logger.LogLevel
+Imports MusicDirectorySyncer.FileProcessingQueue
 Imports System.Windows.Forms
 Imports System.Environment
 Imports System.IO
@@ -181,8 +181,8 @@ Public Class TrayApp
         MySyncer = New SyncerInitialiser(UserGlobalSyncSettings, 500)
 
         'Set callback functions for the SyncBackgroundWorker
-        MySyncer.AddProgressCallback(AddressOf SyncFolderProgressChanged)
-        MySyncer.AddCompletionCallback(AddressOf SyncFolderCompleted)
+        MySyncer.AddProgressCallback(AddressOf SyncDirectoryProgressChanged)
+        MySyncer.AddCompletionCallback(AddressOf SyncDirectoryCompleted)
 
         'Start sync
         If Tray.Visible Then Tray.ShowBalloonTip(BalloonTime, "Processing files...", "Right-click or hover over the application icon to see progress.", ToolTipIcon.Info)
@@ -527,14 +527,14 @@ Public Class TrayApp
         End If
     End Sub
 
-    Private Sub SyncFolderProgressChanged(sender As Object, e As ProgressChangedEventArgs)
+    Private Sub SyncDirectoryProgressChanged(sender As Object, e As ProgressChangedEventArgs)
 
         mnuStatus.Text = "Processing files (" & e.ProgressPercentage & "% complete)"
         Tray.Text = "Processing files (" & e.ProgressPercentage & "% complete)"
 
     End Sub
 
-    Private Sub SyncFolderCompleted(sender As Object, e As System.ComponentModel.RunWorkerCompletedEventArgs)
+    Private Sub SyncDirectoryCompleted(sender As Object, e As System.ComponentModel.RunWorkerCompletedEventArgs)
 
         SyncTimer.Stop()
         MySyncer = Nothing
@@ -567,7 +567,7 @@ Public Class TrayApp
                 Dim Result As ReturnObject = CType(e.Result, ReturnObject)
 
                 If Result.Success Then
-                    'Work out size of sync folder
+                    'Work out size of sync directory
                     Dim SyncSize As Double = CType(Result.MyObject, Double) / (2 ^ 20) ' Convert to MiB
                     Dim SyncSizeString As String
                     If SyncSize > 1024 Then ' Directory size is greater than 1 GiB

@@ -1,5 +1,5 @@
 ﻿#Region " Namespaces "
-Imports MusicFolderSyncer.Toolkit
+Imports MusicDirectorySyncer.Toolkit
 Imports TagLib
 Imports System.Globalization.CultureInfo
 #End Region

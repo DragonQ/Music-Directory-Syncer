@@ -8,12 +8,12 @@ Imports System.Resources
 
 ' Review the values of the assembly attributes
 
-<Assembly: AssemblyTitle("Music Folder Syncer")>
+<Assembly: AssemblyTitle("Music Directory Syncer")>
 <Assembly: AssemblyDescription("")> 
 <Assembly: AssemblyCompany("")>
-<Assembly: AssemblyProduct("Music Folder Syncer")>
+<Assembly: AssemblyProduct("Music Directory Syncer")>
 
-<Assembly: AssemblyCopyright("Copyright © DragonQ 2017")>
+<Assembly: AssemblyCopyright("Copyright © DragonQ 2020")>
 <Assembly: AssemblyTrademark("")> 
 <Assembly: ComVisible(false)>
 

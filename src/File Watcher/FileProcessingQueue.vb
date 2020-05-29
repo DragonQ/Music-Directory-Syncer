@@ -1,7 +1,7 @@
 ﻿#Region " Namespaces "
-Imports MusicFolderSyncer.Toolkit
-Imports MusicFolderSyncer.Logger.LogLevel
-Imports MusicFolderSyncer.FileProcessingQueue.FileProcessingInfo.ActionType
+Imports MusicDirectorySyncer.Toolkit
+Imports MusicDirectorySyncer.Logger.LogLevel
+Imports MusicDirectorySyncer.FileProcessingQueue.FileProcessingInfo.ActionType
 Imports System.Threading
 #End Region
 
@@ -10,7 +10,7 @@ Class FileProcessingQueue
 
     Private TaskQueueMutex As Object
     Private TasksRunningMutex As Object
-    Private FileTaskList As New List(Of FileProcessingInfo)
+    Private ReadOnly FileTaskList As New List(Of FileProcessingInfo)
     Private ReadOnly WaitBeforeSlowProcessing_ms As Int32 = 5000     'Repeated file-changed events within this time period cause file processing to restart
     Private Const WaitBeforeFastProcessing_ms As Int32 = 50       'Non-zero to give time for cancellation events to filter through
     Private TasksRunning As Int64 = 0
@@ -232,28 +232,28 @@ Class FileProcessingQueue
         Select Case MyFileProcessingInfo.ActionToTake
             Case Is = FileProcessingInfo.ActionType.DirectoryDeleted
                 MyLog.Write(MyFileProcessingInfo.ProcessID, "Processing directory: " & MyFileProcessingInfo.FilePath, Information)
-                Result = MyFileProcessingInfo.FileParser.DeleteDirectoryInSyncFolder()
+                Result = MyFileProcessingInfo.FileParser.DeleteDirectoryInSyncDirectory()
                 SuccessMessage = "Directory deleted:"
                 FailureMessage = "Directory deletion failed:"
             Case Is = FileProcessingInfo.ActionType.Deleted
                 MyLog.Write(MyFileProcessingInfo.ProcessID, "Processing file: " & MyFileProcessingInfo.FilePath, Information)
-                Result = MyFileProcessingInfo.FileParser.DeleteInSyncFolder()
+                Result = MyFileProcessingInfo.FileParser.DeleteInSyncDirectory()
                 SuccessMessage = "File deleted:"
                 FailureMessage = "File deletion failed:"
             Case Is = FileProcessingInfo.ActionType.Renamed
                 MyLog.Write(MyFileProcessingInfo.ProcessID, "Processing file: " & MyFileProcessingInfo.FilePath, Information)
-                Result = MyFileProcessingInfo.FileParser.RenameInSyncFolder(MyFileProcessingInfo.OldFilePath)
+                Result = MyFileProcessingInfo.FileParser.RenameInSyncDirectory(MyFileProcessingInfo.OldFilePath)
                 SuccessMessage = "File processed:"
                 FailureMessage = "File processing failed:"
             Case Is = FileProcessingInfo.ActionType.Created
                 MyLog.Write(MyFileProcessingInfo.ProcessID, "Processing file: " & MyFileProcessingInfo.FilePath, Information)
-                Result = MyFileProcessingInfo.FileParser.TransferToSyncFolder()
+                Result = MyFileProcessingInfo.FileParser.TransferToSyncDirectory()
                 SuccessMessage = "File processed:"
                 FailureMessage = "File processing failed:"
             Case Is = FileProcessingInfo.ActionType.Changed
                 MyLog.Write(MyFileProcessingInfo.ProcessID, "Processing file: " & MyFileProcessingInfo.FilePath, Information)
-                Result = MyFileProcessingInfo.FileParser.DeleteInSyncFolder(True)
-                If Result.Success Then Result = MyFileProcessingInfo.FileParser.TransferToSyncFolder()
+                Result = MyFileProcessingInfo.FileParser.DeleteInSyncDirectory(True)
+                If Result.Success Then Result = MyFileProcessingInfo.FileParser.TransferToSyncDirectory()
                 SuccessMessage = "File processed:"
                 FailureMessage = "File processing failed:"
         End Select

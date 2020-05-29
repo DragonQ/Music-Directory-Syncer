@@ -1,5 +1,5 @@
 <?xml version="1.0"?>
-<MusicFolderSyncer>
+<MusicDirectorySyncer>
   <Codecs>
     <Codec>
       <Name>OGG</Name>
@@ -86,4 +86,4 @@
       </Profiles>
     </Codec>
   </Codecs>
-</MusicFolderSyncer>
+</MusicDirectorySyncer>

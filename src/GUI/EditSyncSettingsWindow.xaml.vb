@@ -1,13 +1,13 @@
 ﻿#Region " Namespaces "
-Imports MusicFolderSyncer.Logger.LogLevel
-Imports MusicFolderSyncer.Toolkit
-Imports MusicFolderSyncer.Toolkit.Browsers
+Imports MusicDirectorySyncer.Logger.LogLevel
+Imports MusicDirectorySyncer.Toolkit
+Imports MusicDirectorySyncer.Toolkit.Browsers
 Imports System.IO
 #End Region
 
 Public Class EditSyncSettingsWindow
 
-    Private MyGlobalSyncSettings As GlobalSyncSettings
+    Private ReadOnly MyGlobalSyncSettings As GlobalSyncSettings
 
 #Region " New "
     Public Sub New(NewGlobalSyncSettings As GlobalSyncSettings)

@@ -1,10 +1,10 @@
 ﻿#Region " Namespaces "
-Imports MusicFolderSyncer.Toolkit
-Imports MusicFolderSyncer.Toolkit.Browsers
-Imports MusicFolderSyncer.Codec.CodecType
-Imports MusicFolderSyncer.Logger.LogLevel
-Imports MusicFolderSyncer.SyncSettings
-Imports MusicFolderSyncer.SyncSettings.TranscodeMode
+Imports MusicDirectorySyncer.Toolkit
+Imports MusicDirectorySyncer.Toolkit.Browsers
+Imports MusicDirectorySyncer.Codec.CodecType
+Imports MusicDirectorySyncer.Logger.LogLevel
+Imports MusicDirectorySyncer.SyncSettings
+Imports MusicDirectorySyncer.SyncSettings.TranscodeMode
 Imports System.IO
 Imports System.Environment
 Imports System.Collections.ObjectModel
@@ -17,11 +17,11 @@ Public Class NewSyncWindow
     Private ExitApplication As Boolean = False
     Private ReadOnly SyncTimer As New Stopwatch()
     Private TagsToSync As ObservableCollection(Of Codec.Tag)
-    Private FileTypesToSync As ObservableCollection(Of Codec)
-    Private MyGlobalSyncSettings As GlobalSyncSettings
-    Private MySyncSettings As SyncSettings
+    Private ReadOnly FileTypesToSync As ObservableCollection(Of Codec)
+    Private ReadOnly MyGlobalSyncSettings As GlobalSyncSettings
+    Private ReadOnly MySyncSettings As SyncSettings
     Private MySyncSettingsList As List(Of SyncSettings)
-    Private IsNewSync As Boolean
+    Private ReadOnly IsNewSync As Boolean
     Private SyncInProgress As Boolean = False
 
 #Region " New "
@@ -276,8 +276,8 @@ Public Class NewSyncWindow
                 CancelSync()
             End If
         Else 'Begin sync process
-            If System.Windows.MessageBox.Show("Are you sure you want to start a new sync? This will delete all files and folders in the specified " &
-                    "sync folder!", "New Sync", MessageBoxButton.OKCancel, MessageBoxImage.Warning) = MessageBoxResult.OK Then
+            If System.Windows.MessageBox.Show("Are you sure you want to start a new sync? This will delete all files and directories in the specified " &
+                    "sync directory!", "New Sync", MessageBoxButton.OKCancel, MessageBoxImage.Warning) = MessageBoxResult.OK Then
 
                 'Disable window controls
                 EnableDisableControls(False)
@@ -300,7 +300,7 @@ Public Class NewSyncWindow
                     End If
                 End If
 
-                MyLog.Write("Creating new folder sync!", Warning)
+                MyLog.Write("Creating new directory sync!", Warning)
                 MyLog.Write("Source directory: """ & txtSourceDirectory.Text & """.", Information)
                 MyLog.Write("Sync directory: """ & txtSyncDirectory.Text & """.", Information)
 
@@ -356,7 +356,7 @@ Public Class NewSyncWindow
                 txtFilesProcessed.Text = "???"
                 btnNewSync.Content = "Scanning files..."
                 SyncTimer.Start()
-                SyncFolder()
+                SyncDirectory()
             End If
         End If
 
@@ -389,14 +389,14 @@ Public Class NewSyncWindow
 #End Region
 
 #Region " Start New Sync [Background Worker] "
-    Private Sub SyncFolder()
+    Private Sub SyncDirectory()
 
         'Create syncer initialiser
         MySyncer = New SyncerInitialiser(MyGlobalSyncSettings, MySyncSettings, 500)
 
         'Set callback functions for the SyncBackgroundWorker
-        MySyncer.AddProgressCallback(AddressOf SyncFolderProgressChanged)
-        MySyncer.AddCompletionCallback(AddressOf SyncFolderCompleted)
+        MySyncer.AddProgressCallback(AddressOf SyncDirectoryProgressChanged)
+        MySyncer.AddCompletionCallback(AddressOf SyncDirectoryCompleted)
 
         'Start sync
         SyncInProgress = True
@@ -404,7 +404,7 @@ Public Class NewSyncWindow
 
     End Sub
 
-    Private Sub SyncFolderProgressChanged(sender As Object, e As ProgressChangedEventArgs)
+    Private Sub SyncDirectoryProgressChanged(sender As Object, e As ProgressChangedEventArgs)
 
         'If Not e.UserState Is Nothing Then txtThreadsRunning.Text = "Threads running: " & CType(e.UserState, Int64).ToString
         If Not e.UserState Is Nothing Then
@@ -418,7 +418,7 @@ Public Class NewSyncWindow
 
     End Sub
 
-    Private Sub SyncFolderCompleted(sender As Object, e As System.ComponentModel.RunWorkerCompletedEventArgs)
+    Private Sub SyncDirectoryCompleted(sender As Object, e As System.ComponentModel.RunWorkerCompletedEventArgs)
 
         SyncTimer.Stop()
         txtFilesRemaining.Text = ""
@@ -465,7 +465,7 @@ Public Class NewSyncWindow
         Dim Result As ReturnObject = CType(e.Result, ReturnObject)
 
         If Result.Success Then
-            'Work out size of sync folder
+            'Work out size of sync directory
             Dim SyncSize As Double = CType(Result.MyObject, Double) / (2 ^ 20) ' Convert to MiB
             Dim SyncSizeString As String
             If SyncSize > 1024 Then ' Directory size is greater than 1 GiB
@@ -487,7 +487,7 @@ Public Class NewSyncWindow
 
             'Ask user if they want to start the background sync updater (presumably yes)
             If System.Windows.MessageBox.Show("Sync directory size: " & SyncSizeString & NewLine & NewLine & "Time taken: " & TimeTaken & NewLine & NewLine &
-                               "Do you want to enable background sync? This will ensure your sync folders are always up-to-date.", "Sync Complete!",
+                               "Do you want to enable background sync? This will ensure your sync directories are always up-to-date.", "Sync Complete!",
                                     MessageBoxButton.OKCancel, MessageBoxImage.Information) = MessageBoxResult.OK Then
                 MyGlobalSyncSettings.SyncIsEnabled = True
             Else

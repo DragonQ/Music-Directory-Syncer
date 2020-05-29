@@ -1,6 +1,6 @@
 ﻿#Region " Namespaces "
-Imports MusicFolderSyncer.Toolkit
-Imports MusicFolderSyncer.SyncSettings
+Imports MusicDirectorySyncer.Toolkit
+Imports MusicDirectorySyncer.SyncSettings
 Imports System.IO
 Imports System.Xml
 #End Region
@@ -34,7 +34,7 @@ Module XML
                 Dim CodecsXML As XDocument = XDocument.Load(CodecFileReader)
 
                 'Find all <Codec> elements and assign properties based on known sub-elements
-                Dim Codecs = From Codec In CodecsXML.Elements("MusicFolderSyncer").Elements("Codecs").Elements("Codec")
+                Dim Codecs = From Codec In CodecsXML.Elements("MusicDirectorySyncer").Elements("Codecs").Elements("Codec")
                              Select New With
                     {
                     .Name = Codec.Element("Name").Value,
@@ -103,7 +103,7 @@ Module XML
                 Dim SettingsXML As XDocument = XDocument.Load(SettingsFileReader)
 
                 'Find global settings
-                Dim GlobalSettings = From Setting In SettingsXML.Elements("MusicFolderSyncer")
+                Dim GlobalSettings = From Setting In SettingsXML.Elements("MusicDirectorySyncer")
                                      Select New With
                     {
                         .EnableSync = If(Setting.OptionalElement("EnableSync"), Nothing),
@@ -122,10 +122,10 @@ Module XML
                         If Not GlobalSettings(0).LogLevel Is Nothing Then GlobalSyncSettings.SetLogLevel(GlobalSettings(0).LogLevel)
                         If Not GlobalSettings(0).MaxThreads Is Nothing Then GlobalSyncSettings.MaxThreads = CInt(GlobalSettings(0).MaxThreads)
                     Else
-                        Throw New Exception("Settings file is malformed: too many <MusicFolderSyncer> elements.")
+                        Throw New Exception("Settings file is malformed: too many <MusicDirectorySyncer> elements.")
                     End If
                 Else
-                    Throw New Exception("Settings file is malformed: missing <MusicFolderSyncer> element.")
+                    Throw New Exception("Settings file is malformed: missing <MusicDirectorySyncer> element.")
                 End If
 
                 Dim Settings = From Setting In GlobalSettings(0).SyncSettings.Elements("SyncSetting")
@@ -283,7 +283,7 @@ Module XML
             Using MyWriter As XmlWriter = XmlWriter.Create(FileData, XMLSettings)
                 'Begin document
                 MyWriter.WriteStartDocument()
-                MyWriter.WriteStartElement("MusicFolderSyncer")
+                MyWriter.WriteStartElement("MusicDirectorySyncer")
 
                 If MyGlobalSyncSettings.SyncIsEnabled Then
                     MyWriter.WriteStartElement("EnableSync")
