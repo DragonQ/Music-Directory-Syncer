@@ -84,12 +84,8 @@ Class FileParser
                         MyLog.Write(ProcessID, "...file doesn't exist in sync folder: """ & SyncFilePath.Substring(SyncSetting.SyncDirectory.Length) & """.", Debug)
                     End If
 
-                    'Delete folder if there are no more files in it
-                    Dim DirName = Path.GetDirectoryName(SyncFilePath)
-                    If Directory.Exists(DirName) AndAlso Directory.GetFiles(DirName, "*", SearchOption.AllDirectories).Length = 0 Then
-                        Directory.Delete(DirName)
-                        MyLog.Write(ProcessID, "...parent directory is now empty so was deleted: """ & DirName.Substring(SyncSetting.SyncDirectory.Length) & """.", Debug)
-                    End If
+                    'Delete parent directory if there are no more files in it
+                    RecursiveDeleteEmptyDirectory(Path.GetDirectoryName(SyncFilePath), SyncSetting.SyncDirectory.Length)
                 Else
                     Throw New Exception("File was being watched but could not determine its codec.")
                 End If
@@ -111,6 +107,15 @@ Class FileParser
         Return MyReturnObject
 
     End Function
+
+    Private Sub RecursiveDeleteEmptyDirectory(DirName As String, SyncDirectoryLength As Integer)
+        If Directory.Exists(DirName) AndAlso Not Directory.EnumerateFileSystemEntries(DirName).Any() Then
+            Dim ParentDir As DirectoryInfo = Directory.GetParent(DirName)
+            Directory.Delete(DirName)
+            MyLog.Write(ProcessID, "...empty parent directory in sync folder deleted: """ & DirName.Substring(SyncDirectoryLength) & """.", Debug)
+            RecursiveDeleteEmptyDirectory(ParentDir.ToString, SyncDirectoryLength)
+        End If
+    End Sub
 
     Public Function DeleteDirectoryInSyncFolder() As ReturnObject
 
