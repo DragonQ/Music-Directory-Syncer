@@ -80,8 +80,8 @@ Public Class Codec
     Public Overridable Function MatchTag(FilePath As String, Tags As Tag()) As ReturnObject
 
         Select Case Me.Name
-            Case Is = "FLAC", "OGG Vorbis"
-                Return FlacCodec.MatchTag(FilePath, Tags)
+            Case Is = "FLAC", "OGG"
+                Return OggCodec.MatchTag(FilePath, Tags, Me.Name)
             Case Is = "WMA Lossless", "WMA"
                 Return WMACodec.MatchTag(FilePath, Tags)
             Case Is = "MP3"
@@ -146,13 +146,13 @@ Public Class Codec
         End Property
     End Class
 
-    Private Class FlacCodec
+    Private Class OggCodec
 
         Private Sub New()
             ' Unused...
         End Sub
 
-        Public Shared Function MatchTag(FilePath As String, Tags As Tag()) As ReturnObject
+        Public Shared Function MatchTag(FilePath As String, Tags As Tag(), CodecName As String) As ReturnObject
 
             If Not Tags Is Nothing Then
                 Try
@@ -160,12 +160,21 @@ Public Class Codec
                         'Tags weren't specified, so always match every file
                         Return New ReturnObject(True, "", True)
                     Else
-                        'Find tags within FLAC file
-                        Using FlacFile As New Flac.File(FilePath)
-                            Dim Xiph As Ogg.XiphComment = CType(FlacFile.GetTag(TagTypes.Xiph, False), Ogg.XiphComment)
+                        'Find tags within OGG/FLAC file
+                        Dim MyFile As TagLib.File
+                        If CodecName = "FLAC" Then
+                            MyFile = New Flac.File(FilePath)
+                        ElseIf CodecName = "OGG" Then
+                            MyFile = New Ogg.File(FilePath)
+                        Else
+                            Throw New Exception("Cannot find tags because codec name """ & CodecName & """ is not recognised.")
+                        End If
+
+                        Using MyFile
+                            Dim Xiph As Ogg.XiphComment = CType(MyFile.GetTag(TagTypes.Xiph, False), Ogg.XiphComment)
 
                             If Xiph Is Nothing Then
-                                Throw New Exception("FLAC tags not found.")
+                                Throw New Exception("OGG/FLAC tags not found.")
                             Else
                                 'Search for each requested tag
                                 For Each MyTag As Tag In Tags
