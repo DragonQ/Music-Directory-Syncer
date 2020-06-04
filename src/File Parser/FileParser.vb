@@ -222,18 +222,19 @@ Class FileParser
                             File.Move(OldSyncFilePath, SyncFilePath)
                             MyLog.Write(ProcessID, "...successfully renamed file in sync directory.", Debug)
 
-                            'Delete directory if there are no more files in it
-                            Dim OldDirName = Path.GetDirectoryName(OldSyncFilePath)
-                            If Directory.Exists(OldDirName) AndAlso Directory.GetFiles(OldDirName, "*", SearchOption.AllDirectories).Length = 0 Then
-                                Directory.Delete(OldDirName)
-                                MyLog.Write(ProcessID, "...old parent directory is now empty so was deleted: """ & OldDirName.Substring(SyncSetting.SyncDirectory.Length) & """.", Debug)
-                            End If
+                            'Delete old directory if there are no more files in it
+                            RecursiveDeleteEmptyDirectory(Path.GetDirectoryName(OldSyncFilePath), SyncSetting.SyncDirectory.Length)
                         Else
-                            MyLog.Write(ProcessID, "...old file doesn't exist in sync directory: """ & OldSyncFilePath & """, creating now...", Warning)
+                            ' This is a tricky edge case. SrcFileA has been renamed to SrcFileB, but SyncFileA doesn't exist,
+                            ' so we can't simply rename SyncFileA to SyncFileB. We need to do a fresh transcode/copy instead.
+                            ' However, SyncFileB may already exist! If so, we need to delete it before continuing, using DeleteInSyncDirectory().
+                            MyLog.Write(ProcessID, "...old file doesn't exist in sync directory (this could be a temporary file being renamed): """ & OldSyncFilePath & """, creating now...", Warning)
+                            Dim Result As ReturnObject = DeleteInSyncDirectory(True)
+                            If Not Result.Success Then Throw New Exception("Could not delete destination file before rename.")
 
                             If SyncSetting.TranscodeSetting = All OrElse (SyncSetting.TranscodeSetting = LosslessOnly AndAlso FileCodec.CompressionType = Lossless) Then 'Need to transcode file
                                 MyLog.Write(ProcessID, "...transcoding file to " & SyncSetting.Encoder.Name & "...", Debug)
-                                Dim Result As ReturnObject = TranscodeFile(SyncFilePath, SyncSetting)
+                                Result = TranscodeFile(SyncFilePath, SyncSetting)
                                 If Result.Success Then
                                     SyncFilePath = Path.Combine(Path.GetDirectoryName(SyncFilePath), Path.GetFileNameWithoutExtension(SyncFilePath)) &
                                                         SyncSetting.Encoder.GetFileExtensions(0)
@@ -242,7 +243,7 @@ Class FileParser
                                 End If
                             Else
                                 Directory.CreateDirectory(Path.GetDirectoryName(SyncFilePath), DirectoryAccessPermissions)
-                                Dim Result As ReturnObject = SafeCopy(SourceFileStream, SyncFilePath)
+                                Result = SafeCopy(SourceFileStream, SyncFilePath)
                                 If Not Result.Success Then Throw New Exception(Result.ErrorMessage)
                             End If
 
