@@ -116,7 +116,6 @@ Class FileProcessingQueue
         SyncLock TaskQueueMutex
             MyLog.Write(MyFileProcessingInfo.ProcessID, "Checking if file is already being processed: " & MyFileProcessingInfo.FilePath, Debug)
             For Each OtherFileProcessingInfo As FileProcessingInfo In FileTaskList
-                MyLog.Write(MyFileProcessingInfo.ProcessID, "File is already being processed: " & OtherFileProcessingInfo.FilePath, Debug)
                 If OtherFileProcessingInfo.ProcessID <> MyFileProcessingInfo.ProcessID AndAlso OtherFileProcessingInfo.FilePath = MyFileProcessingInfo.FilePath Then 'Cancel task
                     MyFileProcessingInfo.CancelState.Cancel()
                     TaskCancelled = True
