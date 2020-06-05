@@ -43,11 +43,12 @@ Class FileProcessingQueue
             FileTaskList.Add(MyFileProcessingInfo)
         End SyncLock
 
+        'Cancel all other file tasks if they are accessing the same file as this task
+        CancelFileTaskIfAlreadyRunning(MyFileProcessingInfo)
+
         'Only wait when a file was changed/created. A deleted or renamed file shouldn't require any transcoding so no point waiting
         Select Case MyFileProcessingInfo.ActionToTake
             Case Is = Changed, Created
-                'Cancel all other file tasks if they are accessing the same file as this task
-                CancelFileTaskIfAlreadyRunning(MyFileProcessingInfo)
                 WaitTime_ms = WaitBeforeSlowProcessing_ms
             Case Is = Renamed, Deleted, DirectoryDeleted
                 WaitTime_ms = WaitBeforeFastProcessing_ms
