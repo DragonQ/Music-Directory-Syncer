@@ -46,11 +46,11 @@ Class FileProcessingQueue
         'Cancel all other file tasks if they are accessing the same file as this task
         CancelFileTaskIfAlreadyRunning(MyFileProcessingInfo)
 
-        'Only wait when a file was changed/created. A deleted or renamed file shouldn't require any transcoding so no point waiting
+        'Only wait when a file was changed/created/renamed. A deleted file/directory shouldn't require any transcoding so no point waiting
         Select Case MyFileProcessingInfo.ActionToTake
-            Case Is = Changed, Created
+            Case Is = Changed, Created, Renamed
                 WaitTime_ms = WaitBeforeSlowProcessing_ms
-            Case Is = Renamed, Deleted, DirectoryDeleted
+            Case Is = Deleted, DirectoryDeleted
                 WaitTime_ms = WaitBeforeFastProcessing_ms
         End Select
 
