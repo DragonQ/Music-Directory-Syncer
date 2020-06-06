@@ -6,6 +6,7 @@ Imports System.Environment
 Public Class Logger
 
     Public Enum LogLevel
+        Trace
         Debug
         Information
         Warning
@@ -27,6 +28,8 @@ Public Class Logger
     Public Shared Function ConvertStringToLogLevel(LogLevelString As String) As LogLevel
 
         Select Case LogLevelString
+            Case Is = "Trace"
+                Return Trace
             Case Is = "Debug"
                 Return Debug
             Case Is = "Information"
@@ -44,6 +47,8 @@ Public Class Logger
     Public Shared Function ConvertLogLevelToString(LogLevel As LogLevel) As String
 
         Select Case LogLevel
+            Case Is = Trace
+                Return "Trace"
             Case Is = Debug
                 Return "Debug"
             Case Is = Information
@@ -84,6 +89,8 @@ Public Class Logger
             Dim LogMarker As String
 
             Select Case LogLevel
+                Case Is = Trace
+                    LogMarker = " [Trace]         :   "
                 Case Is = Debug
                     LogMarker = " [Debug]         :   "
                 Case Is = Information
