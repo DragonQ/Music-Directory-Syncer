@@ -169,7 +169,6 @@ Class FileParser
                                 Throw New Exception(Result.ErrorMessage)
                             End If
                         Else
-                            Directory.CreateDirectory(Path.GetDirectoryName(SyncFilePath), DirectoryAccessPermissions)
                             Dim Result As ReturnObject = SafeCopy(SourceFileStream, SyncFilePath)
                             If Not Result.Success Then Throw New Exception(Result.ErrorMessage)
                         End If
@@ -217,8 +216,8 @@ Class FileParser
                         End If
 
                         If File.Exists(OldSyncFilePath) Then
-                            Dim DirName = Path.GetDirectoryName(SyncFilePath)
-                            If Not Directory.Exists(DirName) Then Directory.CreateDirectory(DirName, DirectoryAccessPermissions)
+                            Dim Result As ReturnObject = SafeCreateDirectory(Path.GetDirectoryName(SyncFilePath))
+                            If Not Result.Success Then Throw New Exception(Result.ErrorMessage)
                             File.Move(OldSyncFilePath, SyncFilePath)
                             MyLog.Write(ProcessID, "...successfully renamed file in sync directory.", Debug)
 
@@ -242,7 +241,6 @@ Class FileParser
                                     Throw New Exception(Result.ErrorMessage)
                                 End If
                             Else
-                                Directory.CreateDirectory(Path.GetDirectoryName(SyncFilePath), DirectoryAccessPermissions)
                                 Result = SafeCopy(SourceFileStream, SyncFilePath)
                                 If Not Result.Success Then Throw New Exception(Result.ErrorMessage)
                             End If
@@ -273,8 +271,9 @@ Class FileParser
 
         Try
             Dim OutputDirectory As String = Path.GetDirectoryName(FileTo)
+            Dim Result As ReturnObject = SafeCreateDirectory(OutputDirectory)
+            If Not Result.Success Then Throw New Exception(Result.ErrorMessage)
             OutputFilePath = Path.Combine(OutputDirectory, Path.GetFileNameWithoutExtension(FileTo)) & SyncSetting.Encoder.GetFileExtensions(0)
-            Directory.CreateDirectory(OutputDirectory, DirectoryAccessPermissions)
         Catch ex As Exception
             Dim MyError As String = ex.Message
             If ex.InnerException IsNot Nothing Then
@@ -330,8 +329,8 @@ Class FileParser
 
         Try
             If SourceFileStream Is Nothing Then Throw New Exception("Could not get file system lock on source file.")
-            Dim OutputDirectory As String = Path.GetDirectoryName(SyncFilePath)
-            Directory.CreateDirectory(OutputDirectory, DirectoryAccessPermissions)
+            Dim Result As ReturnObject = SafeCreateDirectory(Path.GetDirectoryName(SyncFilePath))
+            If Not Result.Success Then Throw New Exception(Result.ErrorMessage)
             Using NewFile As FileStream = WaitForFile(SyncFilePath, FileMode.CreateNew, FileAccess.ReadWrite, FileShare.None, FileTimeout)
                 If Not NewFile Is Nothing Then
                     SourceFileStream.CopyTo(NewFile)
@@ -342,6 +341,31 @@ Class FileParser
             End Using
         Catch ex As Exception
             MyReturnObject = New ReturnObject(False, ex.Message)
+        End Try
+
+        Return MyReturnObject
+
+    End Function
+
+    Private Function SafeCreateDirectory(DirName As String) As ReturnObject
+
+        Dim MyReturnObject As ReturnObject
+
+        Try
+            If Not Directory.Exists(DirName) Then Directory.CreateDirectory(DirName, DirectoryAccessPermissions)
+            MyReturnObject = New ReturnObject(True, "")
+        Catch ex As Exception
+            Dim MyError As String = ex.Message
+            If ex.InnerException IsNot Nothing Then MyError &= NewLine & NewLine & ex.InnerException.ToString
+            If MyError.Contains("because a file or directory with the same name already exists") Then
+                ' For some reason CreateDirectory sometimes fails because the directory already exists,
+                ' even though it shouldn't.
+                MyLog.Write(ProcessID, "Couldn't create directory; it apparently already exists. Continuing...", Debug)
+                MyReturnObject = New ReturnObject(True, "")
+            Else
+                MyLog.Write(ProcessID, "Couldn't create directory, will retry. Exception: " & MyError, Debug)
+                MyReturnObject = New ReturnObject(False, MyError)
+            End If
         End Try
 
         Return MyReturnObject
