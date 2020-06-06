@@ -180,7 +180,7 @@ Public Class TrayApp
         End If
 
         SyncInProgress = True
-        MyLog.Write("Starting re-sync of all sync directories", Information)
+        MyLog.Write("Starting re-sync of all sync directories.", Information)
 
         'Create syncer initialiser
         MySyncer = New SyncerInitialiser(UserGlobalSyncSettings, 500)
@@ -325,7 +325,7 @@ Public Class TrayApp
 
             mnuStatus.Text = "Syncer is active"
             mnuEnableSync.Text = "Disable sync"
-            MyLog.Write("File system watcher started (monitoring directory """ & UserGlobalSyncSettings.SourceDirectory & """ for audio files)", Information)
+            MyLog.Write("File system watcher started (monitoring directory """ & UserGlobalSyncSettings.SourceDirectory & """ for audio files).", Information)
             If Tray.Visible Then Tray.ShowBalloonTip(BalloonTime, ApplicationName, "Syncer active.", ToolTipIcon.Info)
 
             Return New ReturnObject(True, Nothing)
@@ -580,8 +580,10 @@ Public Class TrayApp
                 Dim Result As ReturnObject = CType(e.Result, ReturnObject)
 
                 If Result.Success Then
+                    Dim SyncDirectoryInfo As SyncerInitialiser.SyncerDirectoryInfo = CType(Result.MyObject, SyncerInitialiser.SyncerDirectoryInfo)
+
                     'Work out size of sync directory
-                    Dim SyncSize As Double = CType(Result.MyObject, Double) / (2 ^ 20) ' Convert to MiB
+                    Dim SyncSize As Double = SyncDirectoryInfo.Size / (2 ^ 20) ' Convert to MiB
                     Dim SyncSizeString As String
                     If SyncSize > 1024 Then ' Directory size is greater than 1 GiB
                         SyncSizeString = String.Format(EnglishGB, "{0:0.0}", SyncSize / (2 ^ 10)) & " GiB"
@@ -600,7 +602,11 @@ Public Class TrayApp
                         TimeTaken = String.Format(EnglishGB, "{0:0}", SecondsTaken) & " s"
                     End If
 
-                    If Tray.Visible Then Tray.ShowBalloonTip(BalloonTime, "File processing complete!", "Total sync directories size: " & SyncSizeString & NewLine & "Time taken: " & TimeTaken, ToolTipIcon.Info)
+                    MyLog.Write("File processing complete!", Information)
+                    MyLog.Write(UserGlobalSyncSettings.GetSyncSettings().Length & " sync directories created with total size: " & SyncSizeString, Information)
+                    MyLog.Write("Total files synced: " & SyncDirectoryInfo.NumberOfFiles, Information)
+                    MyLog.Write("Total time taken: " & TimeTaken, Information)
+                    If Tray.Visible Then Tray.ShowBalloonTip(BalloonTime, "File processing complete!", "Total files synced: " & SyncDirectoryInfo.NumberOfFiles & NewLine & "Total sync directories size: " & SyncSizeString & NewLine & "Time taken: " & TimeTaken, ToolTipIcon.Info)
                 Else
                     MyLog.Write("Sync failed: " & Result.ErrorMessage, Warning)
                     If Tray.Visible Then Tray.ShowBalloonTip(BalloonTime, "Sync Failed!", Result.ErrorMessage, ToolTipIcon.Error)

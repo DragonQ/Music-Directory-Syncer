@@ -13,7 +13,7 @@ Public Class SyncerInitialiser
 
     Public WithEvents SyncBackgroundWorker As New BackgroundWorker
     Private ThreadsCompleted As Int64 = 0
-    Private SyncDirectorySize As Int64 = 0
+    Property SyncDirectoryInfo As New SyncerDirectoryInfo
     Private MyGlobalSyncSettings As GlobalSyncSettings
     ReadOnly MySyncSettings As SyncSettings()
     ReadOnly CallbackUpdateMilliseconds As Int32 = 500  'Update UI twice a second by default
@@ -119,7 +119,6 @@ Public Class SyncerInitialiser
             Next
 
             MyLog.Write("Starting file processing threads.", Information)
-            SyncDirectorySize = 0
 
             Try
                 '==============================================================================================
@@ -217,7 +216,8 @@ Public Class SyncerInitialiser
 
                     If ThreadsCompletedSoFar > CheckPointThreadsCompleted Then 'At least one thread has finished since the last check
                         If ThreadsCompletedSoFar >= ThreadsStarted Then 'All files have been processed, so end background worker
-                            MyLog.Write("All files processed. " & ThreadsStarted & " files synced.", Information)
+                            Dim FinalSyncDirectoryFiles As Int64 = Interlocked.Read(SyncDirectoryInfo.NumberOfFiles)
+                            MyLog.Write("All files processed. " & FinalSyncDirectoryFiles & " of " & ThreadsStarted & " files synced.", Information)
                             Exit Do
                         Else
                             ThreadsRemaining = ThreadsStarted - ThreadsCompletedSoFar
@@ -229,7 +229,7 @@ Public Class SyncerInitialiser
 
                 '==============================================================================================
 
-                e.Result = New ReturnObject(True, Nothing, SyncDirectorySize)
+                e.Result = New ReturnObject(True, Nothing, SyncDirectoryInfo)
             Catch ex As Exception
                 MyLog.Write("Failed to complete sync. Exception: " & ex.Message, Warning)
                 e.Result = New ReturnObject(False, ex.Message)
@@ -251,6 +251,7 @@ Public Class SyncerInitialiser
                 Dim AccessPermissions As DirectorySecurity = CType(InputObjects(3), DirectorySecurity)
                 Dim TransferResult As ReturnObject
 
+                MyLog.Write(ProcessID, "Processing file: " & FilePath, Debug)
                 Using MyFileParser As New FileParser(MyGlobalSyncSettings, ProcessID, FilePath, AccessPermissions, NewSyncSettings)
                     TransferResult = MyFileParser.TransferToSyncDirectory()
                 End Using
@@ -258,7 +259,8 @@ Public Class SyncerInitialiser
                     Dim NewSize As Int64 = CType(TransferResult.MyObject, Int64)
 
                     If NewSize > 0 Then
-                        Interlocked.Add(SyncDirectorySize, NewSize)
+                        Interlocked.Add(SyncDirectoryInfo.Size, NewSize)
+                        Interlocked.Increment(SyncDirectoryInfo.NumberOfFiles)
                     End If
                 Else
                     MyLog.Write(ProcessID, "File could not be processed. Error: " & TransferResult.ErrorMessage, Warning)
@@ -273,4 +275,8 @@ Public Class SyncerInitialiser
 
     End Sub
 
+    Public Class SyncerDirectoryInfo
+        Property Size As Int64 = 0
+        Property NumberOfFiles As Int64 = 0
+    End Class
 End Class
