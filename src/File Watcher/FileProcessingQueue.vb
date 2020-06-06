@@ -15,7 +15,7 @@ Class FileProcessingQueue
     Private Const WaitBeforeFastProcessing_ms As Int32 = 50       'Non-zero to give time for cancellation events to filter through
     Private TasksRunning As Int64 = 0
     Private ReadOnly MaxThreads As Int64 = 2
-    Private IsDisposing As Boolean = False
+    Private IsDisposed As Boolean = False
 
     Public Sub New(WaitBeforeProcessingFiles_ms As Int32, NewMaxThreads As Int64)
 
@@ -58,8 +58,8 @@ Class FileProcessingQueue
         MyLog.Write(MyFileProcessingInfo.ProcessID, "Waiting " & WaitTime_ms & " ms before attempting to process file: " & MyFileProcessingInfo.FilePath, Debug)
         Do
             'Do nothing if we are disposing
-            If IsDisposing Then
-                MyLog.Write(MyFileProcessingInfo.ProcessID, "IsDisposing", Debug)
+            If IsDisposed Then
+                MyLog.Write(MyFileProcessingInfo.ProcessID, "IsDisposed", Debug)
                 Return New ReturnObject(False, "File system watcher has been stopped, aborting pending file processing.")
             End If
 
@@ -155,34 +155,42 @@ Class FileProcessingQueue
         Return Result
     End Function
 
-    Public Sub Dispose() Implements IDisposable.Dispose
-
-        'Ensure this isn't called twice
-        If IsDisposing Then Exit Sub
-        IsDisposing = True
-
-        'Wait for current tasks to exit
-        Dim SleepTime_ms As Int32 = 50
-        Do
-            SyncLock TasksRunningMutex
-                If TasksRunning = 0 Then
-                    Exit Do
-                End If
-            End SyncLock
-            Thread.Sleep(SleepTime_ms)
-        Loop
-
-        'Dispose of task queue mutex
-        If TaskQueueMutex IsNot Nothing Then
-            TaskQueueMutex = Nothing
-        End If
-
-        'Dispose of task running mutex
-        If TasksRunningMutex IsNot Nothing Then
-            TasksRunningMutex = Nothing
-        End If
-
+    Public Overloads Sub Dispose() Implements IDisposable.Dispose
+        Dispose(True)
         GC.SuppressFinalize(Me)
+    End Sub
+
+    Protected Overloads Sub Dispose(Disposing As Boolean)
+        'Ensure this isn't called twice
+        If IsDisposed Then Exit Sub
+
+        If (Disposing) Then
+            'Wait for current tasks to exit
+            Dim SleepTime_ms As Int32 = 50
+            Do
+                SyncLock TasksRunningMutex
+                    If TasksRunning = 0 Then
+                        Exit Do
+                    End If
+                End SyncLock
+                Thread.Sleep(SleepTime_ms)
+            Loop
+
+            'Clear file task list
+            FileTaskList.Clear()
+
+            'Dispose of task queue mutex
+            If TaskQueueMutex IsNot Nothing Then
+                TaskQueueMutex = Nothing
+            End If
+
+            'Dispose of task running mutex
+            If TasksRunningMutex IsNot Nothing Then
+                TasksRunningMutex = Nothing
+            End If
+        End If
+
+        IsDisposed = True
 
     End Sub
 
