@@ -10,9 +10,11 @@ Imports System.Threading
 
 Public Class TrayApp
     Inherits ApplicationContext
+    Implements IDisposable
 
 #Region " Declarations "
     Private ApplicationExitPending As Boolean = False
+    Private IsDisposed As Boolean = False
 
     Private WithEvents Tray As NotifyIcon
     Private WithEvents MainMenu As ContextMenuStrip
@@ -22,7 +24,8 @@ Public Class TrayApp
 
     Private WithEvents DirectoryWatcher As MyFileSystemWatcher = Nothing
     Private WithEvents FileWatcher As MyFileSystemWatcher = Nothing
-    Private FileID As Int32 = 1
+    Private FileIDMutex As Object
+    Private GlobalFileID As Int32 = 1
 
     Private Const FileWatcherInterval_ms As Int32 = 200           'Repeated events within this time period don't even get reported to our watchers
     Private Const WaitBeforeProcessingFiles_ms As Int32 = 5000    'Repeated events within this time period cause file processing to restart
@@ -34,6 +37,8 @@ Public Class TrayApp
 
 #Region " New "
     Public Sub New(LaunchNewSyncWindow As Boolean)
+
+        FileIDMutex = New Object
 
         'Initialize the menus
         mnuStatus = New ToolStripMenuItem("Syncer is not active")
@@ -355,9 +360,9 @@ Public Class TrayApp
 
     Private Sub DirectoryRenamed(ByVal sender As Object, ByVal e As RenamedEventArgs)
 
-        MyLog.Write(FileID, "Directory renamed: " & e.FullPath, Information)
+        Dim FileID As Int32 = GrabAndIncrementFileID()
 
-        IncrementFileID()
+        MyLog.Write(FileID, "Directory renamed: " & e.FullPath, Information)
 
         Dim NewDirectory As New DirectoryInfo(e.FullPath)
         For Each SubDirectory As DirectoryInfo In NewDirectory.GetDirectories("*", SearchOption.TopDirectoryOnly)
@@ -375,6 +380,8 @@ Public Class TrayApp
 
     Private Sub FileChanged(ByVal sender As Object, ByVal e As System.IO.FileSystemEventArgs)
         'Handles changed and new files
+
+        Dim FileID As Int32 = GrabAndIncrementFileID()
 
         Dim ActionTaken As Boolean = False
         Dim ChangeType As FileProcessingInfo.ActionType
@@ -445,8 +452,6 @@ Public Class TrayApp
                                TaskContinuationOptions.ExecuteSynchronously)
         End If
 
-        IncrementFileID()
-
     End Sub
 
     Private Sub FileProcessingCompleted(Result As ReturnObject)
@@ -511,13 +516,21 @@ Public Class TrayApp
 
     End Function
 
-    Private Sub IncrementFileID()
-        If Interlocked.Equals(FileID, MaxFileID) Then
-            Interlocked.Add(FileID, -MaxFileID)
-        Else
-            Interlocked.Increment(FileID)
-        End If
-    End Sub
+    Private Function GrabAndIncrementFileID() As Int32
+
+        Dim FileID As Int32
+        SyncLock FileIDMutex
+            FileID = GlobalFileID
+            If GlobalFileID = MaxFileID Then
+                GlobalFileID = 1
+            Else
+                GlobalFileID += 1
+            End If
+        End SyncLock
+
+        Return FileID
+
+    End Function
 #End Region
 
 #Region " Re-Apply Sync Callbacks "
@@ -601,6 +614,30 @@ Public Class TrayApp
         EnableDisableControls(True)
         ApplyEnableSync()
 
+    End Sub
+#End Region
+
+#Region " IDisposable Members "
+    Public Overloads Sub Dispose() Implements IDisposable.Dispose
+        Dispose(True)
+        GC.SuppressFinalize(Me)
+    End Sub
+
+    Protected Overrides Sub Dispose(Disposing As Boolean)
+        'Ensure this isn't called twice
+        If IsDisposed Then Exit Sub
+
+        If (Disposing) Then
+            'Dispose of file ID mutex
+            If FileIDMutex IsNot Nothing Then
+                FileIDMutex = Nothing
+            End If
+        End If
+
+        IsDisposed = True
+
+
+        MyBase.Dispose(Disposing)
     End Sub
 #End Region
 
