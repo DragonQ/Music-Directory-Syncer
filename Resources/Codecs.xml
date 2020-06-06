@@ -76,7 +76,6 @@
       <Extensions>
         <Extension>.mp4</Extension>
         <Extension>.m4a</Extension>
-        <Extension>.aac</Extension>
       </Extensions>
       <Profiles>
         <Profile>
