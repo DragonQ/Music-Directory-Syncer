@@ -145,14 +145,18 @@ publish/
 # NuGet Packages
 *.nupkg
 # The packages folder can be ignored because of Package Restore
-**/packages/*
+**/[Pp]ackages/*
 # except build/, which is used as an MSBuild target.
-!**/packages/build/
+!**/[Pp]ackages/build/
 # Uncomment if necessary however generally it will be regenerated when needed
-#!**/packages/repositories.config
-# NuGet v3's project.json files produces more ignoreable files
+#!**/[Pp]ackages/repositories.config
+# NuGet v3's project.json files produces more ignorable files
 *.nuget.props
 *.nuget.targets
+# Ignore other intermediate files that NuGet might create. project.lock.json is used in conjunction
+# with project.json (NuGet v3); project.assets.json is used in conjunction with the PackageReference
+# format (NuGet v4 and .NET Core).
+project.assets.json
 
 # Microsoft Azure Build Output
 csx/
