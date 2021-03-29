@@ -13,7 +13,7 @@ Imports System.Resources
 <Assembly: AssemblyCompany("")>
 <Assembly: AssemblyProduct("Music Directory Syncer")>
 
-<Assembly: AssemblyCopyright("Copyright © DragonQ 2020")>
+<Assembly: AssemblyCopyright("")>
 <Assembly: AssemblyTrademark("")> 
 <Assembly: ComVisible(false)>
 
