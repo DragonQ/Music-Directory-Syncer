@@ -116,11 +116,11 @@ Module XML
 
                 If GlobalSettings.Count > 0 Then
                     If GlobalSettings.Count = 1 Then
-                        If Not GlobalSettings(0).EnableSync Is Nothing Then GlobalSyncSettings.SyncIsEnabled = True
-                        If Not GlobalSettings(0).SourceDirectory Is Nothing Then GlobalSyncSettings.SourceDirectory = GlobalSettings(0).SourceDirectory.Value.TrimEnd("\"c)
-                        If Not GlobalSettings(0).ffmpegPath Is Nothing Then GlobalSyncSettings.ffmpegPath = GlobalSettings(0).ffmpegPath.Value
-                        If Not GlobalSettings(0).LogLevel Is Nothing Then GlobalSyncSettings.SetLogLevel(GlobalSettings(0).LogLevel)
-                        If Not GlobalSettings(0).MaxThreads Is Nothing Then GlobalSyncSettings.MaxThreads = CInt(GlobalSettings(0).MaxThreads)
+                        If GlobalSettings(0).EnableSync IsNot Nothing Then GlobalSyncSettings.SyncIsEnabled = True
+                        If GlobalSettings(0).SourceDirectory IsNot Nothing Then GlobalSyncSettings.SourceDirectory = GlobalSettings(0).SourceDirectory.Value.TrimEnd("\"c)
+                        If GlobalSettings(0).ffmpegPath IsNot Nothing Then GlobalSyncSettings.ffmpegPath = GlobalSettings(0).ffmpegPath.Value
+                        If GlobalSettings(0).LogLevel IsNot Nothing Then GlobalSyncSettings.SetLogLevel(GlobalSettings(0).LogLevel)
+                        If GlobalSettings(0).MaxThreads IsNot Nothing Then GlobalSyncSettings.MaxThreads = CInt(GlobalSettings(0).MaxThreads)
                     Else
                         Throw New Exception("Settings file is malformed: too many <MusicDirectorySyncer> elements.")
                     End If
@@ -146,13 +146,13 @@ Module XML
                         'Apply all default values before searching for this sync's settings
                         Dim NewSyncSettings As New SyncSettings(DefaultSettings.GetSyncSettings(0))
 
-                        If Not MySetting.SyncDirectory Is Nothing Then NewSyncSettings.SyncDirectory = MySetting.SyncDirectory.Value.TrimEnd("\"c)
+                        If MySetting.SyncDirectory IsNot Nothing Then NewSyncSettings.SyncDirectory = MySetting.SyncDirectory.Value.TrimEnd("\"c)
 
-                        If Not MySetting.ReplayGain Is Nothing Then
+                        If MySetting.ReplayGain IsNot Nothing Then
                             NewSyncSettings.SetReplayGainSetting(MySetting.ReplayGain)
                         End If
 
-                        If Not MySetting.TranscodeSetting Is Nothing Then
+                        If MySetting.TranscodeSetting IsNot Nothing Then
                             NewSyncSettings.SetTranscodeSetting(MySetting.TranscodeSetting)
 
                             'Find transcoding settings
@@ -316,7 +316,7 @@ Module XML
                         For Each MyTag As Codec.Tag In SyncSetting.GetWatcherTags
                             MyWriter.WriteStartElement("Tag")
                             MyWriter.WriteElementString("Name", MyTag.Name)
-                            If Not MyTag.Value Is Nothing Then MyWriter.WriteElementString("Value", MyTag.Value)
+                            If MyTag.Value IsNot Nothing Then MyWriter.WriteElementString("Value", MyTag.Value)
                             MyWriter.WriteEndElement()
                         Next
                         MyWriter.WriteEndElement()

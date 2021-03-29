@@ -53,7 +53,7 @@ Class FileParser
 #End Region
 
     Public Overridable Sub Dispose() Implements IDisposable.Dispose
-        If Not SourceFileStream Is Nothing Then
+        If SourceFileStream IsNot Nothing Then
             SourceFileStream.Close()
         End If
     End Sub
@@ -66,7 +66,7 @@ Class FileParser
         Try
             For Each SyncSetting In SyncSettings
                 Dim FileCodec As Codec = CheckFileCodec(SyncSetting.GetWatcherCodecs())
-                If Not FileCodec Is Nothing Then
+                If FileCodec IsNot Nothing Then
                     'File was meant to be synced, which means we now need to delete the synced version
                     Dim SyncFilePath As String = SyncSetting.SyncDirectory & FilePath.Substring(MyGlobalSyncSettings.SourceDirectory.Length)
 
@@ -155,7 +155,7 @@ Class FileParser
             Dim NewFilesSize As Int64 = 0
             For Each SyncSetting In SyncSettings
                 Dim FileCodec As Codec = CheckFileCodec(SyncSetting.GetWatcherCodecs())
-                If Not FileCodec Is Nothing Then
+                If FileCodec IsNot Nothing Then
                     If CheckFileForSync(FileCodec, SyncSetting) Then
                         Dim SyncFilePath As String = SyncSetting.SyncDirectory & FilePath.Substring(MyGlobalSyncSettings.SourceDirectory.Length)
 
@@ -201,7 +201,7 @@ Class FileParser
             If Not HaveFileLock Then Throw New System.Exception("Could not get file system lock on source file.")
             For Each SyncSetting In SyncSettings
                 Dim FileCodec As Codec = CheckFileCodec(SyncSetting.GetWatcherCodecs())
-                If Not FileCodec Is Nothing Then
+                If FileCodec IsNot Nothing Then
                     If CheckFileForSync(FileCodec, SyncSetting) Then
                         Dim SyncFilePath As String = SyncSetting.SyncDirectory & FilePath.Substring(MyGlobalSyncSettings.SourceDirectory.Length)
                         Dim OldSyncFilePath As String = SyncSetting.SyncDirectory & OldFilePath.Substring(MyGlobalSyncSettings.SourceDirectory.Length)
@@ -332,7 +332,7 @@ Class FileParser
             Dim Result As ReturnObject = SafeCreateDirectory(Path.GetDirectoryName(SyncFilePath))
             If Not Result.Success Then Throw New Exception(Result.ErrorMessage)
             Using NewFile As FileStream = WaitForFile(SyncFilePath, FileMode.CreateNew, FileAccess.ReadWrite, FileShare.None, FileTimeout)
-                If Not NewFile Is Nothing Then
+                If NewFile IsNot Nothing Then
                     SourceFileStream.CopyTo(NewFile)
                     MyReturnObject = New ReturnObject(True, "")
                 Else

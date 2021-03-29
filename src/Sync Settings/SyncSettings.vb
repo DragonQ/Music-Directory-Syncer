@@ -14,14 +14,14 @@
         SourceDirectory = MySourceDirectory.TrimEnd("\"c)
         ffmpegPath = My_ffmpegPath
         MaxThreads = MyMaxThreads
-        If Not MySyncSettingsList Is Nothing Then SyncSettings = MySyncSettingsList.ToArray()
+        If MySyncSettingsList IsNot Nothing Then SyncSettings = MySyncSettingsList.ToArray()
         LogLevel = Logger.ConvertStringToLogLevel(MyLogLevel)
 
     End Sub
 
     Public Sub New(NewSyncSettings As GlobalSyncSettings)
 
-        If Not NewSyncSettings Is Nothing Then
+        If NewSyncSettings IsNot Nothing Then
             SyncIsEnabled = NewSyncSettings.SyncIsEnabled
             SourceDirectory = NewSyncSettings.SourceDirectory
             ffmpegPath = NewSyncSettings.ffmpegPath
@@ -38,7 +38,7 @@
     End Function
 
     Public Sub SetSyncSettings(SyncSettingsList As List(Of SyncSettings))
-        If Not SyncSettingsList Is Nothing Then SyncSettings = SyncSettingsList.ToArray()
+        If SyncSettingsList IsNot Nothing Then SyncSettings = SyncSettingsList.ToArray()
     End Sub
 
     Public Sub SetLogLevel(NewLogLevel As String)
@@ -88,7 +88,7 @@ Public Class SyncSettings
 
     Public Sub New(NewSyncSettings As SyncSettings)
 
-        If Not NewSyncSettings Is Nothing Then
+        If NewSyncSettings IsNot Nothing Then
             SyncDirectory = NewSyncSettings.SyncDirectory
             WatcherCodecFilter = NewSyncSettings.GetWatcherCodecs
             WatcherTags = NewSyncSettings.GetWatcherTags
@@ -119,7 +119,7 @@ Public Class SyncSettings
     End Function
 
     Public Sub SetWatcherCodecs(CodecList As List(Of Codec))
-        If Not CodecList Is Nothing Then WatcherCodecFilter = CodecList.ToArray
+        If CodecList IsNot Nothing Then WatcherCodecFilter = CodecList.ToArray
     End Sub
 
     Public Function GetWatcherTags() As Codec.Tag()
@@ -127,7 +127,7 @@ Public Class SyncSettings
     End Function
 
     Public Sub SetWatcherTags(TagList As List(Of Codec.Tag))
-        If Not TagList Is Nothing Then WatcherTags = TagList.ToArray
+        If TagList IsNot Nothing Then WatcherTags = TagList.ToArray
     End Sub
 
     Public Function GetReplayGainSetting() As String

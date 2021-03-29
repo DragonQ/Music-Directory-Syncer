@@ -224,7 +224,7 @@ Class FileProcessingQueue
         End Sub
 
         Public Overridable Sub Dispose() Implements IDisposable.Dispose
-            If Not FileParser Is Nothing Then
+            If FileParser IsNot Nothing Then
                 FileParser.Dispose()
             End If
         End Sub

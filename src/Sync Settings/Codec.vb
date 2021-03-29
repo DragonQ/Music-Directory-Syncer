@@ -30,12 +30,12 @@ Public Class Codec
     End Sub
 
     Public Sub New(MyCodec As Codec, MyProfile As Profile)
-        If Not MyCodec Is Nothing Then
+        If MyCodec IsNot Nothing Then
             Name = MyCodec.Name
             FileExtensions = MyCodec.FileExtensions
             CompressionType = MyCodec.CompressionType
         End If
-        If Not MyProfile Is Nothing Then Profiles = {MyProfile}
+        If MyProfile IsNot Nothing Then Profiles = {MyProfile}
     End Sub
 #End Region
 
@@ -154,7 +154,7 @@ Public Class Codec
 
         Public Shared Function MatchTag(FilePath As String, Tags As Tag(), CodecName As String) As ReturnObject
 
-            If Not Tags Is Nothing Then
+            If Tags IsNot Nothing Then
                 Try
                     If Tags.Length = 0 Then
                         'Tags weren't specified, so always match every file
@@ -180,7 +180,7 @@ Public Class Codec
                                 For Each MyTag As Tag In Tags
                                     Dim Results As String() = Xiph.GetField(MyTag.Name)
 
-                                    If Not Results Is Nothing AndAlso Results.Length > 0 Then 'Tag we're looking for is present, so continue
+                                    If Results IsNot Nothing AndAlso Results.Length > 0 Then 'Tag we're looking for is present, so continue
                                         'Value matches or wasn't requested, so return true
                                         If MyTag.Value Is Nothing OrElse MyTag.Value = "" OrElse
                                             MyTag.Value.ToUpper(InvariantCulture) = Results(0).Trim.ToUpper(InvariantCulture) Then
@@ -215,7 +215,7 @@ Public Class Codec
 
         Public Shared Function MatchTag(FilePath As String, Tags As Tag()) As ReturnObject
 
-            If Not Tags Is Nothing Then
+            If Tags IsNot Nothing Then
                 Try
                     If Tags.Length = 0 Then
                         'Tags weren't specified, so always match every file
@@ -248,7 +248,7 @@ Public Class Codec
                                         End If
                                     Next
 
-                                    If Not MatchFound Is Nothing Then 'If the value matches or wasn't requested, return true
+                                    If MatchFound IsNot Nothing Then 'If the value matches or wasn't requested, return true
                                         If MyTag.Value Is Nothing OrElse MyTag.Value = "" OrElse MyTag.Value.ToUpper(InvariantCulture) =
                                             ASF.GetDescriptorString(MatchFound.Name).Trim.ToUpper(InvariantCulture) Then
                                             Return New ReturnObject(True, "", True)
@@ -282,7 +282,7 @@ Public Class Codec
 
         Public Shared Function MatchTag(FilePath As String, Tags As Tag()) As ReturnObject
 
-            If Not Tags Is Nothing Then
+            If Tags IsNot Nothing Then
                 Try
                     If Tags.Length = 0 Then
                         'Tags weren't specified, so always match every file
@@ -303,7 +303,7 @@ Public Class Codec
                                     Try 'Test if this is a user-defined ID3v2 tag - if not, skip to the next one
                                         ID3UserFrame = TryCast(ID3Frame, Id3v2.UserTextInformationFrame)
 
-                                        If Not ID3UserFrame Is Nothing Then
+                                        If ID3UserFrame IsNot Nothing Then
                                             For Each MyTag As Tag In Tags
                                                 If ID3UserFrame.Description.Trim.ToUpper(InvariantCulture) =
                                                     MyTag.Name.ToUpper(InvariantCulture) Then
@@ -350,7 +350,7 @@ Public Class Codec
             Dim BOXTYPE_NAME As ReadOnlyByteVector = "name" 'Tag name
             Dim BOXTYPE_DATA As ReadOnlyByteVector = "data" 'Tag value
 
-            If Not Tags Is Nothing Then
+            If Tags IsNot Nothing Then
                 Try
                     If Tags.Length = 0 Then
                         'Tags weren't specified, so always match every file
@@ -389,7 +389,7 @@ Public Class Codec
                                                     ElseIf TagBox.BoxType = BOXTYPE_DATA Then
                                                         'This AppleAdditionalInfoBox contains the value of the tag, so if this tag was found in our tag list
                                                         'we need to check if the tag's value also matches (or that no specific value was requested)
-                                                        If Not TagFound Is Nothing Then
+                                                        If TagFound IsNot Nothing Then
                                                             If TagFound.Value Is Nothing OrElse TagFound.Value = "" OrElse CType(TagBox, Mpeg4.AppleDataBox).Text.Trim.ToUpper(InvariantCulture) =
                                                                     TagFound.Value.ToUpper(InvariantCulture) Then
                                                                 TagMatched = True

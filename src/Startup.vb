@@ -46,7 +46,7 @@ Module Startup
 
         ' Read DefaultSettings.xml file to import default sync settings
         Dim DefaultSettings As ReturnObject = XML.ReadDefaultSettings(Codecs)
-        If DefaultSettings.Success AndAlso Not DefaultSettings.MyObject Is Nothing Then
+        If DefaultSettings.Success AndAlso DefaultSettings.MyObject IsNot Nothing Then
             DefaultGlobalSyncSettings = DirectCast(DefaultSettings.MyObject, GlobalSyncSettings)
         Else
             MessageBox.Show(DefaultSettings.ErrorMessage, "Default Sync Settings Error", MessageBoxButton.OK, MessageBoxImage.Error)

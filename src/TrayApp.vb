@@ -535,7 +535,7 @@ Public Class TrayApp
 
 #Region " Re-Apply Sync Callbacks "
     Private Sub CancelSync()
-        If Not MySyncer Is Nothing Then
+        If MySyncer IsNot Nothing Then
             MySyncer.SyncBackgroundWorker.CancelAsync()
         End If
     End Sub
@@ -576,7 +576,7 @@ Public Class TrayApp
         Else 'Task completed successfully
             SyncInProgress = False
 
-            If Not e.Result Is Nothing Then
+            If e.Result IsNot Nothing Then
                 Dim Result As ReturnObject = CType(e.Result, ReturnObject)
 
                 If Result.Success Then

@@ -11,12 +11,12 @@ Namespace Toolkit
         Property Value As Object
 
         Public Sub New(MyName As String, MyValue As Object)
-            If Not MyName Is Nothing Then Name = MyName
-            If Not MyValue Is Nothing Then Value = MyValue
+            If MyName IsNot Nothing Then Name = MyName
+            If MyValue IsNot Nothing Then Value = MyValue
         End Sub
 
         Public Sub New(MyItem As Item) ' Cloning
-            If Not MyItem Is Nothing Then
+            If MyItem IsNot Nothing Then
                 Name = MyItem.Name
                 Value = MyItem.Value
             End If

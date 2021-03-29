@@ -128,7 +128,7 @@ Public Class NewSyncWindow
             Dim EnabledFileTypesToSync As New ObservableCollection(Of Codec)
 
             ' Return a new list of codecs that only includes the codecs enabled/ticked by the user
-            If Not FileTypesToSync Is Nothing Then
+            If FileTypesToSync IsNot Nothing Then
                 For Each FileType As Codec In FileTypesToSync
                     If FileType.IsEnabled Then EnabledFileTypesToSync.Add(FileType)
                 Next
@@ -407,7 +407,7 @@ Public Class NewSyncWindow
     Private Sub SyncDirectoryProgressChanged(sender As Object, e As ProgressChangedEventArgs)
 
         'If Not e.UserState Is Nothing Then txtThreadsRunning.Text = "Threads running: " & CType(e.UserState, Int64).ToString
-        If Not e.UserState Is Nothing Then
+        If e.UserState IsNot Nothing Then
             Dim Times As Int64() = CType(e.UserState, Int64())
             txtFilesRemaining.Text = Times(0).ToString(EnglishGB)
             txtFilesProcessed.Text = Times(1).ToString(EnglishGB)
@@ -539,7 +539,7 @@ Public Class NewSyncWindow
     End Sub
 
     Private Sub CancelSync()
-        If Not MySyncer Is Nothing Then
+        If MySyncer IsNot Nothing Then
             MySyncer.SyncBackgroundWorker.CancelAsync()
         End If
     End Sub
