@@ -11,7 +11,7 @@
       <Profiles>
         <Profile>
           <Name>Vorbis Q7</Name>
-          <Argument>libvorbis -aq 7</Argument>
+          <Argument>libvorbis -aq 7 -ar 44100</Argument>
         </Profile>
         <Profile>
           <Name>Opus 192 kb/s</Name>
@@ -49,7 +49,7 @@
       <Profiles>
         <Profile>
           <Name>CBR 128 kb/s</Name>
-          <Argument>wmav2 -b:a 128k</Argument>
+          <Argument>wmav2 -b:a 128k -ar 44100</Argument>
         </Profile>
       </Profiles>
     </Codec>
@@ -80,7 +80,7 @@
       <Profiles>
         <Profile>
           <Name>VBR Q1.5</Name>
-          <Argument>aac -q:a 1.5</Argument>
+          <Argument>aac -q:a 1.5 -ar 44100</Argument>
         </Profile>
       </Profiles>
     </Codec>
