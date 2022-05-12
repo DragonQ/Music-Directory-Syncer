@@ -88,6 +88,8 @@ Public Class Codec
                 Return MP3Codec.MatchTag(FilePath, Tags)
             Case Is = "AAC"
                 Return AACCodec.MatchTag(FilePath, Tags)
+            Case Is = "WavPack"
+                Return WavPackCodec.MatchTag(FilePath, Tags)
             Case Else
                 Return New ReturnObject(False, "Codec not recognised: " & Me.Name)
         End Select
@@ -207,6 +209,55 @@ Public Class Codec
 
     End Class
 
+    Private Class WavPackCodec
+
+        Private Sub New()
+            ' Unused...
+        End Sub
+
+        Public Shared Function MatchTag(FilePath As String, Tags As Tag()) As ReturnObject
+
+            If Tags IsNot Nothing Then
+                Try
+                    If Tags.Length = 0 Then
+                        'Tags weren't specified, so always match every file
+                        Return New ReturnObject(True, "", True)
+                    Else
+                        'Find tags within WV file
+                        Using WavPackFile As TagLib.File = TagLib.WavPack.File.Create(FilePath)
+                            Dim MyApe As Ape.Tag = CType(WavPackFile.GetTag(TagTypes.Ape, False), Ape.Tag)
+
+                            If MyApe Is Nothing Then
+                                Throw New Exception("WavPack tags not found.")
+                            Else
+                                'Search for each requested tag
+                                For Each MyTag As Tag In Tags
+                                    If MyApe.HasItem(MyTag.Name) Then 'Tag we're looking for is present, so continue
+                                        'Value matches or wasn't requested, so return true
+                                        If MyTag.Value Is Nothing OrElse MyTag.Value = "" OrElse MyTag.Value.ToUpper(InvariantCulture) = MyApe.GetItem(MyTag.Name).ToString.Trim.ToUpper(InvariantCulture) Then
+                                            Return New ReturnObject(True, "", True)
+                                        End If
+                                    End If
+                                Next
+
+                                'If none of the tags were found, return false
+                                Return New ReturnObject(True, "", False)
+                            End If
+                        End Using
+
+                        Return New ReturnObject(True, "", False)
+                    End If
+                Catch ex As Exception
+                    Return New ReturnObject(False, ex.Message)
+                End Try
+            Else
+                Return New ReturnObject(False, "Tags is nothing")
+            End If
+
+        End Function
+
+    End Class
+
     Private Class WMACodec
 
         Private Sub New()
@@ -240,8 +291,7 @@ Public Class Codec
                                         ElseIf FieldName.Contains(MyTag.Name.ToUpper(InvariantCulture)) Then 'Could be a match, need to do an extra check...
                                             Dim TagSplit As String() = FieldName.Split("/"c)
 
-                                            If TagSplit.Count > 1 AndAlso TagSplit(1).Trim.ToUpper(InvariantCulture) =
-                                                MyTag.Name.ToUpper(InvariantCulture) Then
+                                            If TagSplit.Count > 1 AndAlso TagSplit(1).Trim.ToUpper(InvariantCulture) = MyTag.Name.ToUpper(InvariantCulture) Then
                                                 MatchFound = Field
                                                 Exit For
                                             End If
@@ -249,8 +299,7 @@ Public Class Codec
                                     Next
 
                                     If MatchFound IsNot Nothing Then 'If the value matches or wasn't requested, return true
-                                        If MyTag.Value Is Nothing OrElse MyTag.Value = "" OrElse MyTag.Value.ToUpper(InvariantCulture) =
-                                            ASF.GetDescriptorString(MatchFound.Name).Trim.ToUpper(InvariantCulture) Then
+                                        If MyTag.Value Is Nothing OrElse MyTag.Value = "" OrElse MyTag.Value.ToUpper(InvariantCulture) = ASF.GetDescriptorString(MatchFound.Name).Trim.ToUpper(InvariantCulture) Then
                                             Return New ReturnObject(True, "", True)
                                         End If
                                     End If
@@ -308,8 +357,7 @@ Public Class Codec
                                                 If ID3UserFrame.Description.Trim.ToUpper(InvariantCulture) =
                                                     MyTag.Name.ToUpper(InvariantCulture) Then
                                                     'If the value matches or wasn't requested, return true
-                                                    If MyTag.Value Is Nothing OrElse MyTag.Value = "" OrElse MyTag.Value.ToUpper(InvariantCulture) =
-                                                        ID3UserFrame.Text(0).Trim.ToUpper(InvariantCulture) Then
+                                                    If MyTag.Value Is Nothing OrElse MyTag.Value = "" OrElse MyTag.Value.ToUpper(InvariantCulture) = ID3UserFrame.Text(0).Trim.ToUpper(InvariantCulture) Then
                                                         Return New ReturnObject(True, "", True)
                                                     End If
                                                 End If
@@ -380,8 +428,7 @@ Public Class Codec
 
                                                         'This AppleAdditionalInfoBox contains the name of the tag, so look for it in our list of tag names
                                                         For Each MyTag As Tag In Tags
-                                                            If CType(TagBox, Mpeg4.AppleAdditionalInfoBox).Text.Replace(Convert.ToChar(0), "").Trim.ToUpper(InvariantCulture) =
-                                                                    MyTag.Name.ToUpper(InvariantCulture) Then
+                                                            If CType(TagBox, Mpeg4.AppleAdditionalInfoBox).Text.Replace(Convert.ToChar(0), "").Trim.ToUpper(InvariantCulture) = MyTag.Name.ToUpper(InvariantCulture) Then
                                                                 TagFound = MyTag
                                                                 Exit For
                                                             End If
@@ -390,8 +437,7 @@ Public Class Codec
                                                         'This AppleAdditionalInfoBox contains the value of the tag, so if this tag was found in our tag list
                                                         'we need to check if the tag's value also matches (or that no specific value was requested)
                                                         If TagFound IsNot Nothing Then
-                                                            If TagFound.Value Is Nothing OrElse TagFound.Value = "" OrElse CType(TagBox, Mpeg4.AppleDataBox).Text.Trim.ToUpper(InvariantCulture) =
-                                                                    TagFound.Value.ToUpper(InvariantCulture) Then
+                                                            If TagFound.Value Is Nothing OrElse TagFound.Value = "" OrElse CType(TagBox, Mpeg4.AppleDataBox).Text.Trim.ToUpper(InvariantCulture) = TagFound.Value.ToUpper(InvariantCulture) Then
                                                                 TagMatched = True
                                                                 Exit For
                                                             End If

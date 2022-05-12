@@ -14,6 +14,7 @@
         <CodecName>MP3</CodecName>
         <CodecName>AAC</CodecName>
         <CodecName>OGG</CodecName>
+        <CodecName>WavPack</CodecName>
       </FileTypes>
       <Tags>
         <!--<Tag>

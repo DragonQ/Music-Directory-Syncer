@@ -84,5 +84,14 @@
         </Profile>
       </Profiles>
     </Codec>
+    <Codec>
+      <Name>WavPack</Name>
+      <Type>Lossless</Type>
+      <Extensions>
+        <Extension>.wv</Extension>
+      </Extensions>
+      <Profiles>
+      </Profiles>
+    </Codec>
   </Codecs>
 </MusicDirectorySyncer>
