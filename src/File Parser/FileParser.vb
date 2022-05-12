@@ -363,7 +363,7 @@ Class FileParser
                 MyLog.Write(ProcessID, "Couldn't create directory; it apparently already exists. Continuing...", Debug)
                 MyReturnObject = New ReturnObject(True, "")
             Else
-                MyLog.Write(ProcessID, "Couldn't create directory, will retry. Exception: " & MyError, Debug)
+                MyLog.Write(ProcessID, "Couldn't create directory. Exception: " & MyError, Debug)
                 MyReturnObject = New ReturnObject(False, MyError)
             End If
         End Try
